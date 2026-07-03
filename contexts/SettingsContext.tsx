@@ -22,11 +22,8 @@ export interface AppSettings {
   studyReminder: boolean;
   reminderTime: string; // "HH:MM"
   streakAlert: boolean;
-  achievements: boolean;
-  // Áudio
+  // Feedback
   feedbackSounds: boolean;
-  tts: boolean;
-  ttsLang: string;
   // Dados
   autoBackup: boolean;
   wifiOnly: boolean;
@@ -49,10 +46,7 @@ const DEFAULTS: AppSettings = {
   studyReminder: false,
   reminderTime: '20:00',
   streakAlert: false,
-  achievements: true,
   feedbackSounds: true,
-  tts: false,
-  ttsLang: 'Português (BR)',
   autoBackup: true,
   wifiOnly: false,
   highContrast: false,

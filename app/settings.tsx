@@ -28,8 +28,7 @@ const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 export default function SettingsScreen() {
   const router = useRouter();
   const scheme = useColorScheme();
-  const { user, profile, signOut, sendPasswordReset, refreshProfile } =
-    useAuth();
+  const { user, profile, signOut, refreshProfile } = useAuth();
   const { settings, update } = useSettings();
   const colors = useThemeColors();
 
@@ -64,7 +63,7 @@ export default function SettingsScreen() {
 
   // Ao ativar uma notificação, garante a permissão antes de salvar a opção.
   const toggleNotification = async (
-    key: 'studyReminder' | 'streakAlert' | 'achievements',
+    key: 'studyReminder' | 'streakAlert',
     value: boolean,
   ) => {
     if (value) {
@@ -91,32 +90,6 @@ export default function SettingsScreen() {
     Alert.alert(
       'Recall',
       `Versão ${APP_VERSION}\n\nApp de flashcards com criação assistida por IA.\nFeito com Expo + Supabase.`,
-    );
-  };
-
-  const handleChangePassword = () => {
-    if (!user?.email) return;
-    Alert.alert(
-      'Alterar senha',
-      `Enviaremos um link de redefinição para ${user.email}.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Enviar',
-          onPress: async () => {
-            try {
-              await sendPasswordReset(user.email!);
-              Alert.alert(
-                'E-mail enviado',
-                'Verifique sua caixa de entrada para redefinir a senha.',
-              );
-            } catch (e: unknown) {
-              const msg = e instanceof Error ? e.message : 'Erro ao enviar.';
-              Alert.alert('Erro', msg);
-            }
-          },
-        },
-      ],
     );
   };
 
@@ -174,12 +147,6 @@ export default function SettingsScreen() {
             iconColor={colors.primary}
             title={profile?.name ?? 'Minha conta'}
             subtitle={user?.email ?? undefined}
-          />
-          <SettingsRow
-            icon="key"
-            iconColor="#ffb690"
-            title="Alterar senha"
-            onPress={handleChangePassword}
           />
         </SettingsSection>
 
@@ -319,20 +286,10 @@ export default function SettingsScreen() {
               onValueChange: v => void toggleNotification('streakAlert', v),
             }}
           />
-          <SettingsRow
-            icon="trophy"
-            iconColor="#ffd479"
-            title="Conquistas"
-            subtitle="Avise quando desbloquear marcos"
-            toggle={{
-              value: settings.achievements,
-              onValueChange: v => void toggleNotification('achievements', v),
-            }}
-          />
         </SettingsSection>
 
-        {/* ── Áudio ── */}
-        <SettingsSection title="Áudio e tato">
+        {/* ── Feedback ── */}
+        <SettingsSection title="Feedback">
           <SettingsRow
             icon="phone-portrait"
             iconColor={colors.primary}
@@ -341,25 +298,6 @@ export default function SettingsScreen() {
               value: settings.feedbackSounds,
               onValueChange: v => update('feedbackSounds', v),
             }}
-          />
-          <SettingsRow
-            icon="volume-high"
-            iconColor="#7cc6ff"
-            title="Text-to-speech"
-            toggle={{ value: settings.tts, onValueChange: v => update('tts', v) }}
-          />
-          <SettingsRow
-            icon="language"
-            iconColor="#9ef0b0"
-            title="Idioma do TTS"
-            value={settings.ttsLang}
-            onPress={() =>
-              pickOption(
-                'Idioma do TTS',
-                ['Português (BR)', 'English (US)', 'Español'],
-                v => update('ttsLang', v),
-              )
-            }
           />
         </SettingsSection>
 

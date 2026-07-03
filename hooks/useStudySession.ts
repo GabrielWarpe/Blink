@@ -70,21 +70,18 @@ export function useStudySession(deck: Deck | null) {
           // ── Conquistas ──
           const sessions = await db.sessions.getRecent(user.id, 365);
           const playlists = await db.playlists.getAll(user.id);
-          await checkAchievements(
-            {
-              totalCards: sessions.reduce((sum, s) => sum + s.total, 0),
-              totalSessions: sessions.length,
-              currentStreak: after?.current_streak ?? 0,
-              deckCount: playlists.length,
-              lastAccuracy: Math.round((finalCorrect / answered) * 100),
-            },
-            settings.achievements,
-          );
+          await checkAchievements({
+            totalCards: sessions.reduce((sum, s) => sum + s.total, 0),
+            totalSessions: sessions.length,
+            currentStreak: after?.current_streak ?? 0,
+            deckCount: playlists.length,
+            lastAccuracy: Math.round((finalCorrect / answered) * 100),
+          });
         })();
       }
       setPhase('finished');
     },
-    [deck, user, refreshProfile, settings.streakAlert, settings.achievements],
+    [deck, user, refreshProfile, settings.streakAlert],
   );
 
   const answer = useCallback(

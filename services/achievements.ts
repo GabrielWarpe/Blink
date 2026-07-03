@@ -76,12 +76,11 @@ export async function getUnlocked(): Promise<string[]> {
 
 /**
  * Verifica as conquistas com base nas estatísticas atuais. Para cada conquista
- * recém-desbloqueada, dispara uma notificação (se `notify`) e persiste o estado.
+ * recém-desbloqueada, dispara uma notificação e persiste o estado.
  * Retorna os ids recém-desbloqueados.
  */
 export async function checkAchievements(
   stats: AchievementStats,
-  notify: boolean,
 ): Promise<string[]> {
   const unlocked = new Set(await getUnlocked());
   const newly: Achievement[] = [];
@@ -95,10 +94,8 @@ export async function checkAchievements(
 
   if (newly.length > 0) {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([...unlocked]));
-    if (notify) {
-      for (const a of newly) {
-        await fireNotification(a.title, a.body);
-      }
+    for (const a of newly) {
+      await fireNotification(a.title, a.body);
     }
   }
   return newly.map(a => a.id);

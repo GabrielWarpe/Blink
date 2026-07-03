@@ -151,6 +151,16 @@ export const db = {
       return data;
     },
 
+    async countMastered(userId: string): Promise<number> {
+      const { count, error } = await supabase
+        .from('flashcards')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('mastered', true);
+      if (error) return 0;
+      return count ?? 0;
+    },
+
     async create(
       data: Omit<FlashcardRow, 'id' | 'created_at'>,
     ): Promise<FlashcardRow> {
