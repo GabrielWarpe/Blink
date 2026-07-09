@@ -220,7 +220,7 @@ export default function DecksScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       {/* Header */}
       <View className="px-5 pt-6 pb-4">
         <View className="flex-row items-center justify-between mb-4">

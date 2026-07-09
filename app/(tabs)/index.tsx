@@ -96,7 +96,9 @@ export default function HomeScreen() {
             };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    // Sem inset de baixo: a barra de abas já cobre essa área. Com ele, sobrava
+    // uma faixa morta acima da barra que cortava o último card.
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: TAB_SCREEN_BOTTOM_INSET }}

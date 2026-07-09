@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,11 +71,13 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          // Mesma cor da tela: a barra some no fundo, sem faixa nem degrau.
-          backgroundColor: colors.background,
-          borderTopWidth: 0,
-          // Zera a moldura que cada plataforma desenha por conta própria,
-          // senão a sombra do tab bar recria uma linha sutil no topo.
+          // Painel próprio + divisória fina: a barra volta a se destacar do
+          // fundo, mas baixa e justa aos ícones (a altura vem do conteúdo).
+          backgroundColor: colors.surfaceContainer,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: colors.outlineVariant,
+          // A linha é a divisória explícita acima: nada de sombra da
+          // plataforma desenhando uma segunda borda por baixo dela.
           elevation: 0,
           shadowOpacity: 0,
           shadowColor: 'transparent',

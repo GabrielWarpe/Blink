@@ -139,7 +139,7 @@ export default function ProgressScreen() {
     pct >= 75 ? colors.primary : pct >= 40 ? colors.tertiary : colors.outline;
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: TAB_SCREEN_BOTTOM_INSET }}

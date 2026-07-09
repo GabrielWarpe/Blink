@@ -13,13 +13,19 @@ export const TAB_LABEL_LINE = 14;
 
 const CONTENT_HEIGHT = TAB_ICON_SIZE + TAB_ICON_LABEL_GAP + TAB_LABEL_LINE;
 
-/** Respiro acima dos ícones — só o suficiente para não colar no conteúdo. */
-export const TAB_BAR_TOP_PAD = 4;
-/** No iOS reserva espaço para o indicador de home; no Android, um respiro. */
-export const TAB_BAR_BOTTOM_PAD = Platform.OS === 'ios' ? 16 : 8;
+/** Respiro entre a divisória e os ícones. */
+export const TAB_BAR_TOP_PAD = 14;
+/**
+ * Folga inferior. No iOS o indicador de home passa por cima do fundo da
+ * barra, como é o padrão do sistema — por isso não precisa do inset cheio.
+ */
+export const TAB_BAR_BOTTOM_PAD = Platform.OS === 'ios' ? 12 : 8;
 
 export const TAB_BAR_HEIGHT =
   TAB_BAR_TOP_PAD + CONTENT_HEIGHT + TAB_BAR_BOTTOM_PAD;
 
-/** Espaço a reservar no fim de uma tela rolável dentro das abas. */
-export const TAB_SCREEN_BOTTOM_INSET = TAB_BAR_HEIGHT + 24;
+/**
+ * Respiro no fim de uma tela rolável das abas. É só folga estética: o tab bar
+ * não é `position: absolute`, então o conteúdo nunca fica embaixo dele.
+ */
+export const TAB_SCREEN_BOTTOM_INSET = 32;
