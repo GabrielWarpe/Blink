@@ -7,12 +7,13 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export interface NewDeckInput {
   title: string;
+  description?: string;
   emoji: string;
   color: string;
   coverUrl?: string | null;
   sourceType: SourceType;
   tags?: string[];
-  cards: { front: string; back: string }[];
+  cards: { front: string; back: string; quizOptions?: string[] }[];
 }
 
 export function useDecks() {
@@ -50,6 +51,7 @@ export function useDecks() {
         user.id,
         {
           title: input.title,
+          description: input.description,
           emoji: input.emoji,
           color: input.color,
           coverUrl: input.coverUrl,

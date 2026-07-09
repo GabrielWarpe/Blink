@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -8,13 +8,26 @@ import { db } from '@/services/database';
 import { getSessionCards } from '@/services/ai';
 import { useStudySession } from '@/hooks/useStudySession';
 import { useSettings } from '@/contexts/SettingsContext';
+import { deckSupportsQuiz, cardSupportsQuiz } from '@/utils/practice';
 import { SwipeCard } from '@/components/SwipeCard';
+import { QuizQuestion } from '@/components/QuizQuestion';
 import { Button } from '@/components/ui/Button';
 import { cardShadow } from '@/components/ui/Card';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
+/** Hash determinístico (djb2) — sorteio de formato estável por pergunta. */
+function hashStr(s: string): number {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
 export default function StudySessionScreen() {
-  const { deckId } = useLocalSearchParams<{ deckId: string }>();
+  const { deckId, mode, mix } = useLocalSearchParams<{
+    deckId: string;
+    mode?: string;
+    mix?: string;
+  }>();
   const router = useRouter();
   const colors = useThemeColors();
   const { settings } = useSettings();
@@ -23,6 +36,17 @@ export default function StudySessionScreen() {
   const [noDue, setNoDue] = useState(false);
 
   const session = useStudySession(deck);
+
+  // ── Modo misto (flashcards + quiz intercalados) ───────────────────────────
+  // Degrada para flashcards puro se o deck não suportar quiz.
+  const isMixed = mode === 'mixed' && deck != null && deckSupportsQuiz(deck);
+  const mixPattern: 'alt' | 'random' = mix === 'random' ? 'random' : 'alt';
+  // Cards já errados no quiz nesta sessão: acertar na repetição vale "Difícil".
+  const missedIdsRef = useRef<Set<string>>(new Set());
+  // Contador de APRESENTAÇÕES (inclui puladas — done/againCount não contam
+  // skip, então a paridade do alternado precisa de um contador próprio).
+  const presentationIndexRef = useRef(-1);
+  const lastQuestionKeyRef = useRef('');
 
   useEffect(() => {
     if (!deckId) return;
@@ -55,6 +79,9 @@ export default function StudySessionScreen() {
   const restart = () => {
     setSessionStarted(false);
     setNoDue(false);
+    missedIdsRef.current = new Set();
+    presentationIndexRef.current = -1;
+    lastQuestionKeyRef.current = '';
     session.reset();
     void db.decks.getOne(deck.id).then(d => {
       if (d) setDeck(d);
@@ -217,6 +244,39 @@ export default function StudySessionScreen() {
   const DOT_COUNT = Math.min(session.total, 12);
   const position = Math.min(session.done + 1, session.total);
 
+  // Identidade única da pergunta atual (o mesmo card pode voltar após erro).
+  const questionKey = session.currentCard
+    ? `${session.currentCard.id}:${session.done}:${session.againCount}`
+    : '';
+  // Conta apresentações quando a pergunta muda (skip incluso).
+  if (questionKey && questionKey !== lastQuestionKeyRef.current) {
+    lastQuestionKeyRef.current = questionKey;
+    presentationIndexRef.current += 1;
+  }
+
+  // Formato do card do topo no misto: alternado por paridade da apresentação
+  // ou sorteio estável por pergunta; card sem distrator cai para flashcard.
+  const showAsQuiz =
+    isMixed &&
+    session.currentCard != null &&
+    cardSupportsQuiz(session.currentCard) &&
+    (mixPattern === 'alt'
+      ? presentationIndexRef.current % 2 === 1
+      : hashStr(questionKey) % 2 === 1);
+
+  // Quiz do misto: acertou de primeira = Bom; após errar = Difícil; errou =
+  // De novo (volta ao fim da fila) — mesmo mapeamento da tela de quiz.
+  const handleQuizAnswer = (correct: boolean) => {
+    const card = session.currentCard;
+    if (!card) return;
+    if (correct) {
+      session.grade(missedIdsRef.current.has(card.id) ? 'hard' : 'good');
+    } else {
+      missedIdsRef.current.add(card.id);
+      session.grade('again');
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Header */}
@@ -275,22 +335,34 @@ export default function StudySessionScreen() {
       </View>
 
       {/* Card area */}
-      <View className="flex-1 items-center justify-center px-6">
-        {session.currentCard != null && (
-          <SwipeCard
-            key={
-              session.currentCard.id +
-              '_' +
-              (session.done + session.againCount)
-            }
-            card={session.currentCard}
-            index={session.done}
-            total={session.total}
-            onGrade={g => session.grade(g)}
-            onSkip={() => session.skip()}
-          />
-        )}
-      </View>
+      {showAsQuiz && session.currentCard != null ? (
+        // SEM prop `key`: a troca de pergunta é comunicada pelo questionKey e
+        // os guards anti-toque-duplo internos sobrevivem entre perguntas.
+        <QuizQuestion
+          card={session.currentCard}
+          questionKey={questionKey}
+          isLastIfCorrect={session.total - session.done === 1}
+          onAnswer={handleQuizAnswer}
+          onSkip={() => session.skip()}
+        />
+      ) : (
+        <View className="flex-1 items-center justify-center px-6">
+          {session.currentCard != null && (
+            <SwipeCard
+              key={
+                session.currentCard.id +
+                '_' +
+                (session.done + session.againCount)
+              }
+              card={session.currentCard}
+              index={session.done}
+              total={session.total}
+              onGrade={g => session.grade(g)}
+              onSkip={() => session.skip()}
+            />
+          )}
+        </View>
+      )}
     </SafeAreaView>
   );
 }

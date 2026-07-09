@@ -19,6 +19,7 @@ create table if not exists playlists (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references profiles(id) on delete cascade not null,
   name text not null,
+  description text,
   emoji text default '📚',
   color text default '#7c3aed',
   cover_url text,
@@ -43,6 +44,9 @@ create table if not exists flashcards (
   last_review_date timestamp with time zone,
   mastered boolean default false,
   images text[] not null default '{}',
+  -- Alternativas ERRADAS autoradas do quiz (a correta é o `back`). Card com
+  -- 2+ alternativas vira pergunta de quiz; vazio = só flashcard.
+  quiz_options text[] not null default '{}',
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
@@ -116,6 +120,17 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- Colunas para bancos criados ANTES delas existirem (o `create table if not
+-- exists` acima não altera tabelas já criadas).
+alter table playlists add column if not exists tags text[] not null default '{}';
+alter table playlists add column if not exists cover_url text;
+alter table playlists add column if not exists description text;
+alter table flashcards add column if not exists quiz_options text[] not null default '{}';
+
+-- Força o PostgREST a recarregar o cache do schema (às vezes ele demora a ver
+-- colunas novas e continua respondendo "column not found").
+notify pgrst, 'reload schema';
 
 -- ── Dados por conta: configurações, onboarding e conquistas ─────────────────
 -- Tudo que era salvo apenas no aparelho (AsyncStorage) passa a viver na conta

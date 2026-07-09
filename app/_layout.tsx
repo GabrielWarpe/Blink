@@ -19,7 +19,7 @@ import {
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { SettingsProvider, useSettings } from '@/contexts/SettingsContext';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
-import { resolveAccent, hexToTriplet } from '@/constants/accents';
+import { ACCENT, hexToTriplet } from '@/constants/accents';
 import { syncReminders } from '@/services/notifications';
 import '../global.css';
 
@@ -111,8 +111,7 @@ function ThemeVarsView({ children }: { children: ReactNode }) {
   const { settings } = useSettings();
   const { colorScheme: active } = useColorScheme();
 
-  const accent = resolveAccent(settings.accent);
-  const c = active === 'light' ? accent.light : accent.dark;
+  const c = active === 'light' ? ACCENT.light : ACCENT.dark;
   const scale = FONT_SCALE[settings.fontSize] ?? 1;
 
   const fontVars: Record<string, string> = {};

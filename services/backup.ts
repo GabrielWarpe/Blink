@@ -21,6 +21,8 @@ interface CardExport {
   front: string;
   back: string;
   images?: string[];
+  /** Alternativas ERRADAS do quiz (2+ tornam o card uma pergunta de quiz). */
+  quizOptions?: string[];
 }
 
 interface DeckExport {
@@ -70,6 +72,7 @@ export interface ImportCard {
   front: string;
   back: string;
   images?: string[];
+  quizOptions?: string[];
 }
 
 export interface ImportDeck {
@@ -112,11 +115,14 @@ export type CardImportTarget =
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function toCardExport(c: Pick<Flashcard, 'front' | 'back' | 'images'>): CardExport {
+function toCardExport(
+  c: Pick<Flashcard, 'front' | 'back' | 'images' | 'quizOptions'>,
+): CardExport {
   return {
     front: c.front,
     back: c.back,
     ...(c.images.length > 0 ? { images: c.images } : {}),
+    ...(c.quizOptions.length > 0 ? { quizOptions: c.quizOptions } : {}),
   };
 }
 
@@ -257,7 +263,14 @@ function normalizeCards(raw: unknown): ImportCard[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter(
-      (c): c is { front: string; back: string; images?: unknown } =>
+      (
+        c,
+      ): c is {
+        front: string;
+        back: string;
+        images?: unknown;
+        quizOptions?: unknown;
+      } =>
         c != null &&
         typeof c.front === 'string' &&
         typeof c.back === 'string' &&
@@ -271,10 +284,19 @@ function normalizeCards(raw: unknown): ImportCard[] {
             )
             .slice(0, 4)
         : [];
+      // Alternativas do quiz: só valem se houver 2+ (regra do app).
+      const quizOptions = Array.isArray(c.quizOptions)
+        ? c.quizOptions
+            .filter((o): o is string => typeof o === 'string')
+            .map(o => o.trim())
+            .filter(o => o.length > 0)
+            .slice(0, 3)
+        : [];
       return {
         front: String(c.front),
         back: String(c.back),
         ...(images.length > 0 ? { images } : {}),
+        ...(quizOptions.length >= 2 ? { quizOptions } : {}),
       };
     });
 }

@@ -4,6 +4,8 @@ import { storage } from './storage';
 interface GeneratedCard {
   front: string;
   back: string;
+  /** Alternativas ERRADAS do quiz, geradas junto com a pergunta. */
+  options?: string[];
 }
 
 /** Bloco de conteúdo enviado à API (texto, imagem ou documento PDF). */
@@ -26,7 +28,7 @@ export interface FileAttachment {
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
-const CARD_INSTRUCTIONS = `Return ONLY a valid JSON array with no other text. Each item must have "front" (question or concept) and "back" (answer or explanation) fields. Keep each card concise and focused on a single idea. Write the cards in the same language as the source content.`;
+const CARD_INSTRUCTIONS = `Return ONLY a valid JSON array with no other text. Each item must have "front" (question or concept), "back" (the correct answer or explanation) and "options" (an array of exactly 3 plausible but INCORRECT answer choices for a multiple-choice quiz about that question). The wrong options must be related to the question, in the same style and similar length as the correct answer, and must never repeat the correct answer. Keep each card concise and focused on a single idea. Write everything in the same language as the source content.`;
 
 /** Chamada única à API: monta a requisição, valida e extrai o array de cards. */
 async function requestCards(
@@ -75,7 +77,21 @@ async function requestCards(
     throw new Error('Resposta da IA não é um array válido.');
   }
 
-  return cards.filter(c => c.front && c.back);
+  // Sanitiza as alternativas: strings não vazias, diferentes da correta,
+  // sem duplicatas e no máximo 3.
+  return cards
+    .filter(c => c.front && c.back)
+    .map(c => ({
+      ...c,
+      options: [
+        ...new Set(
+          (Array.isArray(c.options) ? c.options : [])
+            .filter((o): o is string => typeof o === 'string')
+            .map(o => o.trim())
+            .filter(o => o.length > 0 && o !== c.back.trim()),
+        ),
+      ].slice(0, 3),
+    }));
 }
 
 /**
@@ -156,6 +172,7 @@ export function makeFlashcard(
   front: string,
   back: string,
   images: string[] = [],
+  quizOptions: string[] = [],
 ): Flashcard {
   const now = new Date().toISOString();
   return {
@@ -169,6 +186,7 @@ export function makeFlashcard(
     nextReview: now,
     mastered: false,
     images,
+    quizOptions,
   };
 }
 

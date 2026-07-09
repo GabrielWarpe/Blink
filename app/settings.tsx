@@ -242,19 +242,6 @@ export default function SettingsScreen() {
             }
           />
           <SettingsRow
-            icon="color-palette"
-            iconColor="#ffb690"
-            title="Cor de destaque"
-            value={settings.accent}
-            onPress={() =>
-              pickOption(
-                'Cor de destaque',
-                ['Teal', 'Violeta', 'Azul', 'Verde', 'Laranja', 'Rosa'],
-                v => update('accent', v),
-              )
-            }
-          />
-          <SettingsRow
             icon="text"
             iconColor="#7cc6ff"
             title="Tamanho da fonte"

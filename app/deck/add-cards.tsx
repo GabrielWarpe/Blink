@@ -22,6 +22,10 @@ import { Button } from '@/components/ui/Button';
 import { cardShadow } from '@/components/ui/Card';
 import { CardImagePicker } from '@/components/CardImagePicker';
 import { CardImages } from '@/components/CardImages';
+import {
+  QuizOptionsInput,
+  filledQuizOptions,
+} from '@/components/QuizOptionsInput';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 type Mode = 'manual' | 'ai';
@@ -41,6 +45,8 @@ export default function AddCardsScreen() {
   const [newBack, setNewBack] = useState('');
   // Imagens do card em composição (preview local; upload só no salvar).
   const [newImages, setNewImages] = useState<CardImage[]>([]);
+  // Alternativas ERRADAS do quiz (opcionais; 2+ tornam o card uma pergunta).
+  const [newQuizOptions, setNewQuizOptions] = useState<string[]>([]);
   const pendingImagesRef = useRef<Record<string, CardImage[]>>({});
 
   // AI
@@ -52,16 +58,26 @@ export default function AddCardsScreen() {
 
   const handleAddManual = () => {
     if (!newFront.trim() || !newBack.trim()) return;
+    const wrongOptions = filledQuizOptions(newQuizOptions);
+    if (wrongOptions.length === 1) {
+      Alert.alert(
+        'Quiz incompleto',
+        'Uma pergunta de quiz precisa de pelo menos 2 alternativas erradas (3 opções no total). Complete ou deixe todas vazias.',
+      );
+      return;
+    }
     const card = makeFlashcard(
       newFront.trim(),
       newBack.trim(),
       newImages.map(img => img.uri), // URIs locais só para o preview
+      wrongOptions,
     );
     if (newImages.length > 0) pendingImagesRef.current[card.id] = newImages;
     setCards(c => [...c, card]);
     setNewFront('');
     setNewBack('');
     setNewImages([]);
+    setNewQuizOptions([]);
   };
 
   const handleGenerate = async () => {
@@ -81,7 +97,7 @@ export default function AddCardsScreen() {
       );
       setCards(prev => [
         ...prev,
-        ...raw.map(c => makeFlashcard(c.front, c.back)),
+        ...raw.map(c => makeFlashcard(c.front, c.back, [], c.options ?? [])),
       ]);
       setAiTopic('');
       setAiImages([]);
@@ -105,7 +121,12 @@ export default function AddCardsScreen() {
     if (!user || !deckId) return;
     setSaving(true);
     try {
-      const payload: { front: string; back: string; images?: string[] }[] = [];
+      const payload: {
+        front: string;
+        back: string;
+        images?: string[];
+        quizOptions?: string[];
+      }[] = [];
       for (const c of cards) {
         const pending = pendingImagesRef.current[c.id] ?? [];
         const urls =
@@ -114,6 +135,7 @@ export default function AddCardsScreen() {
           front: c.front,
           back: c.back,
           ...(urls.length > 0 ? { images: urls } : {}),
+          ...(c.quizOptions.length > 0 ? { quizOptions: c.quizOptions } : {}),
         });
       }
       await db.decks.addCards(user.id, deckId, payload);
@@ -203,6 +225,10 @@ export default function AddCardsScreen() {
                 style={{ height: 80, textAlignVertical: 'top', paddingTop: 12 }}
               />
               <CardImagePicker images={newImages} onChange={setNewImages} />
+              <QuizOptionsInput
+                options={newQuizOptions}
+                onChange={setNewQuizOptions}
+              />
               <Button
                 variant="secondary"
                 size="md"

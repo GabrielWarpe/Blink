@@ -32,6 +32,7 @@ const MAX_DIMENSION = 1600; // px no lado maior — qualidade boa, upload leve
 const JPEG_QUALITY = 0.8;
 const BUCKET = 'card-images';
 
+
 /** Imagem em edição: local (com base64 a enviar) ou já hospedada (só URL). */
 export interface CardImage {
   uri: string;
@@ -71,6 +72,33 @@ export async function pickCardImages(maxCount: number): Promise<CardImage[]> {
     if (out.base64) picked.push({ uri: out.uri, base64: out.base64 });
   }
   return picked;
+}
+
+/**
+ * Abre a galeria para escolher a CAPA do deck — mesmo caminho da foto de
+ * perfil: picker com corte quadrado e base64 direto, sem manipulator. A capa
+ * não usa o Storage: é salva como data URI na coluna `cover_url` do deck.
+ */
+export async function pickDeckCover(): Promise<CardImage | null> {
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.4,
+    base64: true,
+  });
+  if (result.canceled) return null;
+  const asset = result.assets[0];
+  if (!asset?.base64) return null;
+  return { uri: asset.uri, base64: asset.base64 };
+}
+
+/**
+ * Converte a imagem escolhida no valor a salvar em `cover_url`: nova (com
+ * base64) vira data URI; já salva (URL http ou data URI) passa direto.
+ */
+export function imageToDataUri(img: CardImage): string {
+  return img.base64 ? `data:image/jpeg;base64,${img.base64}` : img.uri;
 }
 
 /** Decodifica base64 sem depender de `atob` (indisponível em alguns runtimes). */

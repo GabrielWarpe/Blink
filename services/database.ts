@@ -26,6 +26,7 @@ function rowToFlashcard(row: FlashcardRow): Flashcard {
     lastReviewed: row.last_review_date ?? undefined,
     mastered: row.mastered,
     images: row.images ?? [],
+    quizOptions: row.quiz_options ?? [],
   };
 }
 
@@ -33,7 +34,7 @@ function rowsToDeck(playlist: PlaylistRow, cards: FlashcardRow[]): Deck {
   return {
     id: playlist.id,
     title: playlist.name,
-    description: '',
+    description: playlist.description ?? '',
     color: playlist.color,
     emoji: playlist.emoji,
     coverUrl: playlist.cover_url ?? null,
@@ -44,17 +45,17 @@ function rowsToDeck(playlist: PlaylistRow, cards: FlashcardRow[]): Deck {
   };
 }
 
-/** Card de entrada nas criações (front/back + imagens opcionais). */
+/** Card de entrada nas criações (front/back + imagens/quiz opcionais). */
 export interface NewCardInput {
   front: string;
   back: string;
   images?: string[];
+  /** Alternativas erradas do quiz (2+ tornam o card uma pergunta de quiz). */
+  quizOptions?: string[];
 }
 
-/** Linha pronta para inserir; `images` só entra no INSERT quando presente. */
-type NewFlashcardRow = Omit<FlashcardRow, 'id' | 'created_at' | 'images'> & {
-  images?: string[];
-};
+/** Linha pronta para inserir. */
+type NewFlashcardRow = Omit<FlashcardRow, 'id' | 'created_at'>;
 
 /** Monta linhas de flashcard prontas para inserir, com defaults do SM-2. */
 function buildCardRows(
@@ -75,12 +76,13 @@ function buildCardRows(
     next_review_date: nowIso,
     last_review_date: null,
     mastered: false,
-    // SEMPRE presente (mesmo vazio): num INSERT em lote, o PostgREST monta a
-    // lista de colunas pela união das chaves de todos os objetos do array —
+    // SEMPRE presentes (mesmo vazios): num INSERT em lote, o PostgREST monta
+    // a lista de colunas pela união das chaves de todos os objetos do array —
     // se um card do lote tiver `images` e outro não, o card sem a chave
     // recebe NULL explícito (não o DEFAULT da coluna), violando o NOT NULL.
     // Manter a mesma forma em toda linha evita esse NULL-fill.
     images: c.images ?? [],
+    quiz_options: c.quizOptions ?? [],
   }));
 }
 
@@ -127,14 +129,20 @@ export const db = {
     },
 
     async create(
-      // `tags` opcional: quando omitido, a coluna nem entra no INSERT —
+      // Colunas novas opcionais: quando omitidas, nem entram no INSERT —
       // permite gravar mesmo num banco que ainda não rodou a migração.
       data: Omit<
         PlaylistRow,
-        'id' | 'created_at' | 'last_studied_at' | 'tags' | 'cover_url'
+        | 'id'
+        | 'created_at'
+        | 'last_studied_at'
+        | 'tags'
+        | 'cover_url'
+        | 'description'
       > & {
         tags?: string[];
         cover_url?: string | null;
+        description?: string | null;
       },
     ): Promise<PlaylistRow> {
       const { data: row, error } = await supabase
@@ -475,6 +483,7 @@ export const db = {
         sourceType: SourceType;
         tags?: string[];
         coverUrl?: string | null;
+        description?: string | null;
       },
       cards: NewCardInput[],
     ): Promise<Deck> {
@@ -489,6 +498,7 @@ export const db = {
       const optional = {
         ...(meta.tags !== undefined ? { tags: meta.tags } : {}),
         ...(meta.coverUrl !== undefined ? { cover_url: meta.coverUrl } : {}),
+        ...(meta.description ? { description: meta.description } : {}),
       };
 
       let playlist;
@@ -498,7 +508,14 @@ export const db = {
         // Banco ainda sem `tags`/`cover_url`: repete o INSERT sem os opcionais
         // em vez de quebrar a criação de decks inteira.
         const msg = (e as { message?: string } | null)?.message ?? '';
-        if (Object.keys(optional).length > 0 && /tags|cover_url/i.test(msg)) {
+        if (
+          Object.keys(optional).length > 0 &&
+          /tags|cover_url|description/i.test(msg)
+        ) {
+          console.warn(
+            '[Recall] Deck criado SEM capa/tags: o banco não tem as colunas novas. ' +
+              'Execute o supabase/schema.sql no SQL Editor.',
+          );
           playlist = await db.playlists.create(base);
         } else {
           throw e;

@@ -4,8 +4,7 @@ import {
   LIGHT_COLORS,
   type ThemePalette,
 } from '@/constants/theme';
-import { resolveAccent } from '@/constants/accents';
-import { useSettings } from '@/contexts/SettingsContext';
+import { ACCENT } from '@/constants/accents';
 
 /**
  * Retorna a paleta ativa (clara/escura) já com a COR DE DESTAQUE aplicada,
@@ -14,12 +13,10 @@ import { useSettings } from '@/contexts/SettingsContext';
  */
 export function useThemeColors(): ThemePalette {
   const { colorScheme } = useColorScheme();
-  const { settings } = useSettings();
 
   const isLight = colorScheme === 'light';
   const base = isLight ? LIGHT_COLORS : DARK_COLORS;
-  const accent = resolveAccent(settings.accent);
-  const a = isLight ? accent.light : accent.dark;
+  const a = isLight ? ACCENT.light : ACCENT.dark;
 
   return {
     ...base,

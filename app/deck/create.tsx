@@ -19,7 +19,11 @@ import {
   generateFlashcardsFromFile,
   makeFlashcard,
 } from '@/services/ai';
-import { uploadCardImages, type CardImage } from '@/services/images';
+import {
+  uploadCardImages,
+  imageToDataUri,
+  type CardImage,
+} from '@/services/images';
 import { errorMessage } from '@/utils/errors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDecks } from '@/hooks/useDecks';
@@ -30,6 +34,10 @@ import { cardShadow } from '@/components/ui/Card';
 import { TagInput } from '@/components/TagInput';
 import { CardImagePicker } from '@/components/CardImagePicker';
 import { CardImages } from '@/components/CardImages';
+import {
+  QuizOptionsInput,
+  filledQuizOptions,
+} from '@/components/QuizOptionsInput';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 type Mode = 'ai' | 'manual';
@@ -70,6 +78,8 @@ export default function CreateDeckScreen() {
   const [manualCards, setManualCards] = useState<Flashcard[]>([]);
   const [newFront, setNewFront] = useState('');
   const [newBack, setNewBack] = useState('');
+  // Alternativas ERRADAS do quiz (opcionais; 2+ tornam o card uma pergunta).
+  const [newQuizOptions, setNewQuizOptions] = useState<string[]>([]);
   // Imagens do card sendo composto; o preview usa URIs locais e as imagens
   // (com base64) ficam guardadas por card até o upload, na hora de salvar.
   const [newImages, setNewImages] = useState<CardImage[]>([]);
@@ -101,7 +111,9 @@ export default function CreateDeckScreen() {
               .filter(img => img.base64)
               .map(img => ({ base64: img.base64!, mimeType: 'image/jpeg' })),
           );
-      setGeneratedCards(raw.map(c => makeFlashcard(c.front, c.back)));
+      setGeneratedCards(
+        raw.map(c => makeFlashcard(c.front, c.back, [], c.options ?? [])),
+      );
     } catch (e: unknown) {
       Alert.alert('Erro ao gerar cards', errorMessage(e, 'Erro desconhecido'));
     } finally {
@@ -155,16 +167,26 @@ export default function CreateDeckScreen() {
 
   const handleAddManualCard = () => {
     if (!newFront.trim() || !newBack.trim()) return;
+    const wrongOptions = filledQuizOptions(newQuizOptions);
+    if (wrongOptions.length === 1) {
+      Alert.alert(
+        'Quiz incompleto',
+        'Uma pergunta de quiz precisa de pelo menos 2 alternativas erradas (3 opções no total). Complete ou deixe todas vazias.',
+      );
+      return;
+    }
     const card = makeFlashcard(
       newFront.trim(),
       newBack.trim(),
       newImages.map(img => img.uri), // URIs locais só para o preview
+      wrongOptions,
     );
     if (newImages.length > 0) pendingImagesRef.current[card.id] = newImages;
     setManualCards(c => [...c, card]);
     setNewFront('');
     setNewBack('');
     setNewImages([]);
+    setNewQuizOptions([]);
   };
 
   const handleRemoveCard = (id: string) => {
@@ -195,7 +217,12 @@ export default function CreateDeckScreen() {
     try {
       // Sobe as imagens dos cards manuais (com dedupe) e monta o payload
       // final com as URLs públicas.
-      const payload: { front: string; back: string; images?: string[] }[] = [];
+      const payload: {
+        front: string;
+        back: string;
+        images?: string[];
+        quizOptions?: string[];
+      }[] = [];
       for (const c of cards) {
         const pending = pendingImagesRef.current[c.id] ?? [];
         const urls =
@@ -204,16 +231,16 @@ export default function CreateDeckScreen() {
           front: c.front,
           back: c.back,
           ...(urls.length > 0 ? { images: urls } : {}),
+          ...(c.quizOptions.length > 0 ? { quizOptions: c.quizOptions } : {}),
         });
       }
 
-      // Sobe a capa (se houver) e guarda só a URL pública.
-      const coverUrl = cover
-        ? ((await uploadCardImages(user.id, [cover]))[0] ?? null)
-        : null;
+      // Capa (se houver) vira data URI base64 salvo direto no deck — sem Storage.
+      const coverUrl = cover ? imageToDataUri(cover) : null;
 
       await createDeck({
         title: title.trim(),
+        description: description.trim() || undefined,
         emoji: '',
         color: '',
         coverUrl,
@@ -421,6 +448,10 @@ export default function CreateDeckScreen() {
                 style={{ height: 80, textAlignVertical: 'top', paddingTop: 12 }}
               />
               <CardImagePicker images={newImages} onChange={setNewImages} />
+              <QuizOptionsInput
+                options={newQuizOptions}
+                onChange={setNewQuizOptions}
+              />
               <Button
                 variant="secondary"
                 size="md"

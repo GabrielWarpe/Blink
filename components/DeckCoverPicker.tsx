@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { pickCardImages, type CardImage } from '@/services/images';
+import { pickDeckCover, type CardImage } from '@/services/images';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface DeckCoverPickerProps {
@@ -15,8 +15,8 @@ export function DeckCoverPicker({ cover, onChange }: DeckCoverPickerProps) {
   const colors = useThemeColors();
 
   const pick = async () => {
-    const picked = await pickCardImages(1);
-    if (picked[0]) onChange(picked[0]);
+    const picked = await pickDeckCover();
+    if (picked) onChange(picked);
   };
 
   return (

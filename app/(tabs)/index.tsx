@@ -7,6 +7,10 @@ import { useDecks } from '@/hooks/useDecks';
 import { useStreak } from '@/hooks/useStreak';
 import { getDueCards, getNewCards } from '@/services/ai';
 import { DeckCard } from '@/components/DeckCard';
+import {
+  StudyModePicker,
+  useStudyModePicker,
+} from '@/components/StudyModePicker';
 import { StreakBadge } from '@/components/StreakBadge';
 import { ProgressRing } from '@/components/ProgressRing';
 import { Button } from '@/components/ui/Button';
@@ -20,6 +24,7 @@ export default function HomeScreen() {
   const { profile } = useAuth();
   const { decks } = useDecks();
   const { streak, todayCount } = useStreak();
+  const picker = useStudyModePicker();
 
   const DAILY_GOAL = profile?.daily_goal ?? 20;
   const progress = Math.min(todayCount / DAILY_GOAL, 1);
@@ -65,7 +70,7 @@ export default function HomeScreen() {
             tail: 'esperando revisão.',
             label: 'Revisar agora',
             variant: 'primary' as const,
-            target: (topDueDeck ?? recentDeck).id,
+            target: topDueDeck ?? recentDeck,
           }
         : newCount > 0
           ? {
@@ -76,7 +81,7 @@ export default function HomeScreen() {
               tail: 'à sua espera.',
               label: 'Aprender agora',
               variant: 'primary' as const,
-              target: (topNewDeck ?? recentDeck).id,
+              target: topNewDeck ?? recentDeck,
             }
           : {
               icon: 'checkmark-done' as const,
@@ -86,7 +91,7 @@ export default function HomeScreen() {
               tail: 'Nenhuma revisão pendente por agora.',
               label: `Estudar ${recentDeck.title}`,
               variant: 'outline' as const,
-              target: recentDeck.id,
+              target: recentDeck,
             };
 
   return (
@@ -143,7 +148,7 @@ export default function HomeScreen() {
               variant={cta.variant}
               size="lg"
               className="mt-4"
-              onPress={() => router.push(`/study/${cta.target}`)}
+              onPress={() => picker.requestPlay(cta.target)}
             >
               {cta.label}
             </Button>
@@ -224,9 +229,7 @@ export default function HomeScreen() {
                   key={deck.id}
                   deck={deck}
                   onPress={() => router.push(`/deck/${deck.id}`)}
-                  onStudy={() => router.push(`/study/${deck.id}`)}
-                  onQuiz={() => router.push(`/quiz/${deck.id}`)}
-                  onWrite={() => router.push(`/write/${deck.id}`)}
+                  onPlay={() => picker.requestPlay(deck)}
                 />
               ))}
               <TouchableOpacity
@@ -243,6 +246,8 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      <StudyModePicker deck={picker.pickerDeck} onClose={picker.close} />
     </SafeAreaView>
   );
 }

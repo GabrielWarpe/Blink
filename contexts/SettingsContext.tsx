@@ -17,7 +17,6 @@ export interface AppSettings {
   autoReveal: boolean;
   // Aparência
   theme: string;
-  accent: string;
   fontSize: string;
   // Notificações
   studyReminder: boolean;
@@ -35,7 +34,6 @@ const DEFAULTS: AppSettings = {
   shuffle: true,
   autoReveal: false,
   theme: 'Escuro',
-  accent: 'Teal',
   fontSize: 'Médio',
   studyReminder: false,
   reminderTime: '20:00',

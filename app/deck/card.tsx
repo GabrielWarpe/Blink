@@ -18,6 +18,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { CardImagePicker } from '@/components/CardImagePicker';
+import {
+  QuizOptionsInput,
+  filledQuizOptions,
+} from '@/components/QuizOptionsInput';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function CardEditorScreen() {
@@ -34,6 +38,8 @@ export default function CardEditorScreen() {
   const [back, setBack] = useState('');
   // Imagens do card: as existentes entram só com a URL; novas trazem base64.
   const [images, setImages] = useState<CardImage[]>([]);
+  // Alternativas ERRADAS do quiz (2+ tornam o card uma pergunta de quiz).
+  const [quizOptions, setQuizOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
 
@@ -44,6 +50,7 @@ export default function CardEditorScreen() {
         setFront(c.front);
         setBack(c.back);
         setImages((c.images ?? []).map(uri => ({ uri })));
+        setQuizOptions(c.quiz_options ?? []);
       }
       setLoading(false);
     });
@@ -52,6 +59,14 @@ export default function CardEditorScreen() {
   const handleSave = async () => {
     if (!front.trim() || !back.trim()) {
       Alert.alert('Atenção', 'Preencha a frente e o verso do card.');
+      return;
+    }
+    const wrongOptions = filledQuizOptions(quizOptions);
+    if (wrongOptions.length === 1) {
+      Alert.alert(
+        'Quiz incompleto',
+        'Uma pergunta de quiz precisa de pelo menos 2 alternativas erradas (3 opções no total). Complete ou deixe todas vazias.',
+      );
       return;
     }
     if (!user || !deckId) return;
@@ -64,6 +79,7 @@ export default function CardEditorScreen() {
           front: front.trim(),
           back: back.trim(),
           images: urls,
+          quiz_options: wrongOptions,
         });
       } else {
         await db.decks.addCards(user.id, deckId, [
@@ -71,6 +87,7 @@ export default function CardEditorScreen() {
             front: front.trim(),
             back: back.trim(),
             ...(urls.length > 0 ? { images: urls } : {}),
+            ...(wrongOptions.length > 0 ? { quizOptions: wrongOptions } : {}),
           },
         ]);
       }
@@ -148,6 +165,8 @@ export default function CardEditorScreen() {
             />
 
             <CardImagePicker images={images} onChange={setImages} />
+
+            <QuizOptionsInput options={quizOptions} onChange={setQuizOptions} />
 
             {isEditing && (
               <Button

@@ -14,6 +14,7 @@ import { useDecks } from '@/hooks/useDecks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import {
+  exportDeck,
   exportDecks,
   pickBackupFile,
   parseBackup,
@@ -28,6 +29,11 @@ import {
 } from '@/services/backup';
 import { errorMessage } from '@/utils/errors';
 import { DeckCard } from '@/components/DeckCard';
+import { SwipeableDeckRow } from '@/components/SwipeableDeckRow';
+import {
+  StudyModePicker,
+  useStudyModePicker,
+} from '@/components/StudyModePicker';
 import { Input } from '@/components/ui/Input';
 import { cardShadow } from '@/components/ui/Card';
 import {
@@ -38,8 +44,9 @@ import { DeckPickerModal } from '@/components/DeckPickerModal';
 
 export default function DecksScreen() {
   const router = useRouter();
+  const picker = useStudyModePicker();
   const { user } = useAuth();
-  const { decks, reload } = useDecks();
+  const { decks, reload, deleteDeck } = useDecks();
   const colors = useThemeColors();
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
@@ -363,13 +370,39 @@ export default function DecksScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <DeckCard
-            deck={item}
-            onPress={() => router.push(`/deck/${item.id}`)}
-            onStudy={() => router.push(`/study/${item.id}`)}
-            onQuiz={() => router.push(`/quiz/${item.id}`)}
-            onWrite={() => router.push(`/write/${item.id}`)}
-          />
+          <SwipeableDeckRow
+            onDelete={() =>
+              Alert.alert(
+                'Excluir deck',
+                `Deseja excluir "${item.title}"? Esta ação não pode ser desfeita.`,
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  {
+                    text: 'Excluir',
+                    style: 'destructive',
+                    onPress: () => void deleteDeck(item.id),
+                  },
+                ],
+              )
+            }
+            onExport={() =>
+              void exportDeck(item).catch((e: unknown) => {
+                Alert.alert(
+                  'Erro',
+                  e instanceof BackupError && e.code === 'EMPTY'
+                    ? 'Adicione cards antes de exportar.'
+                    : 'Não foi possível exportar o deck.',
+                );
+              })
+            }
+            onEdit={() => router.push(`/deck/edit?id=${item.id}`)}
+          >
+            <DeckCard
+              deck={item}
+              onPress={() => router.push(`/deck/${item.id}`)}
+              onPlay={() => picker.requestPlay(item)}
+            />
+          </SwipeableDeckRow>
         )}
       />
 
@@ -410,6 +443,9 @@ export default function DecksScreen() {
         onCancel={() => setCardState(null)}
         onPick={t => void pickCardTarget(t)}
       />
+
+      {/* Seletor de modo de estudo (play) */}
+      <StudyModePicker deck={picker.pickerDeck} onClose={picker.close} />
     </SafeAreaView>
   );
 }

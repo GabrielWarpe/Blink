@@ -12,6 +12,10 @@ import { sessionAccuracy } from '@/utils/stats';
 import { Button } from '@/components/ui/Button';
 import { cardShadow } from '@/components/ui/Card';
 import { DeckAvatar } from '@/components/DeckAvatar';
+import {
+  StudyModePicker,
+  useStudyModePicker,
+} from '@/components/StudyModePicker';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 type Tab = 'cards' | 'history';
@@ -24,6 +28,7 @@ export default function DeckDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useThemeColors();
+  const picker = useStudyModePicker();
   const [deck, setDeck] = useState<Deck | null>(null);
   const [attempts, setAttempts] = useState<StudySession[]>([]);
   const [tab, setTab] = useState<Tab>('cards');
@@ -133,6 +138,13 @@ export default function DeckDetailScreen() {
 
   const Header = (
     <View>
+      {/* Descrição do deck */}
+      {deck.description.length > 0 && (
+        <Text className="text-on-surface-variant font-inter-regular text-sm leading-5 mb-4">
+          {deck.description}
+        </Text>
+      )}
+
       {/* Tags */}
       {deck.tags.length > 0 && (
         <View className="flex-row flex-wrap gap-2 mb-4">
@@ -176,14 +188,14 @@ export default function DeckDetailScreen() {
         </View>
       )}
 
-      {/* Study button — o modo quiz fica na LISTA de decks, de propósito:
-          aqui as respostas dos cards estão visíveis e estragariam o quiz. */}
+      {/* Study button — entrada única dos modos: abre o seletor quando o
+          deck suporta quiz; senão vai direto para os flashcards. */}
       <Button
         variant="primary"
         size="lg"
         className="mb-5"
         disabled={deck.cards.length === 0}
-        onPress={() => router.push(`/study/${deck.id}`)}
+        onPress={() => picker.requestPlay(deck)}
       >
         {attempts.length > 0 ? 'Estudar novamente' : 'Estudar deck'}
       </Button>
@@ -408,6 +420,9 @@ export default function DeckDetailScreen() {
           );
         }}
       />
+
+      {/* Seletor de modo de estudo (play) */}
+      <StudyModePicker deck={picker.pickerDeck} onClose={picker.close} />
     </SafeAreaView>
   );
 }

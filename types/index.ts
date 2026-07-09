@@ -13,6 +13,11 @@ export interface Flashcard {
   mastered: boolean;
   /** URLs públicas das imagens anexadas ao card. */
   images: string[];
+  /**
+   * Alternativas ERRADAS autoradas do quiz (a correta é o `back`). Com 2+
+   * alternativas o card vira pergunta de quiz; vazio = só flashcard.
+   */
+  quizOptions: string[];
 }
 
 export interface Deck {

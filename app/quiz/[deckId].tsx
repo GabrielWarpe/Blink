@@ -1,86 +1,32 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  useWindowDimensions,
-} from 'react-native';
-import { Image } from 'expo-image';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import type { Deck, Flashcard } from '@/types';
+import type { Deck } from '@/types';
 import { db } from '@/services/database';
+import { getSessionCards } from '@/services/ai';
 import { useStudySession } from '@/hooks/useStudySession';
 import { useSettings } from '@/contexts/SettingsContext';
-import { deckSupportsQuiz } from '@/utils/practice';
+import { deckSupportsQuiz, cardSupportsQuiz } from '@/utils/practice';
+import { QuizQuestion } from '@/components/QuizQuestion';
 import { Button } from '@/components/ui/Button';
 import { cardShadow } from '@/components/ui/Card';
 import { useThemeColors } from '@/hooks/useThemeColors';
-
-const OPTION_COUNT = 4;
-// Altura da imagem-destaque como fração da altura da tela — grande o
-// suficiente para dar contexto visual sem empurrar as alternativas para fora.
-const QUIZ_HERO_HEIGHT_RATIO = 0.42;
-
-interface QuizOption {
-  text: string;
-  isCorrect: boolean;
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
-
-/**
- * Monta as alternativas de um card: o verso correto + até 3 versos de outros
- * cards do mesmo deck (únicos e diferentes da resposta certa).
- */
-function buildOptions(card: Flashcard, deck: Deck): QuizOption[] {
-  const correct = card.back.trim();
-  const distractors = shuffle(
-    [
-      ...new Set(
-        deck.cards
-          .filter(c => c.id !== card.id)
-          .map(c => c.back.trim())
-          .filter(b => b.length > 0 && b !== correct),
-      ),
-    ],
-  ).slice(0, OPTION_COUNT - 1);
-
-  return shuffle([
-    { text: card.back, isCorrect: true },
-    ...distractors.map(text => ({ text, isCorrect: false })),
-  ]);
-}
 
 export default function QuizScreen() {
   const { deckId } = useLocalSearchParams<{ deckId: string }>();
   const router = useRouter();
   const colors = useThemeColors();
   const { settings } = useSettings();
-  const { height: screenHeight } = useWindowDimensions();
   const [deck, setDeck] = useState<Deck | null>(null);
   const [sessionStarted, setSessionStarted] = useState(false);
+  const [noDue, setNoDue] = useState(false);
 
   const session = useStudySession(deck);
 
-  // A resposta fica AMARRADA à pergunta em que foi dada (card + progresso da
-  // sessão). Assim uma seleção antiga nunca "vaza" para a pergunta seguinte,
-  // mesmo com toques rápidos ou re-renderizações fora de ordem.
-  const [answer, setAnswer] = useState<{ key: string; index: number } | null>(
-    null,
-  );
   // Cards já errados nesta sessão: ao acertar na repetição, valem "Difícil".
   const missedIdsRef = useRef<Set<string>>(new Set());
-  // Momento do último avanço: ignora toques "atravessados" logo em seguida
-  // (toque duplo no Próxima cairia sobre uma alternativa da pergunta nova).
-  const advancedAtRef = useRef(0);
-  // Última pergunta avaliada: impede avaliar a mesma pergunta duas vezes.
-  const gradedKeyRef = useRef('');
 
   useEffect(() => {
     if (!deckId) return;
@@ -89,23 +35,40 @@ export default function QuizScreen() {
     });
   }, [deckId]);
 
-  // Quiz usa o deck inteiro, sempre embaralhado (modo prática).
+  // Mesma seleção do estudo (devidos + novos), restrita aos cards que TÊM
+  // alternativas autoradas — só eles são perguntas de quiz. O quiz também
+  // conta para o agendamento SM-2. Sem nada devido → "Tudo em dia".
   useEffect(() => {
-    if (!deck || sessionStarted || !deckSupportsQuiz(deck)) return;
-    session.start(shuffle(deck.cards));
-    setSessionStarted(true);
-  }, [deck, sessionStarted]);
+    if (!deck || sessionStarted || noDue || !deckSupportsQuiz(deck)) return;
+    const cards = getSessionCards(deck, settings.newPerSession).filter(
+      cardSupportsQuiz,
+    );
+    if (cards.length > 0) {
+      session.start(cards);
+      setSessionStarted(true);
+    } else {
+      setNoDue(true);
+    }
+  }, [deck, sessionStarted, noDue, settings.newPerSession]);
 
-  const currentCard = session.currentCard;
-  // Identidade única da pergunta atual dentro da sessão: o mesmo card pode
-  // voltar (após erro), mas done/againCount mudam a cada avaliação.
-  const questionKey = currentCard
-    ? `${currentCard.id}:${session.done}:${session.againCount}`
-    : '';
-  const options = useMemo(
-    () => (currentCard && deck ? buildOptions(currentCard, deck) : []),
-    [questionKey, deck],
-  );
+  const practiceAll = () => {
+    if (!deck) return;
+    setNoDue(false);
+    session.start(deck.cards.filter(cardSupportsQuiz));
+    setSessionStarted(true);
+  };
+
+  const restart = () => {
+    setSessionStarted(false);
+    setNoDue(false);
+    missedIdsRef.current = new Set();
+    session.reset();
+    if (deck) {
+      void db.decks.getOne(deck.id).then(d => {
+        if (d) setDeck(d);
+      });
+    }
+  };
 
   if (!deck) return null;
 
@@ -123,8 +86,8 @@ export default function QuizScreen() {
           Quiz indisponível
         </Text>
         <Text className="text-outline font-inter-regular text-sm text-center mt-2">
-          O modo quiz precisa de pelo menos 2 cards com respostas diferentes
-          para montar as alternativas.
+          Nenhum card deste deck tem alternativas de quiz. Edite um card e
+          adicione pelo menos 2 alternativas erradas para criar a pergunta.
         </Text>
         <Button
           variant="primary"
@@ -138,61 +101,34 @@ export default function QuizScreen() {
     );
   }
 
-  // Só vale a resposta dada NESTA pergunta; a de perguntas anteriores é nula.
-  const selectedIndex = answer?.key === questionKey ? answer.index : null;
-  const answered = selectedIndex !== null;
-  const answeredCorrectly =
-    answered && (options[selectedIndex]?.isCorrect ?? false);
-
-  const handleSelect = (index: number) => {
-    if (answered || !currentCard) return;
-    // Toque logo após avançar = provável toque duplo no "Próxima"; ignora.
-    if (Date.now() - advancedAtRef.current < 300) return;
-    setAnswer({ key: questionKey, index });
-    if (settings.feedbackSounds) {
-      void Haptics.notificationAsync(
-        options[index]?.isCorrect
-          ? Haptics.NotificationFeedbackType.Success
-          : Haptics.NotificationFeedbackType.Warning,
-      );
-    }
-  };
-
-  // Aplica a avaliação só ao avançar, para o feedback ficar visível antes.
-  const handleNext = () => {
-    if (!currentCard || selectedIndex === null) return;
-    if (gradedKeyRef.current === questionKey) return; // toque duplo
-    gradedKeyRef.current = questionKey;
-    advancedAtRef.current = Date.now();
-    const correct = options[selectedIndex]?.isCorrect ?? false;
-    setAnswer(null);
-    if (correct) {
-      // Acertou de primeira → "Bom"; acertou após errar → "Difícil".
-      session.grade(missedIdsRef.current.has(currentCard.id) ? 'hard' : 'good');
-    } else {
-      missedIdsRef.current.add(currentCard.id);
-      session.grade('again'); // volta ao fim da fila
-    }
-  };
-
-  const handleSkip = () => {
-    if (Date.now() - advancedAtRef.current < 300) return;
-    advancedAtRef.current = Date.now();
-    setAnswer(null);
-    session.skip();
-  };
-
-  const restart = () => {
-    setSessionStarted(false);
-    setAnswer(null);
-    missedIdsRef.current = new Set();
-    advancedAtRef.current = 0;
-    gradedKeyRef.current = '';
-    session.reset();
-    void db.decks.getOne(deck.id).then(d => {
-      if (d) setDeck(d);
-    });
-  };
+  // ── Tudo em dia (nada devido) ─────────────────────────────────────────────
+  if (noDue && session.phase !== 'finished') {
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center px-8">
+        <View
+          className="w-20 h-20 rounded-card items-center justify-center mb-5"
+          style={{ backgroundColor: colors.success + '22' }}
+        >
+          <Ionicons name="checkmark-done" size={36} color={colors.success} />
+        </View>
+        <Text className="text-on-surface font-jakarta-extrabold text-2xl text-center">
+          Tudo em dia!
+        </Text>
+        <Text className="text-outline font-inter-regular text-sm text-center mt-2">
+          Você não tem cards para revisar neste deck agora. Volte mais tarde ou
+          pratique mesmo assim.
+        </Text>
+        <View className="w-full mt-8 gap-3">
+          <Button variant="primary" size="lg" onPress={practiceAll}>
+            Praticar tudo
+          </Button>
+          <Button variant="outline" size="lg" onPress={() => router.back()}>
+            Voltar
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // ── Resultado ────────────────────────────────────────────────────────────
   if (session.phase === 'finished') {
@@ -287,9 +223,27 @@ export default function QuizScreen() {
   }
 
   // ── Pergunta ativa ───────────────────────────────────────────────────────
+  const currentCard = session.currentCard;
+  // Identidade única da pergunta atual dentro da sessão: o mesmo card pode
+  // voltar (após erro), mas done/againCount mudam a cada avaliação.
+  const questionKey = currentCard
+    ? `${currentCard.id}:${session.done}:${session.againCount}`
+    : '';
   const progress = session.total > 0 ? session.done / session.total : 0;
   const position = Math.min(session.done + 1, session.total);
   const isLastIfCorrect = session.total - session.done === 1;
+
+  // Acertou de primeira → "Bom"; acertou após errar → "Difícil"; errou →
+  // "De novo" (o card volta ao fim da fila).
+  const handleAnswer = (correct: boolean) => {
+    if (!currentCard) return;
+    if (correct) {
+      session.grade(missedIdsRef.current.has(currentCard.id) ? 'hard' : 'good');
+    } else {
+      missedIdsRef.current.add(currentCard.id);
+      session.grade('again');
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -324,133 +278,15 @@ export default function QuizScreen() {
       </View>
 
       {currentCard != null && (
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ padding: 24, gap: 16 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Imagem-destaque (só a primeira, se o card tiver imagens) */}
-          {currentCard.images.length > 0 && (
-            <Image
-              source={{ uri: currentCard.images[0] }}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-              transition={0}
-              style={{
-                width: '100%',
-                height: screenHeight * QUIZ_HERO_HEIGHT_RATIO,
-                borderRadius: 16,
-                backgroundColor: colors.surfaceContainerHigh,
-              }}
-            />
-          )}
-
-          {/* Pergunta */}
-          <View className="bg-surface-container rounded-card p-6" style={cardShadow}>
-            <Text className="text-outline font-inter-semibold text-xs tracking-widest mb-2">
-              PERGUNTA
-            </Text>
-            <Text className="text-on-surface font-jakarta-bold text-xl leading-7">
-              {currentCard.front}
-            </Text>
-          </View>
-
-          {/* Alternativas */}
-          <View className="gap-3">
-            {options.map((opt, i) => {
-              const isSelected = selectedIndex === i;
-              const showCorrect = answered && opt.isCorrect;
-              const showWrong = answered && isSelected && !opt.isCorrect;
-              const dimmed = answered && !isSelected && !opt.isCorrect;
-
-              return (
-                // key com a identidade da PERGUNTA: cada questão monta opções
-                // novas — o TouchableOpacity anima a própria opacidade e, se
-                // reutilizado entre perguntas, deixa o valor antigo "grudado".
-                <TouchableOpacity
-                  key={`${questionKey}:${i}`}
-                  onPress={() => handleSelect(i)}
-                  disabled={answered}
-                  activeOpacity={0.8}
-                  className={`rounded-card px-4 py-4 border ${
-                    showCorrect
-                      ? 'bg-success/15 border-success'
-                      : showWrong
-                        ? 'bg-error/15 border-error'
-                        : 'bg-surface-container border-outline-variant'
-                  }`}
-                >
-                  {/* Esmaecimento na View interna, fora da animação do Touchable */}
-                  <View
-                    className="flex-row items-center gap-3"
-                    style={{ opacity: dimmed ? 0.45 : 1 }}
-                  >
-                    <Text
-                      className={`flex-1 font-inter-medium text-base leading-6 ${
-                        showCorrect
-                          ? 'text-success'
-                          : showWrong
-                            ? 'text-error'
-                            : 'text-on-surface'
-                      }`}
-                    >
-                      {opt.text}
-                    </Text>
-                    {showCorrect && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={22}
-                        color={colors.success}
-                      />
-                    )}
-                    {showWrong && (
-                      <Ionicons
-                        name="close-circle"
-                        size={22}
-                        color={colors.error}
-                      />
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Feedback + ações */}
-          {answered ? (
-            <View className="gap-3 mt-1">
-              <Text
-                className={`font-inter-semibold text-sm text-center ${
-                  answeredCorrectly ? 'text-success' : 'text-error'
-                }`}
-              >
-                {answeredCorrectly
-                  ? '✓ Correto!'
-                  : '✗ Incorreto — a resposta certa está destacada. Ela voltará no fim do quiz.'}
-              </Text>
-              <Button variant="primary" size="lg" onPress={handleNext}>
-                {answeredCorrectly && isLastIfCorrect
-                  ? 'Ver resultado'
-                  : 'Próxima'}
-              </Button>
-            </View>
-          ) : (
-            <TouchableOpacity
-              onPress={handleSkip}
-              activeOpacity={0.7}
-              className="py-2 flex-row items-center justify-center gap-1.5"
-            >
-              <Ionicons
-                name="play-skip-forward-outline"
-                size={16}
-                color={colors.outline}
-              />
-              <Text className="text-outline font-inter-medium text-sm">
-                Pular
-              </Text>
-            </TouchableOpacity>
-          )}
-        </ScrollView>
+        // SEM prop `key`: a troca de pergunta é comunicada pelo questionKey e
+        // os guards anti-toque-duplo internos sobrevivem entre perguntas.
+        <QuizQuestion
+          card={currentCard}
+          questionKey={questionKey}
+          isLastIfCorrect={isLastIfCorrect}
+          onAnswer={handleAnswer}
+          onSkip={() => session.skip()}
+        />
       )}
     </SafeAreaView>
   );

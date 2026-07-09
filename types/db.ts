@@ -25,6 +25,7 @@ export interface PlaylistRow {
   id: string;
   user_id: string;
   name: string;
+  description: string | null;
   emoji: string;
   color: string;
   cover_url: string | null;
@@ -51,6 +52,8 @@ export interface FlashcardRow {
   mastered: boolean;
   /** URLs públicas das imagens do card (Supabase Storage). */
   images: string[];
+  /** Alternativas ERRADAS do quiz (a correta é `back`); 2+ = card tem quiz. */
+  quiz_options: string[];
   created_at: string;
 }
 

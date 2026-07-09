@@ -15,7 +15,7 @@ import { db } from '@/services/database';
 import { errorMessage } from '@/utils/errors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDecks } from '@/hooks/useDecks';
-import { uploadCardImages, type CardImage } from '@/services/images';
+import { imageToDataUri, type CardImage } from '@/services/images';
 import { DeckCoverPicker } from '@/components/DeckCoverPicker';
 import { Input } from '@/components/ui/Input';
 import { TagInput } from '@/components/TagInput';
@@ -29,6 +29,7 @@ export default function EditDeckScreen() {
   const { decks } = useDecks();
 
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [cover, setCover] = useState<CardImage | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +45,7 @@ export default function EditDeckScreen() {
     void db.decks.getOne(id).then(d => {
       if (d) {
         setTitle(d.title);
+        setDescription(d.description);
         setCover(d.coverUrl ? { uri: d.coverUrl } : null);
         setTags(d.tags);
       }
@@ -59,17 +61,25 @@ export default function EditDeckScreen() {
     if (!id || !user) return;
     setSaving(true);
     try {
-      // Sobe a capa nova (se houver) e guarda a URL; sem capa → null.
-      const coverUrl = cover
-        ? ((await uploadCardImages(user.id, [cover]))[0] ?? null)
-        : null;
-      const base = { name: title.trim(), cover_url: coverUrl };
+      // Capa (se houver) vira data URI base64 salvo direto no deck — sem Storage.
+      const coverUrl = cover ? imageToDataUri(cover) : null;
+      const base = {
+        name: title.trim(),
+        cover_url: coverUrl,
+        description: description.trim() || null,
+      };
       try {
         await db.playlists.update(id, { ...base, tags });
       } catch (e) {
-        // Banco sem `tags`/`cover_url`: salva o que der em vez de quebrar.
-        if (/tags|cover_url/i.test(errorMessage(e, ''))) {
+        // Banco sem `tags`/`cover_url`: salva o que der em vez de quebrar —
+        // mas AVISA, senão a capa some em silêncio e parece bug do app.
+        const msg = errorMessage(e, '');
+        if (/tags|cover_url|description/i.test(msg)) {
           await db.playlists.update(id, { name: title.trim() });
+          Alert.alert(
+            'Banco desatualizado',
+            'A capa/tags não foram salvas: seu banco Supabase ainda não tem as colunas novas. Execute o supabase/schema.sql no SQL Editor e tente de novo.',
+          );
         } else {
           throw e;
         }
@@ -118,6 +128,16 @@ export default function EditDeckScreen() {
               placeholder="Ex: Biologia Celular..."
               value={title}
               onChangeText={setTitle}
+            />
+
+            <Input
+              label="Descrição (opcional)"
+              placeholder="Breve descrição do conteúdo..."
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={3}
+              style={{ height: 80, textAlignVertical: 'top', paddingTop: 12 }}
             />
 
             {/* Capa do deck */}
