@@ -1,12 +1,12 @@
 import React from 'react';
 import { View } from 'react-native';
-import { TierIcon } from '@/components/icons/tiers/TierIcon';
-import type { TierIconName } from '@/components/icons/tiers/paths';
+import { GameIcon } from '@/components/icons/game/GameIcon';
+import type { GameIconName } from '@/components/icons/game/paths';
 import type { TierTone, TierTreatment } from '@/utils/xp';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
-interface TierBadgeProps {
-  icon: TierIconName;
+interface EmblemProps {
+  icon: GameIconName;
   tone: TierTone;
   treatment: TierTreatment;
   /** Lado total do emblema, em px (inclui o halo, quando houver). */
@@ -17,12 +17,12 @@ interface TierBadgeProps {
 const HALO = 4;
 
 /**
- * Emblema de uma patente: o "chip tingido" padrão do app, com a silhueta da
- * patente dentro. O peso do tratamento cresce com o nível — tinta discreta →
- * tinta com anel → preenchimento sólido → sólido com halo externo — para que a
- * raridade se leia sem precisar de sete matizes diferentes.
+ * Emblema monocromático — usado por patentes E conquistas. É o "chip tingido"
+ * padrão do app com uma silhueta dentro. O peso do tratamento cresce com o
+ * degrau: tinta discreta → tinta com anel → preenchimento sólido → sólido com
+ * halo externo. Assim a raridade se lê sem precisar de vários matizes.
  */
-export function TierBadge({ icon, tone, treatment, size = 64 }: TierBadgeProps) {
+export function Emblem({ icon, tone, treatment, size = 64 }: EmblemProps) {
   const colors = useThemeColors();
   const tint = colors[tone];
 
@@ -47,7 +47,7 @@ export function TierBadge({ icon, tone, treatment, size = 64 }: TierBadgeProps) 
       }}
     >
       {/* No preenchimento sólido o glifo é vazado no fundo da tela. */}
-      <TierIcon
+      <GameIcon
         name={icon}
         size={Math.round(chipSize * 0.58)}
         color={solid ? colors.background : tint}

@@ -12,7 +12,7 @@ import {
   LEVEL_TIERS,
 } from '@/utils/xp';
 import { Card } from '@/components/ui/Card';
-import { TierBadge } from '@/components/TierBadge';
+import { Emblem } from '@/components/Emblem';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 /**
@@ -58,7 +58,7 @@ export default function LevelsScreen() {
         {/* Situação atual */}
         <Card className="p-5 mb-5">
           <View className="flex-row items-center">
-            <TierBadge
+            <Emblem
               icon={tier.icon}
               tone={tier.tone}
               treatment={tier.treatment}
@@ -114,7 +114,7 @@ export default function LevelsScreen() {
                   borderColor: isCurrent ? tint : 'transparent',
                 }}
               >
-                <TierBadge
+                <Emblem
                   icon={t.icon}
                   tone={t.tone}
                   treatment={t.treatment}

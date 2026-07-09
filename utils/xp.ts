@@ -1,4 +1,4 @@
-import type { TierIconName } from '@/components/icons/tiers/paths';
+import type { GameIconName } from '@/components/icons/game/paths';
 
 /**
  * Sistema de XP/nível derivado das sessões — sem coluna nova no banco.
@@ -44,11 +44,17 @@ export function levelFromXp(xp: number): LevelInfo {
  * em tempo de render. Assim as patentes acompanham claro/escuro e a cor de
  * destaque, em vez de carregarem cores de fora do sistema.
  *
- * A progressão é lida em dois eixos: o matiz esfria→esquenta (neutro → azul →
- * teal → âmbar) e o `treatment` ganha peso (tinta → anel → preenchimento).
+ * A progressão é lida pelo PESO do emblema (tinta → anel → preenchimento →
+ * preenchimento com halo). O matiz muda uma única vez, de teal para âmbar, ao
+ * entrar nas duas últimas patentes. Patentes vizinhas podem empatar em peso —
+ * o ícone e o nome as separam.
  */
 
-/** Chaves da paleta usadas pelas patentes. */
+/**
+ * Chaves da paleta usadas pelos emblemas. `outline` (cinza) fica reservado ao
+ * estado "não conquistado" da galeria e nunca é recompensa; `info` segue
+ * disponível, mas hoje sem uso.
+ */
 export type TierTone = 'outline' | 'info' | 'primary' | 'tertiary';
 
 /** Peso visual do emblema, crescente. */
@@ -57,7 +63,7 @@ export type TierTreatment = 'tint' | 'ring' | 'solid' | 'solid-ring';
 export interface LevelTier {
   minLevel: number;
   name: string;
-  icon: TierIconName;
+  icon: GameIconName;
   tone: TierTone;
   treatment: TierTreatment;
 }
@@ -65,11 +71,11 @@ export interface LevelTier {
 // `name` e `minLevel` são intocáveis: o id das conquistas de patente é
 // derivado do nome (`tier_${name.toLowerCase()}`) e já está persistido.
 export const LEVEL_TIERS: LevelTier[] = [
-  { minLevel: 1, name: 'Iniciante', icon: 'sprout', tone: 'outline', treatment: 'tint' },
-  { minLevel: 2, name: 'Aprendiz', icon: 'open-book', tone: 'info', treatment: 'tint' },
-  { minLevel: 4, name: 'Dedicado', icon: 'flame', tone: 'primary', treatment: 'tint' },
+  { minLevel: 1, name: 'Iniciante', icon: 'sprout', tone: 'primary', treatment: 'tint' },
+  { minLevel: 2, name: 'Aprendiz', icon: 'open-book', tone: 'primary', treatment: 'tint' },
+  { minLevel: 4, name: 'Dedicado', icon: 'flame', tone: 'primary', treatment: 'ring' },
   { minLevel: 7, name: 'Estudante', icon: 'owl', tone: 'primary', treatment: 'ring' },
-  { minLevel: 10, name: 'Erudito', icon: 'quill', tone: 'tertiary', treatment: 'ring' },
+  { minLevel: 10, name: 'Erudito', icon: 'quill', tone: 'primary', treatment: 'solid' },
   { minLevel: 15, name: 'Mestre', icon: 'laurels', tone: 'tertiary', treatment: 'solid' },
   { minLevel: 20, name: 'Lenda', icon: 'crown', tone: 'tertiary', treatment: 'solid-ring' },
 ];

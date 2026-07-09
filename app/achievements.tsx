@@ -1,24 +1,27 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { ACHIEVEMENTS, getUnlocked } from '@/services/achievements';
-import { TierIcon } from '@/components/icons/tiers/TierIcon';
+import { ACHIEVEMENTS, getUnlocked, type Achievement } from '@/services/achievements';
+import { buildAchievementVisuals } from '@/services/achievementIcons';
+import { Emblem } from '@/components/Emblem';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuth } from '@/contexts/AuthContext';
 
+const EMBLEM_SIZE = 48;
+
 /**
- * Separa o emoji do começo do título ("🎉 Primeiro deck!" → 🎉 + texto).
- * As conquistas de PATENTE não usam isto: elas trazem `icon` e o título limpo.
+ * Tira o emoji do começo do título ("🎉 Primeiro deck!" → "Primeiro deck!").
+ * O emoji continua no título porque a NOTIFICAÇÃO o usa; aqui o emblema já
+ * carrega o significado visual. Títulos sem emoji (patentes) passam intactos.
  */
-function splitTitle(title: string): { emoji: string; label: string } {
+function stripEmoji(title: string): string {
   const spaceIdx = title.indexOf(' ');
-  if (spaceIdx <= 0) return { emoji: '⭐', label: title };
-  return {
-    emoji: title.slice(0, spaceIdx),
-    label: title.slice(spaceIdx + 1),
-  };
+  if (spaceIdx <= 0) return title;
+  const head = title.slice(0, spaceIdx);
+  // Um "primeiro token" sem letras nem dígitos é o emoji.
+  return /\p{L}|\p{N}/u.test(head) ? title : title.slice(spaceIdx + 1);
 }
 
 export default function AchievementsScreen() {
@@ -26,6 +29,12 @@ export default function AchievementsScreen() {
   const colors = useThemeColors();
   const { user } = useAuth();
   const [unlocked, setUnlocked] = useState<Set<string>>(new Set());
+
+  // Os emblemas dependem só da lista estática de conquistas.
+  const visuals = useMemo(
+    () => buildAchievementVisuals(ACHIEVEMENTS.map(a => a.id)),
+    [],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -37,6 +46,60 @@ export default function AchievementsScreen() {
   const unlockedCount = ACHIEVEMENTS.filter(a => unlocked.has(a.id)).length;
   const total = ACHIEVEMENTS.length;
   const progress = total > 0 ? unlockedCount / total : 0;
+
+  // Desbloqueadas no topo — o que a pessoa conquistou é a recompensa, e não
+  // deve ficar enterrado no fim da lista. `sort` é estável, então dentro de
+  // cada grupo a ordem original (a curadoria de ACHIEVEMENTS) se mantém.
+  const ordered = useMemo(
+    () =>
+      [...ACHIEVEMENTS].sort(
+        (a, b) => Number(unlocked.has(b.id)) - Number(unlocked.has(a.id)),
+      ),
+    [unlocked],
+  );
+
+  const renderItem = useCallback(
+    ({ item: a }: { item: Achievement }) => {
+      const isUnlocked = unlocked.has(a.id);
+      const visual = visuals[a.id];
+      if (!visual) return null;
+
+      return (
+        <View
+          className="bg-surface-container rounded-card p-4 border border-outline-variant/20 flex-row items-center gap-3 mb-3"
+          style={{ opacity: isUnlocked ? 1 : 0.5 }}
+        >
+          {/* Bloqueada mostra a MESMA silhueta, só que apagada: dá pra ver o
+              que se está perseguindo, e a cor vira a recompensa. */}
+          <Emblem
+            icon={visual.icon}
+            tone={isUnlocked ? visual.tone : 'outline'}
+            treatment={isUnlocked ? visual.treatment : 'tint'}
+            size={EMBLEM_SIZE}
+          />
+
+          <View className="flex-1">
+            <Text
+              className="font-jakarta-bold text-base"
+              style={{ color: isUnlocked ? colors.onSurface : colors.onSurfaceVariant }}
+            >
+              {stripEmoji(a.title)}
+            </Text>
+            <Text className="text-outline font-inter-regular text-xs mt-0.5 leading-4">
+              {a.body}
+            </Text>
+          </View>
+
+          <Ionicons
+            name={isUnlocked ? 'checkmark-circle' : 'lock-closed'}
+            size={isUnlocked ? 22 : 16}
+            color={isUnlocked ? colors.primary : colors.outline}
+          />
+        </View>
+      );
+    },
+    [unlocked, visuals, colors],
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -50,90 +113,45 @@ export default function AchievementsScreen() {
         </Text>
       </View>
 
-      <ScrollView
+      {/* Lista virtualizada: são 200 conquistas, cada uma com um SVG. */}
+      <FlatList
+        data={ordered}
+        keyExtractor={a => a.id}
+        renderItem={renderItem}
+        extraData={unlocked}
         contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
-      >
-        {/* Progresso geral */}
-        <View className="bg-surface-container rounded-card p-5 border border-outline-variant/20 mb-5">
-          <View className="flex-row items-end justify-between mb-3">
-            <Text className="text-on-surface font-jakarta-bold text-lg">
-              Seu progresso
-            </Text>
-            <Text className="text-primary font-jakarta-extrabold text-xl">
-              {unlockedCount}
-              <Text className="text-outline font-inter-regular text-sm">
-                {' '}
-                / {total}
+        initialNumToRender={12}
+        windowSize={7}
+        removeClippedSubviews
+        ListHeaderComponent={
+          <View className="bg-surface-container rounded-card p-5 border border-outline-variant/20 mb-5">
+            <View className="flex-row items-end justify-between mb-3">
+              <Text className="text-on-surface font-jakarta-bold text-lg">
+                Seu progresso
               </Text>
-            </Text>
-          </View>
-          <View className="h-2 bg-surface-container-high rounded-full overflow-hidden">
-            <View
-              className="h-full rounded-full bg-primary-container"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </View>
-        </View>
-
-        {/* Lista de conquistas */}
-        <View className="gap-3">
-          {ACHIEVEMENTS.map(a => {
-            const isUnlocked = unlocked.has(a.id);
-            // Patente: título já vem limpo e o glifo vem de `icon`.
-            const { emoji, label } = a.icon
-              ? { emoji: '', label: a.title }
-              : splitTitle(a.title);
-            return (
+              <Text className="text-primary font-jakarta-extrabold text-xl">
+                {unlockedCount}
+                <Text className="text-outline font-inter-regular text-sm">
+                  {' '}
+                  / {total}
+                </Text>
+              </Text>
+            </View>
+            <View className="h-2 bg-surface-container-high rounded-full overflow-hidden">
               <View
-                key={a.id}
-                className="bg-surface-container rounded-card p-4 border border-outline-variant/20 flex-row items-center gap-3"
-                style={{ opacity: isUnlocked ? 1 : 0.55 }}
-              >
-                <View
-                  className="w-12 h-12 rounded-full items-center justify-center"
-                  style={{
-                    backgroundColor: isUnlocked
-                      ? colors.primaryContainer + '33'
-                      : colors.surfaceContainerHigh,
-                  }}
-                >
-                  {!isUnlocked ? (
-                    <Ionicons
-                      name="lock-closed"
-                      size={20}
-                      color={colors.outline}
-                    />
-                  ) : a.icon ? (
-                    <TierIcon name={a.icon} size={24} color={colors.primary} />
-                  ) : (
-                    <Text className="text-2xl">{emoji}</Text>
-                  )}
-                </View>
-                <View className="flex-1">
-                  <Text className="text-on-surface font-jakarta-bold text-base">
-                    {label}
-                  </Text>
-                  <Text className="text-outline font-inter-regular text-xs mt-0.5 leading-4">
-                    {a.body}
-                  </Text>
-                </View>
-                {isUnlocked && (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={22}
-                    color={colors.primary}
-                  />
-                )}
-              </View>
-            );
-          })}
-        </View>
-
-        <Text className="text-outline font-inter-regular text-xs text-center mt-6">
-          Continue estudando para desbloquear todas! 🚀
-        </Text>
-      </ScrollView>
+                className="h-full rounded-full bg-primary-container"
+                style={{ width: `${progress * 100}%` }}
+              />
+            </View>
+          </View>
+        }
+        ListFooterComponent={
+          <Text className="text-outline font-inter-regular text-xs text-center mt-3">
+            Continue estudando para desbloquear todas!
+          </Text>
+        }
+      />
     </SafeAreaView>
   );
 }

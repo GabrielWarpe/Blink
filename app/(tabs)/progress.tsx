@@ -10,7 +10,7 @@ import { cardMaturity, type Maturity } from '@/services/ai';
 import { StreakBadge } from '@/components/StreakBadge';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { DeckAvatar } from '@/components/DeckAvatar';
-import { TierBadge } from '@/components/TierBadge';
+import { Emblem } from '@/components/Emblem';
 import { Card, cardShadow } from '@/components/ui/Card';
 import { useStreak } from '@/hooks/useStreak';
 import { useDecks } from '@/hooks/useDecks';
@@ -167,7 +167,7 @@ export default function ProgressScreen() {
         <Card className="mx-5 mb-4 p-5">
           <View className="flex-row items-center">
             {/* Emblema da patente */}
-            <TierBadge
+            <Emblem
               icon={tier.icon}
               tone={tier.tone}
               treatment={tier.treatment}
@@ -223,7 +223,7 @@ export default function ProgressScreen() {
                 <Text className="text-outline font-inter-regular text-xs">
                   {nextLevelUnlocksTier ? 'Desbloqueia' : 'Próxima'}:
                 </Text>
-                <TierBadge
+                <Emblem
                   icon={upcomingTier.icon}
                   tone={upcomingTier.tone}
                   treatment={upcomingTier.treatment}
