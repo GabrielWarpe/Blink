@@ -1,8 +1,16 @@
 import { Tabs } from 'expo-router';
-import { View, Text, Image, Platform } from 'react-native';
+import { View, Text, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  TAB_ICON_SIZE,
+  TAB_ICON_LABEL_GAP,
+  TAB_LABEL_LINE,
+  TAB_BAR_TOP_PAD,
+  TAB_BAR_BOTTOM_PAD,
+  TAB_BAR_HEIGHT,
+} from '@/constants/layout';
 
 interface TabIconProps {
   name: React.ComponentProps<typeof Ionicons>['name'];
@@ -20,7 +28,7 @@ function TabIcon({ name, color, focused, label, avatarUri }: TabIconProps) {
         width: 72,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 3,
+        gap: TAB_ICON_LABEL_GAP,
       }}
     >
       {avatarUri ? (
@@ -35,16 +43,18 @@ function TabIcon({ name, color, focused, label, avatarUri }: TabIconProps) {
           }}
         />
       ) : (
-        <Ionicons name={name} size={22} color={color} />
+        <Ionicons name={name} size={TAB_ICON_SIZE} color={color} />
       )}
       <Text
         numberOfLines={1}
         style={{
           color,
-          fontSize: 10,
-          lineHeight: 12,
+          fontSize: 11,
+          lineHeight: TAB_LABEL_LINE,
+          letterSpacing: 0.2,
           textAlign: 'center',
-          fontFamily: focused ? 'Inter_600SemiBold' : 'Inter_400Regular',
+          // Medium (não Regular) no inativo: o peso 400 fica lavado no escuro.
+          fontFamily: focused ? 'Inter_600SemiBold' : 'Inter_500Medium',
         }}
       >
         {label}
@@ -61,12 +71,18 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.surfaceContainer,
-          borderTopColor: colors.outlineVariant,
-          borderTopWidth: 0.5,
-          height: Platform.OS === 'ios' ? 84 : 64,
-          paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+          // Mesma cor da tela: a barra some no fundo, sem faixa nem degrau.
+          backgroundColor: colors.background,
+          borderTopWidth: 0,
+          // Zera a moldura que cada plataforma desenha por conta própria,
+          // senão a sombra do tab bar recria uma linha sutil no topo.
+          elevation: 0,
+          shadowOpacity: 0,
+          shadowColor: 'transparent',
+          // Altura = exatamente o conteúdo + folgas: nenhum vão sobrando.
+          height: TAB_BAR_HEIGHT,
+          paddingTop: TAB_BAR_TOP_PAD,
+          paddingBottom: TAB_BAR_BOTTOM_PAD,
         },
         tabBarShowLabel: false,
         tabBarIconStyle: {
@@ -96,7 +112,7 @@ export default function TabsLayout() {
         options={{
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              name={focused ? 'library' : 'library-outline'}
+              name={focused ? 'albums' : 'albums-outline'}
               color={color}
               focused={focused}
               label="Decks"
@@ -109,7 +125,7 @@ export default function TabsLayout() {
         options={{
           tabBarIcon: ({ color, focused }) => (
             <TabIcon
-              name={focused ? 'bar-chart' : 'bar-chart-outline'}
+              name={focused ? 'stats-chart' : 'stats-chart-outline'}
               color={color}
               focused={focused}
               label="Progresso"

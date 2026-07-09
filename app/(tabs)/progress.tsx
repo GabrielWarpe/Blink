@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { levelFromXp, tierForLevel, nextTier } from '@/utils/xp';
 import { sessionAccuracy, formatDuration } from '@/utils/stats';
+import { TAB_SCREEN_BOTTOM_INSET } from '@/constants/layout';
 
 const DAYS = 7;
 
@@ -141,7 +142,7 @@ export default function ProgressScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: TAB_SCREEN_BOTTOM_INSET }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}

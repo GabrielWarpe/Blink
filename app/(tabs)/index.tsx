@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { TAB_SCREEN_BOTTOM_INSET } from '@/constants/layout';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -98,7 +99,7 @@ export default function HomeScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 28 }}
+        contentContainerStyle={{ paddingBottom: TAB_SCREEN_BOTTOM_INSET }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
