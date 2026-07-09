@@ -106,6 +106,7 @@ function rowToSession(
     deckId: row.playlist_id ?? '',
     deckTitle,
     date: row.started_at,
+    mode: row.mode === 'quiz' || row.mode === 'write' ? row.mode : 'flash',
     correct: row.correct_count,
     hard: row.hard_count,
     again: row.again_count,
@@ -252,7 +253,20 @@ export const db = {
         .insert(data)
         .select()
         .single();
-      if (error) throw error;
+      if (error) {
+        // Banco sem a coluna `mode` (migração pendente): grava sem ela em vez
+        // de perder a sessão. Mesmo padrão tolerante de tags/cover_url.
+        if (/mode/i.test(error.message ?? '') && data.mode !== undefined) {
+          const { mode: _mode, ...withoutMode } = data;
+          if (__DEV__) {
+            console.warn(
+              '[Recall] Sessão gravada SEM modo: rode a migração da coluna `mode`.',
+            );
+          }
+          return db.sessions.create(withoutMode);
+        }
+        throw error;
+      }
       return row;
     },
 
@@ -422,8 +436,12 @@ export const db = {
       const sessions = await db.sessions.getRecent(userId, 365);
       const dates = sessions.map(s => s.date);
       const current = computeStreak(dates);
-      // Recalcula o recorde a partir dos dados reais (auto-corrige valores antigos).
-      const longest = computeLongestStreak(dates);
+      // O recorde é monotônico: o recálculo enxerga só a janela recente, então
+      // nunca pode REBAIXAR um recorde antigo já registrado no perfil.
+      const longest = Math.max(
+        profile.longest_streak ?? 0,
+        computeLongestStreak(dates),
+      );
       const todayStr = format(new Date(), 'yyyy-MM-dd');
 
       await db.profile.update(userId, {

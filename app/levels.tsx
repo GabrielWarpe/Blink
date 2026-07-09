@@ -29,7 +29,7 @@ export default function LevelsScreen() {
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
-      void db.sessions.getRecent(user.id, 365).then(sessions => {
+      void db.sessions.getRecent(user.id, 2000).then(sessions => {
         setXp(sessions.reduce((sum, s) => sum + s.total, 0));
       });
     }, [user]),

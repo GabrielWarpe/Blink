@@ -38,7 +38,7 @@ export default function ProgressScreen() {
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
-      void db.sessions.getRecent(user.id, 365).then(setSessions);
+      void db.sessions.getRecent(user.id, 2000).then(setSessions);
       void db.reviews.getLeeches(user.id).then(setLeeches);
     }, [user]),
   );

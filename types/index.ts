@@ -34,11 +34,15 @@ export interface Deck {
   lastStudied?: string;
 }
 
+/** Modo de estudo de uma sessão. Sessões antigas (sem coluna) contam como 'flash'. */
+export type StudyMode = 'flash' | 'quiz' | 'write';
+
 export interface StudySession {
   id: string;
   deckId: string;
   deckTitle: string;
   date: string;
+  mode?: StudyMode;
   /** Avaliados como Bom/Fácil. */
   correct: number;
   /** Avaliados como Difícil — passaram, mas com esforço (não é erro). */

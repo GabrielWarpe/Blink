@@ -43,7 +43,7 @@ export default function WriteScreen() {
   const [deck, setDeck] = useState<Deck | null>(null);
   const [sessionStarted, setSessionStarted] = useState(false);
 
-  const session = useStudySession(deck);
+  const session = useStudySession(deck, 'write');
 
   const [draft, setDraft] = useState('');
   const [result, setResult] = useState<WriteResult | null>(null);

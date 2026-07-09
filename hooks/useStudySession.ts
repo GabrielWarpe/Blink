@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import type { Flashcard, Deck, Grade, StudyPhase } from '@/types';
+import type { Flashcard, Deck, Grade, StudyPhase, StudyMode } from '@/types';
 import { reviewCard } from '@/services/ai';
 import { db } from '@/services/database';
 import { prefetchCardImages } from '@/services/images';
@@ -21,7 +21,7 @@ import { useSettings } from '@/contexts/SettingsContext';
  * sempre: done = correctCount + hardCount (cada conclusão é uma coisa ou outra);
  * againCount conta as repetições e não entra em `done`.
  */
-export function useStudySession(deck: Deck | null) {
+export function useStudySession(deck: Deck | null, mode: StudyMode = 'flash') {
   const { user, refreshProfile } = useAuth();
   const { settings } = useSettings();
   const [phase, setPhase] = useState<StudyPhase>('idle');
@@ -68,6 +68,7 @@ export function useStudySession(deck: Deck | null) {
             correct_count: correct,
             hard_count: hard,
             again_count: again,
+            mode,
           });
           await db.decks.touchStudied(deck.id);
 
@@ -84,8 +85,29 @@ export function useStudySession(deck: Deck | null) {
             await fireStreakNotification(after.current_streak);
           }
 
-          const sessions = await db.sessions.getRecent(user.id, 365);
+          // Janela de 2000 sessões: precisa cobrir os maiores limiares das
+          // conquistas (500 sessões, 10.000 cards) — 365 era pouco e tornava
+          // os degraus altos inalcançáveis.
+          const sessions = await db.sessions.getRecent(user.id, 2000);
           const allDecks = await db.decks.getAll(user.id);
+          const [leeches, retentionDays] = await Promise.all([
+            db.reviews.getLeeches(user.id),
+            db.reviews.getRetentionByDay(user.id, 30),
+          ]);
+          // Leech domado = card que acumulou 4+ "De novo" e hoje está dominado.
+          const masteredIds = new Set(
+            allDecks.flatMap(d => d.cards.filter(c => c.mastered).map(c => c.id)),
+          );
+          const leechesTamed = leeches.filter(l =>
+            masteredIds.has(l.cardId),
+          ).length;
+          const retention30 = retentionDays.reduce(
+            (acc, day) => ({
+              total: acc.total + day.total,
+              retained: acc.retained + day.retained,
+            }),
+            { total: 0, retained: 0 },
+          );
           await checkAchievements(
             user.id,
             buildAchievementStats({
@@ -93,6 +115,8 @@ export function useStudySession(deck: Deck | null) {
               decks: allDecks,
               currentStreak: after?.current_streak ?? 0,
               longestStreak: after?.longest_streak ?? 0,
+              leechesTamed,
+              retention30,
             }),
           );
 
@@ -111,6 +135,7 @@ export function useStudySession(deck: Deck | null) {
     [
       deck,
       user,
+      mode,
       refreshProfile,
       settings.streakAlert,
       settings.studyReminder,

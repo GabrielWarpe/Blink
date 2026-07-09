@@ -68,6 +68,8 @@ export interface StudySessionRow {
   correct_count: number;
   hard_count: number;
   again_count: number;
+  /** 'flash' | 'quiz' | 'write'; null em sessões antigas (contam como flash). */
+  mode?: string | null;
 }
 
 export interface CardReviewRow {

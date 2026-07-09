@@ -21,7 +21,7 @@ export default function QuizScreen() {
   const [sessionStarted, setSessionStarted] = useState(false);
   const [noDue, setNoDue] = useState(false);
 
-  const session = useStudySession(deck);
+  const session = useStudySession(deck, 'quiz');
 
   // Cards já errados nesta sessão: ao acertar na repetição, valem "Difícil".
   const missedIdsRef = useRef<Set<string>>(new Set());
