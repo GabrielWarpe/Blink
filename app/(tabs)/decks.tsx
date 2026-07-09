@@ -13,11 +13,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { useDecks } from '@/hooks/useDecks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { exportDecks, importDecks, BackupError } from '@/services/backup';
+import {
+  exportDecks,
+  pickBackupFile,
+  parseBackup,
+  buildImportPlan,
+  applyDeckImport,
+  applyCardImport,
+  BackupError,
+  type ImportDeck,
+  type DeckConflict,
+  type ImportCard,
+  type CardImportTarget,
+} from '@/services/backup';
 import { errorMessage } from '@/utils/errors';
 import { DeckCard } from '@/components/DeckCard';
 import { Input } from '@/components/ui/Input';
 import { cardShadow } from '@/components/ui/Card';
+import {
+  ImportConflictModal,
+  type ConflictResolution,
+} from '@/components/ImportConflictModal';
+import { DeckPickerModal } from '@/components/DeckPickerModal';
 
 export default function DecksScreen() {
   const router = useRouter();
@@ -28,6 +45,15 @@ export default function DecksScreen() {
   const [busy, setBusy] = useState(false);
   const [sort, setSort] = useState<'recent' | 'alpha' | 'count'>('recent');
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  // Estado dos modais de importação.
+  const [conflictState, setConflictState] = useState<{
+    newDecks: ImportDeck[];
+    conflicts: DeckConflict[];
+  } | null>(null);
+  const [cardState, setCardState] = useState<{
+    cards: ImportCard[];
+    source: { title: string; emoji: string } | null;
+  } | null>(null);
 
   // Todas as tags em uso, para a linha de filtro. Se a tag ativa deixou de
   // existir (deck editado/excluído), o filtro volta para "Todas".
@@ -78,32 +104,101 @@ export default function DecksScreen() {
     }
   };
 
+  const showImportError = (e: unknown) => {
+    let msg: string;
+    if (e instanceof BackupError) {
+      msg =
+        e.code === 'INVALID'
+          ? 'O arquivo selecionado não é um backup válido do Recall.'
+          : e.code === 'READ'
+            ? 'Não consegui ler o arquivo. Salve-o no app Arquivos e tente importar de lá.'
+            : 'Nenhum conteúdo válido foi encontrado no arquivo.';
+    } else {
+      const detail = errorMessage(e, String(e));
+      msg = `Não foi possível importar.\n\nDetalhe: ${detail}`;
+    }
+    Alert.alert('Erro na importação', msg);
+  };
+
+  const importDone = async (deckCount: number, cardCount: number) => {
+    await reload();
+    const parts: string[] = [];
+    if (deckCount > 0)
+      parts.push(`${deckCount} ${deckCount === 1 ? 'baralho' : 'baralhos'}`);
+    if (cardCount > 0)
+      parts.push(`${cardCount} ${cardCount === 1 ? 'cartão' : 'cartões'}`);
+    Alert.alert(
+      'Importação concluída',
+      parts.length > 0 ? `${parts.join(' e ')} importados.` : 'Nada foi importado.',
+    );
+  };
+
+  // Escolhe o arquivo, decide o fluxo (baralho x cartões) e abre o modal certo.
   const handleImport = async () => {
     if (!user || busy) return;
     setBusy(true);
     try {
-      const result = await importDecks(user.id);
-      if (!result) return; // cancelado
-      await reload();
-      Alert.alert(
-        'Importação concluída',
-        `${result.deckCount} baralho(s) e ${result.cardCount} cartão(ões) importados.`,
-      );
-    } catch (e) {
-      let msg: string;
-      if (e instanceof BackupError) {
-        msg =
-          e.code === 'INVALID'
-            ? 'O arquivo selecionado não é um backup válido do Recall.'
-            : e.code === 'READ'
-              ? 'Não consegui ler o arquivo. Salve-o no app Arquivos e tente importar de lá.'
-              : 'Nenhum baralho válido foi encontrado no arquivo.';
-      } else {
-        // Erro inesperado (ex.: banco/rede): mostra o detalhe para diagnóstico.
-        const detail = errorMessage(e, String(e));
-        msg = `Não foi possível importar os baralhos.\n\nDetalhe: ${detail}`;
+      const raw = await pickBackupFile();
+      if (raw == null) return; // cancelado na seleção de arquivo
+      const parsed = parseBackup(raw);
+
+      if (parsed.kind === 'cards') {
+        setCardState({ cards: parsed.cards, source: parsed.source });
+        return;
       }
-      Alert.alert('Erro na importação', msg);
+
+      const plan = buildImportPlan(
+        decks.map(d => ({ id: d.id, title: d.title })),
+        parsed.decks,
+      );
+      if (plan.conflicts.length === 0) {
+        const res = await applyDeckImport(user.id, {
+          newDecks: plan.newDecks,
+          resolutions: [],
+          existingTitles: decks.map(d => d.title),
+        });
+        await importDone(res.deckCount, res.cardCount);
+      } else {
+        setConflictState({ newDecks: plan.newDecks, conflicts: plan.conflicts });
+      }
+    } catch (e) {
+      showImportError(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Conclui a importação de baralhos após o usuário resolver os conflitos.
+  const resolveConflicts = async (resolutions: ConflictResolution[]) => {
+    const state = conflictState;
+    setConflictState(null);
+    if (!user || !state) return;
+    setBusy(true);
+    try {
+      const res = await applyDeckImport(user.id, {
+        newDecks: state.newDecks,
+        resolutions,
+        existingTitles: decks.map(d => d.title),
+      });
+      await importDone(res.deckCount, res.cardCount);
+    } catch (e) {
+      showImportError(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Conclui a importação de um pacote de cartões no destino escolhido.
+  const pickCardTarget = async (target: CardImportTarget) => {
+    const state = cardState;
+    setCardState(null);
+    if (!user || !state) return;
+    setBusy(true);
+    try {
+      const res = await applyCardImport(user.id, target, state.cards);
+      await importDone(res.deckCount, res.cardCount);
+    } catch (e) {
+      showImportError(e);
     } finally {
       setBusy(false);
     }
@@ -293,6 +388,29 @@ export default function DecksScreen() {
       >
         <Ionicons name="add" size={28} color="#dffbf7" />
       </TouchableOpacity>
+
+      {/* Conflito de baralho na importação */}
+      <ImportConflictModal
+        visible={conflictState != null}
+        conflicts={conflictState?.conflicts ?? []}
+        onCancel={() => setConflictState(null)}
+        onResolve={r => void resolveConflicts(r)}
+      />
+
+      {/* Destino de um pacote de cartões importado */}
+      <DeckPickerModal
+        visible={cardState != null}
+        decks={decks.map(d => ({
+          id: d.id,
+          title: d.title,
+          emoji: d.emoji,
+          color: d.color,
+        }))}
+        cardCount={cardState?.cards.length ?? 0}
+        sourceTitle={cardState?.source?.title ?? null}
+        onCancel={() => setCardState(null)}
+        onPick={t => void pickCardTarget(t)}
+      />
     </SafeAreaView>
   );
 }

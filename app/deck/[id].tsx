@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import type { Deck, Flashcard, StudySession } from '@/types';
 import { db } from '@/services/database';
-import { exportDeck, BackupError } from '@/services/backup';
+import { exportDeck, exportCards, BackupError } from '@/services/backup';
 import { getDueCards } from '@/services/ai';
 import { sessionAccuracy } from '@/utils/stats';
 import { Button } from '@/components/ui/Button';
@@ -26,6 +26,9 @@ export default function DeckDetailScreen() {
   const [deck, setDeck] = useState<Deck | null>(null);
   const [attempts, setAttempts] = useState<StudySession[]>([]);
   const [tab, setTab] = useState<Tab>('cards');
+  // Modo de seleção de cartões (para exportar só alguns).
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -50,12 +53,50 @@ export default function DeckDetailScreen() {
   const dueCount = getDueCards(deck).length;
 
   const handleMenu = () => {
-    Alert.alert(deck.title, undefined, [
+    const options: Parameters<typeof Alert.alert>[2] = [
       { text: 'Editar deck', onPress: () => router.push(`/deck/edit?id=${deck.id}`) },
       { text: 'Exportar deck', onPress: () => void handleExport() },
+    ];
+    if (deck.cards.length > 0) {
+      options.push({ text: 'Exportar cartões…', onPress: enterSelect });
+    }
+    options.push(
       { text: 'Excluir deck', style: 'destructive', onPress: handleDelete },
       { text: 'Cancelar', style: 'cancel' },
-    ]);
+    );
+    Alert.alert(deck.title, undefined, options);
+  };
+
+  // ── Seleção de cartões para exportar ─────────────────────────────────────
+  const enterSelect = () => {
+    setTab('cards');
+    setSelected(new Set());
+    setSelectMode(true);
+  };
+
+  const exitSelect = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
+  const toggleSelect = (cardId: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(cardId)) next.delete(cardId);
+      else next.add(cardId);
+      return next;
+    });
+  };
+
+  const exportSelected = async () => {
+    const chosen = deck.cards.filter(c => selected.has(c.id));
+    if (chosen.length === 0) return;
+    try {
+      await exportCards(deck, chosen);
+      exitSelect();
+    } catch {
+      Alert.alert('Erro', 'Não foi possível exportar os cartões.');
+    }
   };
 
   const handleExport = async () => {
@@ -239,26 +280,52 @@ export default function DeckDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      {/* Header bar */}
-      <View className="flex-row items-center px-4 pt-2 pb-3">
-        <TouchableOpacity onPress={() => router.back()} className="p-2">
-          <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
-        </TouchableOpacity>
-        <View className="flex-1 mx-2">
-          <View className="flex-row items-center gap-2">
-            <Text className="text-xl">{deck.emoji}</Text>
-            <Text
-              className="text-on-surface font-jakarta-bold text-xl flex-1"
-              numberOfLines={1}
-            >
-              {deck.title}
+      {/* Header bar (normal x seleção) */}
+      {selectMode ? (
+        <View className="flex-row items-center px-4 pt-2 pb-3">
+          <TouchableOpacity onPress={exitSelect} className="p-2">
+            <Ionicons name="close" size={22} color={colors.onSurface} />
+          </TouchableOpacity>
+          <Text className="flex-1 mx-2 text-on-surface font-jakarta-bold text-lg">
+            {selected.size} selecionado{selected.size === 1 ? '' : 's'}
+          </Text>
+          <TouchableOpacity
+            onPress={() => void exportSelected()}
+            disabled={selected.size === 0}
+            className="flex-row items-center gap-1.5 px-3 py-2 rounded-button"
+            style={{ opacity: selected.size === 0 ? 0.4 : 1 }}
+          >
+            <Ionicons name="share-outline" size={18} color={colors.primary} />
+            <Text className="text-primary font-inter-semibold text-sm">
+              Exportar
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={handleMenu} className="p-2">
-          <Ionicons name="ellipsis-horizontal" size={22} color={colors.onSurface} />
-        </TouchableOpacity>
-      </View>
+      ) : (
+        <View className="flex-row items-center px-4 pt-2 pb-3">
+          <TouchableOpacity onPress={() => router.back()} className="p-2">
+            <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
+          </TouchableOpacity>
+          <View className="flex-1 mx-2">
+            <View className="flex-row items-center gap-2">
+              <Text className="text-xl">{deck.emoji}</Text>
+              <Text
+                className="text-on-surface font-jakarta-bold text-xl flex-1"
+                numberOfLines={1}
+              >
+                {deck.title}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity onPress={handleMenu} className="p-2">
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={22}
+              color={colors.onSurface}
+            />
+          </TouchableOpacity>
+        </View>
+      )}
 
       <FlatList
         data={cardData}
@@ -269,7 +336,8 @@ export default function DeckDetailScreen() {
           gap: 8,
         }}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={Header}
+        // Em modo seleção some o cabeçalho (stats/abas/estudar) para focar nos cards.
+        ListHeaderComponent={selectMode ? undefined : Header}
         ListEmptyComponent={
           tab === 'cards' ? (
             <View className="items-center py-6">
@@ -279,38 +347,65 @@ export default function DeckDetailScreen() {
             </View>
           ) : null
         }
-        renderItem={({ item, index }) => (
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() =>
-              router.push(`/deck/card?deckId=${deck.id}&cardId=${item.id}`)
-            }
-            className="bg-surface-container rounded-card p-4 flex-row items-start gap-2"
-            style={cardShadow}
-          >
-            <Text className="text-outline font-inter-regular text-xs mt-0.5 w-5">
-              {index + 1}.
-            </Text>
-            <View className="flex-1">
-              <Text className="text-on-surface font-inter-medium text-sm leading-5">
-                {item.front}
-              </Text>
-              <Text className="text-outline font-inter-regular text-xs mt-1.5 leading-4">
-                {item.back}
-              </Text>
-              {item.images.length > 0 && (
-                <View className="flex-row items-center gap-1 mt-1.5">
-                  <Ionicons name="image" size={12} color={colors.outline} />
-                  <Text className="text-outline font-inter-regular text-xs">
-                    {item.images.length}{' '}
-                    {item.images.length === 1 ? 'imagem' : 'imagens'}
-                  </Text>
+        renderItem={({ item, index }) => {
+          const isSelected = selected.has(item.id);
+          return (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() =>
+                selectMode
+                  ? toggleSelect(item.id)
+                  : router.push(`/deck/card?deckId=${deck.id}&cardId=${item.id}`)
+              }
+              className="bg-surface-container rounded-card p-4 flex-row items-start gap-2.5"
+              style={[
+                cardShadow,
+                selectMode && isSelected
+                  ? { borderWidth: 1, borderColor: colors.primary }
+                  : null,
+              ]}
+            >
+              {selectMode ? (
+                <View
+                  className="w-5 h-5 rounded-full items-center justify-center mt-0.5"
+                  style={{
+                    backgroundColor: isSelected ? colors.primary : 'transparent',
+                    borderWidth: isSelected ? 0 : 1.5,
+                    borderColor: colors.outline,
+                  }}
+                >
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={13} color={colors.onPrimary} />
+                  )}
                 </View>
+              ) : (
+                <Text className="text-outline font-inter-regular text-xs mt-0.5 w-5">
+                  {index + 1}.
+                </Text>
               )}
-            </View>
-            <Ionicons name="pencil" size={15} color={colors.outline} />
-          </TouchableOpacity>
-        )}
+              <View className="flex-1">
+                <Text className="text-on-surface font-inter-medium text-sm leading-5">
+                  {item.front}
+                </Text>
+                <Text className="text-outline font-inter-regular text-xs mt-1.5 leading-4">
+                  {item.back}
+                </Text>
+                {item.images.length > 0 && (
+                  <View className="flex-row items-center gap-1 mt-1.5">
+                    <Ionicons name="image" size={12} color={colors.outline} />
+                    <Text className="text-outline font-inter-regular text-xs">
+                      {item.images.length}{' '}
+                      {item.images.length === 1 ? 'imagem' : 'imagens'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              {!selectMode && (
+                <Ionicons name="pencil" size={15} color={colors.outline} />
+              )}
+            </TouchableOpacity>
+          );
+        }}
       />
     </SafeAreaView>
   );
