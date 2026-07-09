@@ -7,8 +7,10 @@ import {
   fireStreakNotification,
   syncReminders,
 } from '@/services/notifications';
-import { checkAchievements } from '@/services/achievements';
-import { levelFromXp } from '@/utils/xp';
+import {
+  checkAchievements,
+  buildAchievementStats,
+} from '@/services/achievements';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 
@@ -83,19 +85,16 @@ export function useStudySession(deck: Deck | null) {
           }
 
           const sessions = await db.sessions.getRecent(user.id, 365);
-          const playlists = await db.playlists.getAll(user.id);
-          const lifetimeCards = sessions.reduce((sum, s) => sum + s.total, 0);
-          await checkAchievements(user.id, {
-            totalCards: lifetimeCards,
-            totalSessions: sessions.length,
-            currentStreak: after?.current_streak ?? 0,
-            deckCount: playlists.length,
-            lastAccuracy:
-              correct + hard + again > 0
-                ? Math.round(((correct + hard) / (correct + hard + again)) * 100)
-                : 0,
-            level: levelFromXp(lifetimeCards).level,
-          });
+          const allDecks = await db.decks.getAll(user.id);
+          await checkAchievements(
+            user.id,
+            buildAchievementStats({
+              sessions,
+              decks: allDecks,
+              currentStreak: after?.current_streak ?? 0,
+              longestStreak: after?.longest_streak ?? 0,
+            }),
+          );
 
           // Reagenda os lembretes com as contagens pós-sessão: cards recém
           // revisados deixam de estar "devidos" nos próximos dias.
