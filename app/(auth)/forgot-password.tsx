@@ -47,6 +47,18 @@ export default function ForgotPasswordScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
+      {/* Fora do ScrollView: o conteúdo dele é centralizado verticalmente, e a
+          seta acompanhava esse centro em vez de ficar presa no topo. */}
+      <View className="px-4 pt-2">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="w-10 h-10 items-center justify-center"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
+        </TouchableOpacity>
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
@@ -56,20 +68,11 @@ export default function ForgotPasswordScreen() {
             flexGrow: 1,
             justifyContent: 'center',
             paddingHorizontal: 24,
-            paddingVertical: 32,
+            paddingBottom: 32,
           }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="flex-row items-center mb-8">
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="w-10 h-10 -ml-2 items-center justify-center"
-            >
-              <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
-            </TouchableOpacity>
-          </View>
-
           {sent ? (
             <View className="items-center">
               <View className="w-16 h-16 rounded-2xl bg-green-500/20 items-center justify-center mb-5">

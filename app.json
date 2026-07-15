@@ -1,33 +1,29 @@
 {
   "expo": {
-    "name": "FlashMind",
-    "slug": "flashmind",
+    "name": "Recall",
+    "slug": "recall",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "flashmind",
+    "scheme": "recall",
     "splash": {
-      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0b1326"
+      "backgroundColor": "#0b0f14"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.flashmind.app"
+      "bundleIdentifier": "com.recall.app"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0b1326"
+        "backgroundColor": "#0b0f14"
       },
-      "package": "com.flashmind.app"
+      "package": "com.recall.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
     "plugins": [

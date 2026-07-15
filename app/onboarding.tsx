@@ -52,27 +52,34 @@ function DeckDemo(colors: ThemePalette) {
   );
 }
 
-/** Slide 2: os quatro botões de avaliação do modo estudo. */
+/** Slide 2: a resposta binária do estudo — errei ou acertei. */
 function GradesDemo(colors: ThemePalette) {
-  const grades: { label: string; tint: string }[] = [
-    { label: 'De novo', tint: colors.error },
-    { label: 'Difícil', tint: colors.tertiary },
-    { label: 'Bom', tint: colors.primary },
-    { label: 'Fácil', tint: colors.success },
-  ];
   return (
-    <View className="w-full flex-row justify-center gap-2">
-      {grades.map(g => (
-        <View
-          key={g.label}
-          className="rounded-pill px-3 py-2"
-          style={{ backgroundColor: g.tint + '22' }}
+    <View className="w-full flex-row justify-center gap-3">
+      <View
+        className="flex-row items-center gap-2 rounded-3xl px-5 py-2.5"
+        style={{ backgroundColor: colors.error + '14' }}
+      >
+        <Ionicons name="close" size={20} color={colors.error} />
+        <Text
+          className="font-jakarta-bold text-base"
+          style={{ color: colors.error }}
         >
-          <Text className="font-inter-semibold text-xs" style={{ color: g.tint }}>
-            {g.label}
-          </Text>
-        </View>
-      ))}
+          Errei
+        </Text>
+      </View>
+      <View
+        className="flex-row items-center gap-2 rounded-3xl px-5 py-2.5"
+        style={{ backgroundColor: colors.success + '14' }}
+      >
+        <Text
+          className="font-jakarta-bold text-base"
+          style={{ color: colors.success }}
+        >
+          Entendi
+        </Text>
+        <Ionicons name="checkmark" size={20} color={colors.success} />
+      </View>
     </View>
   );
 }
@@ -141,7 +148,7 @@ const SLIDES: Slide[] = [
     icon: 'layers',
     accent: 'primary',
     title: 'Estude no ritmo certo',
-    body: 'A repetição espaçada agenda cada card para a hora exata de revisar. Avalie cada resposta — ou simplesmente deslize o card.',
+    body: 'Diga só se acertou ou errou. Os que você errar voltam na mesma sessão, e a repetição espaçada agenda cada card para a hora exata de revisar.',
     demo: GradesDemo,
   },
   {

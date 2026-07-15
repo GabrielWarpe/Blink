@@ -338,6 +338,29 @@ export const db = {
       if (error) throw error;
     },
 
+    /**
+     * Apaga a última revisão registrada de um card — usado pelo "voltar" da
+     * sessão. Sem isso, uma resposta desfeita continuaria contando como erro
+     * nas estatísticas de retenção e na detecção de cards difíceis (leeches).
+     */
+    async undoLast(userId: string, cardId: string): Promise<void> {
+      const { data, error } = await supabase
+        .from('card_reviews')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('card_id', cardId)
+        .order('reviewed_at', { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      const last = (data ?? [])[0] as { id: string } | undefined;
+      if (!last) return;
+      const { error: delError } = await supabase
+        .from('card_reviews')
+        .delete()
+        .eq('id', last.id);
+      if (delError) throw delError;
+    },
+
     /** Cards com `threshold`+ "De novo" no total — os que mais travam o
      * aprendizado. Agregado no cliente (mesmo padrão de streak/conquistas
      * já usado no app): busca só a coluna necessária, conta em JS. */

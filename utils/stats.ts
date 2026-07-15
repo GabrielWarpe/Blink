@@ -1,9 +1,13 @@
 import type { StudySession } from '@/types';
 
 /**
- * Taxa de acerto real de uma sessão: Bom/Fácil E Difícil contam como acerto
- * (o card foi lembrado, ainda que com esforço) — só "De novo" é erro.
- * Contar Difícil como erro subestimava a taxa mostrada ao usuário.
+ * Taxa de acerto de uma sessão: acertos ÷ (acertos + erros). Cada erro conta,
+ * então um card errado duas vezes pesa dois — o número reflete o esforço real.
+ *
+ * A avaliação hoje é binária (acertei/errei) e `hard` é sempre 0. O campo
+ * continua na conta por causa das sessões ANTIGAS, gravadas quando existia
+ * "Difícil": lá ele era um acerto (o card foi lembrado, ainda que com esforço),
+ * e somá-lo mantém o histórico coerente em vez de rebaixá-lo à força.
  */
 export function sessionAccuracy(s: Pick<StudySession, 'correct' | 'hard' | 'again'>): number {
   const attempts = s.correct + s.hard + s.again;

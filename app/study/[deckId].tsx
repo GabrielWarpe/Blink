@@ -13,10 +13,9 @@ import { SwipeCard } from '@/components/SwipeCard';
 import { QuizQuestion } from '@/components/QuizQuestion';
 import { SessionTimer } from '@/components/SessionTimer';
 import { StudySetup } from '@/components/StudySetup';
+import { SessionResult } from '@/components/SessionResult';
 import { TimeUpNotice, TIME_UP_MESSAGE } from '@/components/TimeUpNotice';
 import { Button } from '@/components/ui/Button';
-import { cardShadow } from '@/components/ui/Card';
-import { formatClock } from '@/utils/stats';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 /** Hash determinístico (djb2) — sorteio de formato estável por pergunta. */
@@ -45,8 +44,6 @@ export default function StudySessionScreen() {
   // Degrada para flashcards puro se o deck não suportar quiz.
   const isMixed = mode === 'mixed' && deck != null && deckSupportsQuiz(deck);
   const mixPattern: 'alt' | 'random' = mix === 'random' ? 'random' : 'alt';
-  // Cards já errados no quiz nesta sessão: acertar na repetição vale "Difícil".
-  const missedIdsRef = useRef<Set<string>>(new Set());
   // Contador de APRESENTAÇÕES (inclui puladas — done/againCount não contam
   // skip, então a paridade do alternado precisa de um contador próprio).
   const presentationIndexRef = useRef(-1);
@@ -76,15 +73,18 @@ export default function StudySessionScreen() {
     timed.prepare(deck.cards);
   };
 
-  const restart = () => {
+  // 'all' = revisar o deck inteiro de novo; 'wrong' = só as que errei nesta
+  // sessão. Os ids errados são lidos ANTES do reset (que os limpa) e a
+  // preparação síncrona evita a corrida com o auto-prepare.
+  const restart = (scope: 'all' | 'wrong') => {
+    const wrong = session.wrongIds;
+    const cards =
+      scope === 'wrong' ? deck.cards.filter(c => wrong.has(c.id)) : deck.cards;
     setNoDue(false);
-    missedIdsRef.current = new Set();
     presentationIndexRef.current = -1;
     lastQuestionKeyRef.current = '';
     timed.resetTimed();
-    void db.decks.getOne(deck.id).then(d => {
-      if (d) setDeck(d);
-    });
+    timed.prepare(cards);
   };
 
   // ── Deck sem cards ───────────────────────────────────────────────────────
@@ -164,109 +164,20 @@ export default function StudySessionScreen() {
 
   // ── Results screen ────────────────────────────────────────────────────────
   if (session.phase === 'finished') {
-    const reviewed = session.correctCount + session.hardCount;
-    const accuracy =
-      reviewed > 0 ? Math.round((session.correctCount / reviewed) * 100) : 0;
-
-    const resultIcon =
-      accuracy >= 80 ? 'trophy' : accuracy >= 50 ? 'trending-up' : 'book';
-    const resultTint =
-      accuracy >= 80
-        ? colors.tertiary
-        : accuracy >= 50
-          ? colors.primary
-          : colors.info;
-
-    const message =
-      accuracy >= 100
-        ? 'Perfeito! Você dominou esta revisão. 🌟'
-        : accuracy >= 80
-          ? 'Excelente trabalho — retenção alta!'
-          : accuracy >= 50
-            ? 'Bom progresso. Continue praticando!'
-            : 'Todo começo é assim: repetir fixa o conteúdo.';
-
     return (
-      <SafeAreaView className="flex-1 bg-background px-8">
-        <View className="flex-1 items-center justify-center">
-          <View
-            className="w-20 h-20 rounded-card items-center justify-center mb-5"
-            style={{ backgroundColor: resultTint + '22' }}
-          >
-            <Ionicons name={resultIcon} size={38} color={resultTint} />
-          </View>
-          <Text className="text-on-surface font-jakarta-extrabold text-3xl text-center">
-            Sessão concluída!
-          </Text>
-          <Text className="text-outline font-inter-regular text-base text-center mt-2">
-            {deck.title}
-          </Text>
-
-          {/* Tempo total (só com o app aberto). Aparece mesmo com o relógio
-              OCULTO — o que ele esconde é o durante, não o resultado. */}
-          {timed.config.enabled && (
-            <View className="flex-row items-center gap-1.5 mt-3">
-              <Ionicons name="time-outline" size={15} color={colors.outline} />
-              <Text
-                className="text-outline font-inter-medium text-sm"
-                style={{ fontVariant: ['tabular-nums'] }}
-              >
-                {formatClock(session.elapsedSeconds)}
-              </Text>
-            </View>
-          )}
-
-          <Text className="text-on-surface-variant font-inter-medium text-sm text-center mt-3">
-            {message}
-          </Text>
-
-          <View className="w-full mt-8 flex-row gap-3">
-            <View className="flex-1 bg-surface-container rounded-card p-4 items-center" style={cardShadow}>
-              <Text className="text-on-surface font-jakarta-extrabold text-3xl">
-                {session.correctCount}
-              </Text>
-              <Text className="text-primary font-inter-medium text-xs mt-1">
-                Acertos
-              </Text>
-            </View>
-            <View className="flex-1 bg-surface-container rounded-card p-4 items-center" style={cardShadow}>
-              <Text className="text-on-surface font-jakarta-extrabold text-3xl">
-                {session.hardCount}
-              </Text>
-              <Text className="text-tertiary font-inter-medium text-xs mt-1">
-                Difícil
-              </Text>
-            </View>
-            <View className="flex-1 bg-surface-container rounded-card p-4 items-center" style={cardShadow}>
-              <Text className="text-on-surface font-jakarta-extrabold text-3xl">
-                {session.againCount}
-              </Text>
-              <Text className="text-error font-inter-medium text-xs mt-1">
-                De novo
-              </Text>
-            </View>
-          </View>
-
-          <View className="w-full mt-6 gap-3">
-            <Button variant="primary" size="lg" onPress={restart}>
-              Estudar novamente
-            </Button>
-            <Button variant="outline" size="lg" onPress={() => router.back()}>
-              Voltar
-            </Button>
-          </View>
-
-          <TouchableOpacity
-            className="mt-5 flex-row items-center gap-1.5"
-            activeOpacity={0.7}
-            onPress={() => router.replace('/achievements')}
-          >
-            <Ionicons name="trophy-outline" size={16} color={colors.tertiary} />
-            <Text className="text-outline font-inter-medium text-sm">
-              Ver conquistas
-            </Text>
-          </TouchableOpacity>
-        </View>
+      <SafeAreaView className="flex-1 bg-background">
+        <SessionResult
+          deckTitle={deck.title}
+          correct={session.correctCount}
+          wrong={session.againCount}
+          skipped={session.skippedCount}
+          seconds={session.elapsedSeconds}
+          showTime={timed.config.enabled}
+          redoCount={session.wrongIds.size}
+          onRedo={restart}
+          onExit={() => router.back()}
+          onAchievements={() => router.replace('/achievements')}
+        />
       </SafeAreaView>
     );
   }
@@ -276,7 +187,7 @@ export default function StudySessionScreen() {
   const DOT_COUNT = Math.min(session.total, 12);
   const position = Math.min(session.done + 1, session.total);
 
-  // Identidade única da pergunta atual (o mesmo card pode voltar após erro).
+  // Identidade única da pergunta atual.
   const questionKey = session.currentCard
     ? `${session.currentCard.id}:${session.done}:${session.againCount}`
     : '';
@@ -296,17 +207,9 @@ export default function StudySessionScreen() {
       ? presentationIndexRef.current % 2 === 1
       : hashStr(questionKey) % 2 === 1);
 
-  // Quiz do misto: acertou de primeira = Bom; após errar = Difícil; errou =
-  // De novo (volta ao fim da fila) — mesmo mapeamento da tela de quiz.
+  // Acertou ou errou (uma passada — o card sai da fila).
   const handleQuizAnswer = (correct: boolean) => {
-    const card = session.currentCard;
-    if (!card) return;
-    if (correct) {
-      session.grade(missedIdsRef.current.has(card.id) ? 'hard' : 'good');
-    } else {
-      missedIdsRef.current.add(card.id);
-      session.grade('again');
-    }
+    session.answer(correct);
   };
 
   return (
@@ -383,7 +286,7 @@ export default function StudySessionScreen() {
         <QuizQuestion
           card={session.currentCard}
           questionKey={questionKey}
-          isLastIfCorrect={session.total - session.done === 1 || timed.expired}
+          isLast={session.total - session.done === 1 || timed.expired}
           notice={timed.expired ? TIME_UP_MESSAGE : undefined}
           onAnswer={handleQuizAnswer}
           onSkip={() => session.skip()}
@@ -401,9 +304,11 @@ export default function StudySessionScreen() {
                 (session.done + session.againCount)
               }
               card={session.currentCard}
-              index={session.done}
-              total={session.total}
-              onGrade={g => session.grade(g)}
+              onAnswer={correct => session.answer(correct)}
+              onBack={() => session.back()}
+              canGoBack={session.canGoBack}
+              wrongCount={session.againCount}
+              rightCount={session.correctCount}
               onSkip={() => session.skip()}
             />
           )}

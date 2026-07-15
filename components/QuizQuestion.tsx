@@ -30,8 +30,8 @@ interface QuizQuestionProps {
    * comunicada por esta prop, e os guards anti-toque-duplo sobrevivem.
    */
   questionKey: string;
-  /** true quando acertar esta pergunta encerra a sessão ("Ver resultado"). */
-  isLastIfCorrect: boolean;
+  /** true quando esta é a última pergunta da sessão ("Ver resultado"). */
+  isLast: boolean;
   /** Aviso destacado acima da pergunta (ex.: "Tempo esgotado"). */
   notice?: string;
   /** Disparado ao confirmar em "Próxima" — o pai converte em grade SM-2. */
@@ -47,7 +47,7 @@ interface QuizQuestionProps {
 export function QuizQuestion({
   card,
   questionKey,
-  isLastIfCorrect,
+  isLast,
   notice,
   onAnswer,
   onSkip,
@@ -271,7 +271,7 @@ export function QuizQuestion({
               : '✗ Incorreto — a resposta certa está destacada. Ela voltará no fim da sessão.'}
           </Text>
           <Button variant="primary" size="lg" onPress={handleNext}>
-            {answeredCorrectly && isLastIfCorrect ? 'Ver resultado' : 'Próxima'}
+            {isLast ? 'Ver resultado' : 'Próxima'}
           </Button>
         </View>
       ) : (

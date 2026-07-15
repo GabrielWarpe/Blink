@@ -16,7 +16,11 @@ import {
   Inter_500Medium,
   Inter_600SemiBold,
 } from '@expo-google-fonts/inter';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import {
+  AuthProvider,
+  useAuth,
+  RESET_PASSWORD_PATH,
+} from '@/contexts/AuthContext';
 import { SettingsProvider, useSettings } from '@/contexts/SettingsContext';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
 import { ACCENT, hexToTriplet } from '@/constants/accents';
@@ -129,7 +133,7 @@ function ThemeVarsView({ children }: { children: ReactNode }) {
 }
 
 function RootNavigator() {
-  const { session, loading, freshLogin } = useAuth();
+  const { session, loading, freshLogin, recovering } = useAuth();
   const { done: onboardingDone } = useOnboarding();
   const segments = useSegments();
   const router = useRouter();
@@ -138,6 +142,15 @@ function RootNavigator() {
     if (loading || onboardingDone === null) return;
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboarding = segments[0] === 'onboarding';
+    const inReset = segments[0] === 'reset-password';
+
+    // Recuperação de senha vem PRIMEIRO: o link cria uma sessão de verdade, e
+    // sem esta guarda o usuário seria jogado direto nas abas (ou no onboarding,
+    // já que `setSession` dispara SIGNED_IN) sem nunca trocar a senha.
+    if (recovering) {
+      if (!inReset) router.replace(RESET_PASSWORD_PATH);
+      return;
+    }
 
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/login');
@@ -148,11 +161,19 @@ function RootNavigator() {
     } else if (
       session &&
       (onboardingDone || !freshLogin) &&
-      (inAuthGroup || inOnboarding)
+      (inAuthGroup || inOnboarding || inReset)
     ) {
       router.replace('/(tabs)');
     }
-  }, [session, loading, onboardingDone, freshLogin, segments, router]);
+  }, [
+    session,
+    loading,
+    onboardingDone,
+    freshLogin,
+    recovering,
+    segments,
+    router,
+  ]);
 
   if (loading || onboardingDone === null) {
     return (
@@ -172,6 +193,8 @@ function RootNavigator() {
     >
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
+      {/* Aberta pelo link do e-mail de recuperação (deep link). */}
+      <Stack.Screen name="reset-password" options={{ animation: 'fade' }} />
       <Stack.Screen
         name="deck/[id]"
         options={{ animation: 'slide_from_right' }}

@@ -23,9 +23,9 @@ import { Button } from '@/components/ui/Button';
 import { CardImages } from '@/components/CardImages';
 import { SessionTimer } from '@/components/SessionTimer';
 import { StudySetup } from '@/components/StudySetup';
+import { SessionResult } from '@/components/SessionResult';
 import { TimeUpNotice } from '@/components/TimeUpNotice';
 import { cardShadow } from '@/components/ui/Card';
-import { formatClock } from '@/utils/stats';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 function shuffle<T>(arr: T[]): T[] {
@@ -53,7 +53,6 @@ export default function WriteScreen() {
 
   const [draft, setDraft] = useState('');
   const [result, setResult] = useState<WriteResult | null>(null);
-  const missedIdsRef = useRef<Set<string>>(new Set());
   const advancedAtRef = useRef(0);
   const gradedKeyRef = useRef('');
 
@@ -153,24 +152,23 @@ export default function WriteScreen() {
     advancedAtRef.current = Date.now();
     setResult(null);
     setDraft('');
-    if (isCorrect) {
-      session.grade(missedIdsRef.current.has(currentCard.id) ? 'hard' : 'good');
-    } else {
-      missedIdsRef.current.add(currentCard.id);
-      session.grade('again'); // volta ao fim da fila
-    }
+    // Acertou ou errou (uma passada).
+    session.answer(isCorrect);
   };
 
-  const restart = () => {
+  // 'all' = praticar o deck inteiro de novo; 'wrong' = só as que errei nesta
+  // sessão. Os ids errados são lidos ANTES do reset (que os limpa) e a
+  // preparação síncrona evita a corrida com o auto-prepare.
+  const restart = (scope: 'all' | 'wrong') => {
+    const wrong = session.wrongIds;
+    const cards =
+      scope === 'wrong' ? deck.cards.filter(c => wrong.has(c.id)) : deck.cards;
     setResult(null);
     setDraft('');
-    missedIdsRef.current = new Set();
     advancedAtRef.current = 0;
     gradedKeyRef.current = '';
     timed.resetTimed();
-    void db.decks.getOne(deck.id).then(d => {
-      if (d) setDeck(d);
-    });
+    timed.prepare(shuffle(cards));
   };
 
   // ── Tela de início (config do cronômetro desta sessão) ────────────────────
@@ -193,107 +191,20 @@ export default function WriteScreen() {
 
   // ── Resultado final ──────────────────────────────────────────────────────
   if (session.phase === 'finished') {
-    const reviewed = session.correctCount + session.hardCount;
-    const accuracy =
-      reviewed > 0 ? Math.round((session.correctCount / reviewed) * 100) : 0;
-    const resultIcon =
-      accuracy >= 80 ? 'trophy' : accuracy >= 50 ? 'trending-up' : 'book';
-    const resultTint =
-      accuracy >= 80
-        ? colors.tertiary
-        : accuracy >= 50
-          ? colors.primary
-          : colors.info;
-    const message =
-      accuracy >= 100
-        ? 'Perfeito! Você escreveu tudo certo. 🌟'
-        : accuracy >= 80
-          ? 'Excelente! Escrever é o jeito mais forte de fixar.'
-          : accuracy >= 50
-            ? 'Bom treino. Os erros voltaram até você acertar!'
-            : 'Escrever é difícil mesmo — e é por isso que funciona.';
-
     return (
-      <SafeAreaView className="flex-1 bg-background px-8">
-        <View className="flex-1 items-center justify-center">
-          <View
-            className="w-20 h-20 rounded-card items-center justify-center mb-5"
-            style={{ backgroundColor: resultTint + '22' }}
-          >
-            <Ionicons name={resultIcon} size={38} color={resultTint} />
-          </View>
-          <Text className="text-on-surface font-jakarta-extrabold text-3xl text-center">
-            Prática concluída!
-          </Text>
-          <Text className="text-outline font-inter-regular text-base text-center mt-2">
-            {deck.title}
-          </Text>
-
-          {/* Tempo total (só com o app aberto). Aparece mesmo com o relógio
-              OCULTO — o que ele esconde é o durante, não o resultado. */}
-          {timed.config.enabled && (
-            <View className="flex-row items-center gap-1.5 mt-3">
-              <Ionicons name="time-outline" size={15} color={colors.outline} />
-              <Text
-                className="text-outline font-inter-medium text-sm"
-                style={{ fontVariant: ['tabular-nums'] }}
-              >
-                {formatClock(session.elapsedSeconds)}
-              </Text>
-            </View>
-          )}
-
-          <Text className="text-on-surface-variant font-inter-medium text-sm text-center mt-3">
-            {message}
-          </Text>
-
-          <View className="w-full mt-8 flex-row gap-3">
-            <View className="flex-1 bg-surface-container rounded-card p-4 items-center" style={cardShadow}>
-              <Text className="text-on-surface font-jakarta-extrabold text-3xl">
-                {session.correctCount}
-              </Text>
-              <Text className="text-primary font-inter-medium text-xs mt-1">
-                De primeira
-              </Text>
-            </View>
-            <View className="flex-1 bg-surface-container rounded-card p-4 items-center" style={cardShadow}>
-              <Text className="text-on-surface font-jakarta-extrabold text-3xl">
-                {session.hardCount}
-              </Text>
-              <Text className="text-tertiary font-inter-medium text-xs mt-1">
-                Recuperados
-              </Text>
-            </View>
-            <View className="flex-1 bg-surface-container rounded-card p-4 items-center" style={cardShadow}>
-              <Text className="text-on-surface font-jakarta-extrabold text-3xl">
-                {accuracy}%
-              </Text>
-              <Text className="text-error font-inter-medium text-xs mt-1">
-                Precisão
-              </Text>
-            </View>
-          </View>
-
-          <View className="w-full mt-6 gap-3">
-            <Button variant="primary" size="lg" onPress={restart}>
-              Praticar de novo
-            </Button>
-            <Button variant="outline" size="lg" onPress={() => router.back()}>
-              Voltar
-            </Button>
-          </View>
-
-          <TouchableOpacity
-            className="mt-5 flex-row items-center gap-1.5"
-            activeOpacity={0.7}
-            onPress={() => router.replace('/achievements')}
-          >
-            <Ionicons name="trophy-outline" size={16} color={colors.tertiary} />
-            <Text className="text-outline font-inter-medium text-sm">
-              Ver conquistas
-            </Text>
-          </TouchableOpacity>
-        </View>
+      <SafeAreaView className="flex-1 bg-background">
+        <SessionResult
+          deckTitle={deck.title}
+          correct={session.correctCount}
+          wrong={session.againCount}
+          skipped={session.skippedCount}
+          seconds={session.elapsedSeconds}
+          showTime={timed.config.enabled}
+          redoCount={session.wrongIds.size}
+          onRedo={restart}
+          onExit={() => router.back()}
+          onAchievements={() => router.replace('/achievements')}
+        />
       </SafeAreaView>
     );
   }

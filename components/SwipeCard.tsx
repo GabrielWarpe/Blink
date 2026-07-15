@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { FlashCard } from './FlashCard';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import type { Flashcard, Grade } from '@/types';
+import type { Flashcard } from '@/types';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width - 48;
@@ -23,50 +23,27 @@ const SWIPE_THRESHOLD = width * 0.3;
 
 interface SwipeCardProps {
   card: Flashcard;
-  index: number;
-  total: number;
-  onGrade: (grade: Grade) => void;
+  /** Resposta binária: true = acertei, false = errei. */
+  onAnswer: (correct: boolean) => void;
+  /** Desfaz a resposta anterior e volta ao card anterior. */
+  onBack: () => void;
+  /** Há resposta anterior para desfazer? */
+  canGoBack: boolean;
+  /** Contadores da sessão, exibidos dentro dos próprios botões. */
+  wrongCount: number;
+  rightCount: number;
   onSkip: () => void;
 }
 
-const GRADE_BUTTONS: {
-  grade: Grade;
-  label: string;
-  bg: string;
-  border: string;
-  text: string;
-}[] = [
-  {
-    grade: 'again',
-    label: 'De novo',
-    bg: 'bg-error/20',
-    border: 'border-error/40',
-    text: 'text-error',
-  },
-  {
-    grade: 'hard',
-    label: 'Difícil',
-    bg: 'bg-tertiary/20',
-    border: 'border-tertiary/40',
-    text: 'text-tertiary',
-  },
-  {
-    grade: 'good',
-    label: 'Bom',
-    bg: 'bg-primary-container/25',
-    border: 'border-primary/40',
-    text: 'text-primary',
-  },
-  {
-    grade: 'easy',
-    label: 'Fácil',
-    bg: 'bg-success/20',
-    border: 'border-success/40',
-    text: 'text-success',
-  },
-];
-
-export function SwipeCard({ card, onGrade, onSkip }: SwipeCardProps) {
+export function SwipeCard({
+  card,
+  onAnswer,
+  onBack,
+  canGoBack,
+  wrongCount,
+  rightCount,
+  onSkip,
+}: SwipeCardProps) {
   const { settings } = useSettings();
   const colors = useThemeColors();
   const [isFlipped, setIsFlipped] = useState(false);
@@ -82,14 +59,14 @@ export function SwipeCard({ card, onGrade, onSkip }: SwipeCardProps) {
     return () => clearTimeout(t);
   }, [settings.autoReveal, isFlipped]);
 
-  // Vibração de resultado (verde = sucesso, vermelho/amarelo = aviso).
-  const fireGradeHaptic = (g: Grade) => {
+  // Vibração de resultado (acertou = sucesso, errou = aviso).
+  const fireAnswerHaptic = (correct: boolean) => {
     if (!settings.feedbackSounds) return;
-    const type =
-      g === 'again' || g === 'hard'
-        ? Haptics.NotificationFeedbackType.Warning
-        : Haptics.NotificationFeedbackType.Success;
-    void Haptics.notificationAsync(type);
+    void Haptics.notificationAsync(
+      correct
+        ? Haptics.NotificationFeedbackType.Success
+        : Haptics.NotificationFeedbackType.Warning,
+    );
   };
 
   // Vibração leve ao revelar a resposta.
@@ -102,24 +79,23 @@ export function SwipeCard({ card, onGrade, onSkip }: SwipeCardProps) {
     setIsFlipped(v => !v);
   };
 
-  // Anima o card para fora e dispara a avaliação: "De novo" sai à esquerda,
-  // os demais à direita. A vibração dispara já no toque (não no fim da
-  // animação), então o feedback é imediato.
-  const flyOut = (g: Grade) => {
-    fireGradeHaptic(g);
-    const toRight = g !== 'again';
+  // Anima o card para fora e dispara a resposta: errei sai à esquerda, acertei
+  // à direita. A vibração dispara já no toque (não no fim da animação), então o
+  // feedback é imediato.
+  const flyOut = (correct: boolean) => {
+    fireAnswerHaptic(correct);
     translateX.value = withTiming(
-      (toRight ? 1 : -1) * width * 1.6,
+      (correct ? 1 : -1) * width * 1.6,
       { duration: exitDuration },
       finished => {
         'worklet';
-        if (finished) runOnJS(onGrade)(g);
+        if (finished) runOnJS(onAnswer)(correct);
       },
     );
   };
 
-  // O arraste só é habilitado após virar o card — e se os gestos estiverem ativos.
-  // Esquerda = "De novo", direita = "Bom" (atalhos; os 4 níveis ficam nos botões).
+  // O arraste só é habilitado após virar o card — e se os gestos estiverem
+  // ativos. Esquerda = errei, direita = acertei (os mesmos dois da barra).
   const pan = Gesture.Pan()
     .enabled(isFlipped && settings.swipeGestures)
     .onUpdate(e => {
@@ -128,21 +104,21 @@ export function SwipeCard({ card, onGrade, onSkip }: SwipeCardProps) {
     })
     .onEnd(e => {
       if (e.translationX > SWIPE_THRESHOLD) {
-        runOnJS(fireGradeHaptic)('good');
+        runOnJS(fireAnswerHaptic)(true);
         translateX.value = withTiming(
           width * 1.6,
           { duration: exitDuration },
           () => {
-            runOnJS(onGrade)('good');
+            runOnJS(onAnswer)(true);
           },
         );
       } else if (e.translationX < -SWIPE_THRESHOLD) {
-        runOnJS(fireGradeHaptic)('again');
+        runOnJS(fireAnswerHaptic)(false);
         translateX.value = withTiming(
           -width * 1.6,
           { duration: exitDuration },
           () => {
-            runOnJS(onGrade)('again');
+            runOnJS(onAnswer)(false);
           },
         );
       } else {
@@ -189,24 +165,24 @@ export function SwipeCard({ card, onGrade, onSkip }: SwipeCardProps) {
     <View className="items-center w-full">
       <GestureDetector gesture={pan}>
         <Animated.View style={cardStyle}>
-          {/* Overlay "Bom" (direita) */}
+          {/* Overlay "acertei" (arrastando para a direita) */}
           <Animated.View
             style={[
               goodOverlayStyle,
               { position: 'absolute', top: 24, left: 20, zIndex: 10 },
             ]}
-            className="bg-primary/25 border-2 border-primary rounded-button px-4 py-2"
+            className="bg-success/25 border-2 border-success rounded-button px-4 py-2"
             pointerEvents="none"
           >
             <Text
-              className="text-primary font-jakarta-bold text-lg"
+              className="text-success font-jakarta-bold text-lg"
               style={{ transform: [{ rotate: '-12deg' }] }}
             >
-              BOM ✓
+              ENTENDI ✓
             </Text>
           </Animated.View>
 
-          {/* Overlay "De novo" (esquerda) */}
+          {/* Overlay "errei" (arrastando para a esquerda) */}
           <Animated.View
             style={[
               againOverlayStyle,
@@ -219,7 +195,7 @@ export function SwipeCard({ card, onGrade, onSkip }: SwipeCardProps) {
               className="text-error font-jakarta-bold text-lg"
               style={{ transform: [{ rotate: '12deg' }] }}
             >
-              DE NOVO ↺
+              ERREI ✗
             </Text>
           </Animated.View>
 
@@ -258,43 +234,87 @@ export function SwipeCard({ card, onGrade, onSkip }: SwipeCardProps) {
             </TouchableOpacity>
           </View>
         ) : (
-          <View className="gap-4">
-            {/* 4 níveis de avaliação */}
-            <View className="flex-row gap-2">
-              {GRADE_BUTTONS.map(b => (
-                <TouchableOpacity
-                  key={b.grade}
-                  onPress={() => flyOut(b.grade)}
-                  activeOpacity={0.75}
-                  className={`flex-1 rounded-button py-3 items-center border ${b.bg} ${b.border}`}
+          <View className="gap-3">
+            {/* Estilo NotebookLM: revelou a resposta, responde com dois botões
+                claros — "Não sei" e "Sei". O contador de cada um vem discreto ao
+                lado, sem virar o protagonista. */}
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={() => flyOut(false)}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={`Errei. ${wrongCount} até agora`}
+                className="flex-1 h-14 rounded-3xl flex-row items-center justify-center gap-2 border"
+                style={{
+                  borderColor: colors.error + '4D',
+                  backgroundColor: colors.error + '14',
+                }}
+              >
+                <Ionicons name="close" size={22} color={colors.error} />
+                <Text
+                  className="font-jakarta-bold text-base"
+                  style={{ color: colors.error }}
                 >
-                  <Text className={`font-inter-semibold text-sm ${b.text}`}>
-                    {b.label}
+                  Errei
+                </Text>
+                {wrongCount > 0 && (
+                  <Text
+                    className="font-inter-semibold text-sm"
+                    style={{ color: colors.error, opacity: 0.7, fontVariant: ['tabular-nums'] }}
+                  >
+                    {wrongCount}
                   </Text>
-                </TouchableOpacity>
-              ))}
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => flyOut(true)}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={`Entendi. ${rightCount} até agora`}
+                className="flex-1 h-14 rounded-3xl flex-row items-center justify-center gap-2 border"
+                style={{
+                  borderColor: colors.success + '4D',
+                  backgroundColor: colors.success + '14',
+                }}
+              >
+                <Ionicons name="checkmark" size={22} color={colors.success} />
+                <Text
+                  className="font-jakarta-bold text-base"
+                  style={{ color: colors.success }}
+                >
+                  Entendi
+                </Text>
+                {rightCount > 0 && (
+                  <Text
+                    className="font-inter-semibold text-sm"
+                    style={{ color: colors.success, opacity: 0.7, fontVariant: ['tabular-nums'] }}
+                  >
+                    {rightCount}
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
+
+            {/* Desfazer: discreto, só quando há o que voltar. */}
+            {canGoBack && (
+              <TouchableOpacity
+                onPress={onBack}
+                activeOpacity={0.7}
+                className="py-1 flex-row items-center justify-center gap-1.5"
+              >
+                <Ionicons name="arrow-undo-outline" size={15} color={colors.outline} />
+                <Text className="text-outline font-inter-medium text-sm">
+                  Desfazer
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {settings.swipeGestures && (
               <Text className="text-outline font-inter-regular text-xs text-center">
-                Arraste ← para "De novo" ou → para "Bom"
+                Arraste ← para "errei" ou → para "entendi"
               </Text>
             )}
-
-            <TouchableOpacity
-              onPress={onSkip}
-              activeOpacity={0.7}
-              className="py-1 flex-row items-center justify-center gap-1.5"
-            >
-              <Ionicons
-                name="play-skip-forward-outline"
-                size={16}
-                color={colors.outline}
-              />
-              <Text className="text-outline font-inter-medium text-sm">
-                Pular
-              </Text>
-            </TouchableOpacity>
           </View>
         )}
       </View>
