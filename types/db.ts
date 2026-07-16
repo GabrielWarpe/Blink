@@ -87,3 +87,45 @@ export interface CardReviewRow {
   interval_after: number;
   reviewed_at: string;
 }
+
+// ── Comunidade (snapshot de decks públicos) ─────────────────────────────────
+
+export interface CommunityDeckRow {
+  id: string;
+  author_id: string;
+  source_playlist_id: string | null;
+  title: string;
+  description: string | null;
+  cover_url: string | null;
+  tags: string[];
+  card_count: number;
+  downloads_count: number;
+  rating_avg: number;
+  rating_count: number;
+  author_name: string | null;
+  author_avatar_url: string | null;
+  published_at: string;
+  updated_at: string;
+}
+
+export interface CommunityCardRow {
+  id: string;
+  community_deck_id: string;
+  front: string;
+  back: string;
+  images: string[];
+  quiz_options: string[];
+  position: number;
+}
+
+export interface DeckRatingRow {
+  id: string;
+  community_deck_id: string;
+  user_id: string;
+  stars: number;
+  comment: string | null;
+  reviewer_name: string | null;
+  reviewer_avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}

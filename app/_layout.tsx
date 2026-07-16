@@ -248,6 +248,10 @@ function RootNavigator() {
         name="levels"
         options={{ animation: 'slide_from_right' }}
       />
+      <Stack.Screen
+        name="community/[id]"
+        options={{ animation: 'slide_from_right' }}
+      />
       <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
     </Stack>
   );

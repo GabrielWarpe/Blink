@@ -160,6 +160,184 @@ alter table user_achievements enable row level security;
 drop policy if exists "Users can manage own achievements" on user_achievements;
 create policy "Users can manage own achievements" on user_achievements for all using (auth.uid() = user_id);
 
+-- ── Comunidade: decks públicos, avaliações e downloads ──────────────────────
+-- Modelo SNAPSHOT: publicar um deck cria uma CÓPIA congelada aqui, separada do
+-- deck de trabalho privado. Assim as tabelas privadas (playlists/flashcards)
+-- continuam 100% trancadas — nada de abrir leitura nelas. As avaliações grudam
+-- no id estável do deck publicado; republicar atualiza o snapshot sem perder
+-- notas/downloads. Autor e avaliador têm nome/avatar DENORMALIZADOS (snapshot),
+-- então nem a tabela `profiles` precisa ser exposta.
+
+create table if not exists community_decks (
+  id uuid default gen_random_uuid() primary key,
+  author_id uuid references profiles(id) on delete cascade not null,
+  -- Deck de trabalho que originou o snapshot (para o autor republicar/despublicar).
+  source_playlist_id uuid references playlists(id) on delete set null,
+  title text not null,
+  description text,
+  cover_url text,
+  tags text[] not null default '{}',
+  card_count integer not null default 0,
+  downloads_count integer not null default 0,
+  rating_avg real not null default 0,
+  rating_count integer not null default 0,
+  -- Identidade do autor no momento da publicação (snapshot).
+  author_name text,
+  author_avatar_url text,
+  published_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+-- Cards do snapshot: SEM estado SM-2 (são um molde; o download nasce zerado).
+create table if not exists community_cards (
+  id uuid default gen_random_uuid() primary key,
+  community_deck_id uuid references community_decks(id) on delete cascade not null,
+  front text not null,
+  back text not null,
+  images text[] not null default '{}',
+  quiz_options text[] not null default '{}',
+  position integer not null default 0
+);
+
+-- Uma avaliação por usuário por deck (editável). Nome/avatar denormalizados
+-- para a lista de avaliações não precisar tocar em `profiles`.
+create table if not exists deck_ratings (
+  id uuid default gen_random_uuid() primary key,
+  community_deck_id uuid references community_decks(id) on delete cascade not null,
+  user_id uuid references profiles(id) on delete cascade not null,
+  stars integer not null check (stars between 1 and 5),
+  comment text,
+  reviewer_name text,
+  reviewer_avatar_url text,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now(),
+  unique (community_deck_id, user_id)
+);
+
+-- Quem baixou o quê: conta downloads e libera quem pode avaliar.
+create table if not exists deck_downloads (
+  community_deck_id uuid references community_decks(id) on delete cascade not null,
+  user_id uuid references profiles(id) on delete cascade not null,
+  created_at timestamp with time zone default now(),
+  primary key (community_deck_id, user_id)
+);
+
+create index if not exists idx_community_decks_author on community_decks(author_id);
+create index if not exists idx_community_decks_source on community_decks(source_playlist_id);
+create index if not exists idx_community_decks_rank on community_decks(rating_avg desc, downloads_count desc);
+create index if not exists idx_community_cards_deck on community_cards(community_deck_id, position);
+create index if not exists idx_deck_ratings_deck on deck_ratings(community_deck_id, created_at desc);
+
+alter table community_decks enable row level security;
+alter table community_cards enable row level security;
+alter table deck_ratings enable row level security;
+alter table deck_downloads enable row level security;
+
+-- Catálogo é público para QUALQUER logado ler; só o autor escreve.
+drop policy if exists "Community decks are readable" on community_decks;
+create policy "Community decks are readable" on community_decks
+  for select to authenticated using (true);
+
+drop policy if exists "Authors manage own community decks" on community_decks;
+create policy "Authors manage own community decks" on community_decks
+  for all to authenticated
+  using (author_id = auth.uid())
+  with check (author_id = auth.uid());
+
+drop policy if exists "Community cards are readable" on community_cards;
+create policy "Community cards are readable" on community_cards
+  for select to authenticated using (true);
+
+drop policy if exists "Authors manage own community cards" on community_cards;
+create policy "Authors manage own community cards" on community_cards
+  for all to authenticated
+  using (
+    exists (
+      select 1 from community_decks cd
+      where cd.id = community_deck_id and cd.author_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from community_decks cd
+      where cd.id = community_deck_id and cd.author_id = auth.uid()
+    )
+  );
+
+-- Avaliações: qualquer logado lê; o usuário só escreve a SUA, e apenas se já
+-- baixou o deck (avaliar exige ter baixado).
+drop policy if exists "Ratings are readable" on deck_ratings;
+create policy "Ratings are readable" on deck_ratings
+  for select to authenticated using (true);
+
+drop policy if exists "Users insert own rating after download" on deck_ratings;
+create policy "Users insert own rating after download" on deck_ratings
+  for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and exists (
+      select 1 from deck_downloads dl
+      where dl.community_deck_id = deck_ratings.community_deck_id
+        and dl.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Users update own rating" on deck_ratings;
+create policy "Users update own rating" on deck_ratings
+  for update to authenticated using (user_id = auth.uid());
+
+drop policy if exists "Users delete own rating" on deck_ratings;
+create policy "Users delete own rating" on deck_ratings
+  for delete to authenticated using (user_id = auth.uid());
+
+-- Downloads: cada um vê/insere os próprios (a contagem pública vive no counter).
+drop policy if exists "Users read own downloads" on deck_downloads;
+create policy "Users read own downloads" on deck_downloads
+  for select to authenticated using (user_id = auth.uid());
+
+drop policy if exists "Users insert own downloads" on deck_downloads;
+create policy "Users insert own downloads" on deck_downloads
+  for insert to authenticated with check (user_id = auth.uid());
+
+-- Mantém rating_avg/rating_count no deck publicado a cada mudança de nota.
+create or replace function public.refresh_deck_rating()
+returns trigger as $$
+declare
+  target uuid := coalesce(new.community_deck_id, old.community_deck_id);
+begin
+  update community_decks cd set
+    rating_count = (select count(*) from deck_ratings r where r.community_deck_id = target),
+    rating_avg = coalesce(
+      (select avg(r.stars)::real from deck_ratings r where r.community_deck_id = target),
+      0
+    )
+  where cd.id = target;
+  return null;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists trg_refresh_deck_rating on deck_ratings;
+create trigger trg_refresh_deck_rating
+  after insert or update or delete on deck_ratings
+  for each row execute procedure public.refresh_deck_rating();
+
+-- Registrar download: insere o vínculo (idempotente) e incrementa o counter.
+-- SECURITY DEFINER porque o counter vive em community_decks, que o usuário
+-- comum não pode dar UPDATE (só o autor) — a função faz isso com segurança.
+create or replace function public.register_download(p_deck uuid)
+returns void as $$
+begin
+  insert into deck_downloads (community_deck_id, user_id)
+  values (p_deck, auth.uid())
+  on conflict do nothing;
+
+  if found then
+    update community_decks set downloads_count = downloads_count + 1
+    where id = p_deck;
+  end if;
+end;
+$$ language plpgsql security definer;
+
 -- ── Storage: imagens dos flashcards ──
 -- Bucket público para leitura (URLs permanentes nos cards, inclusive em decks
 -- compartilhados); escrita/atualização apenas na pasta do próprio usuário.

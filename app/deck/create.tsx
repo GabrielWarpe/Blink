@@ -22,7 +22,9 @@ import {
 import { errorMessage } from '@/utils/errors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDecks } from '@/hooks/useDecks';
+import { publishDeck } from '@/services/community';
 import { DeckCoverPicker } from '@/components/DeckCoverPicker';
+import { PublishToggle } from '@/components/PublishToggle';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { cardShadow } from '@/components/ui/Card';
@@ -39,7 +41,7 @@ type Mode = 'ai' | 'manual';
 
 export default function CreateDeckScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { createDeck, decks } = useDecks();
   const colors = useThemeColors();
   const [mode, setMode] = useState<Mode>('ai');
@@ -50,6 +52,7 @@ export default function CreateDeckScreen() {
   const [description, setDescription] = useState('');
   const [cover, setCover] = useState<CardImage | null>(null);
   const [tags, setTags] = useState<string[]>([]);
+  const [isPublic, setIsPublic] = useState(false);
 
   // Tags já usadas nos outros decks, como sugestão de 1 toque.
   const allTags = [...new Set(decks.flatMap(d => d.tags))].sort((a, b) =>
@@ -145,7 +148,7 @@ export default function CreateDeckScreen() {
       // Capa (se houver) vira data URI base64 salvo direto no deck — sem Storage.
       const coverUrl = cover ? imageToDataUri(cover) : null;
 
-      await createDeck({
+      const created = await createDeck({
         title: title.trim(),
         description: description.trim() || undefined,
         emoji: '',
@@ -155,6 +158,22 @@ export default function CreateDeckScreen() {
         tags,
         cards: payload,
       });
+
+      // Publica na comunidade se pedido (o deck já existe com seus cards).
+      if (isPublic && created) {
+        try {
+          await publishDeck(user.id, created, {
+            name: profile?.name ?? null,
+            avatarUrl: profile?.avatar_url ?? null,
+          });
+        } catch (e) {
+          Alert.alert(
+            'Comunidade',
+            'O deck foi criado, mas não consegui publicá-lo agora. Você pode publicar depois na edição do deck.\n\n' +
+              errorMessage(e, ''),
+          );
+        }
+      }
       router.back();
     } catch (e: unknown) {
       Alert.alert('Erro', errorMessage(e, 'Erro ao salvar o deck.'));
@@ -223,6 +242,9 @@ export default function CreateDeckScreen() {
             onChange={setTags}
             suggestions={allTags}
           />
+
+          {/* Comunidade */}
+          <PublishToggle value={isPublic} onValueChange={setIsPublic} />
 
           {/* Mode tabs */}
           <View className="bg-surface-container-high rounded-card p-1 flex-row">

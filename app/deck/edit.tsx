@@ -16,7 +16,13 @@ import { errorMessage } from '@/utils/errors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDecks } from '@/hooks/useDecks';
 import { imageToDataUri, type CardImage } from '@/services/images';
+import {
+  getPublishedFor,
+  publishDeck,
+  unpublishDeck,
+} from '@/services/community';
 import { DeckCoverPicker } from '@/components/DeckCoverPicker';
+import { PublishToggle } from '@/components/PublishToggle';
 import { Input } from '@/components/ui/Input';
 import { TagInput } from '@/components/TagInput';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -25,13 +31,15 @@ export default function EditDeckScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useThemeColors();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { decks } = useDecks();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [cover, setCover] = useState<CardImage | null>(null);
   const [tags, setTags] = useState<string[]>([]);
+  const [isPublic, setIsPublic] = useState(false);
+  const [wasPublic, setWasPublic] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -50,6 +58,11 @@ export default function EditDeckScreen() {
         setTags(d.tags);
       }
       setLoading(false);
+    });
+    // Estado de publicação atual (para o toggle refletir o que já está público).
+    void getPublishedFor(id).then(pub => {
+      setIsPublic(pub != null);
+      setWasPublic(pub != null);
     });
   }, [id]);
 
@@ -84,6 +97,29 @@ export default function EditDeckScreen() {
           throw e;
         }
       }
+
+      // Reconcilia a publicação na comunidade com o estado do toggle. Publicar
+      // (ou republicar) usa o deck já salvo, então o snapshot reflete as edições.
+      try {
+        if (isPublic) {
+          const fresh = await db.decks.getOne(id);
+          if (fresh) {
+            await publishDeck(user.id, fresh, {
+              name: profile?.name ?? null,
+              avatarUrl: profile?.avatar_url ?? null,
+            });
+          }
+        } else if (wasPublic) {
+          await unpublishDeck(id);
+        }
+      } catch (e) {
+        Alert.alert(
+          'Comunidade',
+          'O deck foi salvo, mas não consegui atualizar a publicação. Rode o schema.sql atualizado no Supabase e tente de novo.\n\n' +
+            errorMessage(e, ''),
+        );
+      }
+
       router.back();
     } catch (e: unknown) {
       Alert.alert('Erro', errorMessage(e, 'Erro ao salvar.'));
@@ -145,6 +181,9 @@ export default function EditDeckScreen() {
 
             {/* Tags */}
             <TagInput tags={tags} onChange={setTags} suggestions={allTags} />
+
+            {/* Comunidade */}
+            <PublishToggle value={isPublic} onValueChange={setIsPublic} />
           </ScrollView>
         )}
       </KeyboardAvoidingView>

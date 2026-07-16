@@ -123,6 +123,19 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="community"
+        options={{
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              name={focused ? 'earth' : 'earth-outline'}
+              color={color}
+              focused={focused}
+              label="Comunidade"
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="progress"
         options={{
           tabBarIcon: ({ color, focused }) => (
