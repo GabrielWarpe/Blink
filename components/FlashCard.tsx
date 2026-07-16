@@ -15,7 +15,6 @@ import { useSettings } from '@/contexts/SettingsContext';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width - 48;
 const CARD_HEIGHT = CARD_WIDTH * 1.25;
-const CARD_RADIUS = 16; // deve bater com a classe "rounded-card" do tema
 
 // Quando o card tem imagem, essa fração da altura fica reservada para o
 // scrim + texto da pergunta, ancorados embaixo (a faixa em si cresce com o

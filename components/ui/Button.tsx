@@ -4,7 +4,6 @@ import {
   Text,
   ActivityIndicator,
   type TouchableOpacityProps,
-  View,
 } from 'react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
 

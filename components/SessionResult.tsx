@@ -209,7 +209,6 @@ function LegendRow({
   value: number;
   color: string;
 }) {
-  const colors = useThemeColors();
   return (
     <View className="flex-row items-center justify-between gap-6">
       <Text className="text-on-surface-variant font-inter-medium text-base">

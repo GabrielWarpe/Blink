@@ -20,7 +20,7 @@ export const RESET_PASSWORD_PATH = '/reset-password';
  * `recall://reset-password` (o `scheme` do app.json). Um valor fixo só
  * funcionaria num dos dois.
  */
-export function resetRedirectUrl(): string {
+function resetRedirectUrl(): string {
   return Linking.createURL(RESET_PASSWORD_PATH);
 }
 

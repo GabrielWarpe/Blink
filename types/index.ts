@@ -77,17 +77,6 @@ export interface StudySession {
   durationSeconds: number;
 }
 
-export interface UserSettings {
-  apiKey: string;
-  dailyGoal: number;
-  notifications: boolean;
-}
-
-export interface StudyResult {
-  cardId: string;
-  correct: boolean;
-}
-
 export type StudyPhase = 'idle' | 'studying' | 'finished';
 
 /** Nível de avaliação de um card na revisão (estilo Anki). */

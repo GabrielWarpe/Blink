@@ -27,8 +27,8 @@ export const TIMER_LIMIT_DEFAULT_MIN = 10;
 export const TIMER_LIMIT_STEPS = [5, 10, 15, 20, 30, 45, 60] as const;
 
 /** Faixa aceita para o limite, em minutos. */
-export const TIMER_LIMIT_MIN = 1;
-export const TIMER_LIMIT_MAX = 120;
+const TIMER_LIMIT_MIN = 1;
+const TIMER_LIMIT_MAX = 120;
 
 /** Restringe um limite de tempo (minutos) à faixa permitida. */
 export function clampTimerLimit(minutes: number): number {

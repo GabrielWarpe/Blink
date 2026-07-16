@@ -7,7 +7,7 @@
 export type AnswerVerdict = 'exact' | 'typo' | 'wrong';
 
 /** Normaliza para comparação: minúsculas, sem acentos/pontuação/espaços extras. */
-export function normalizeAnswer(s: string): string {
+function normalizeAnswer(s: string): string {
   return s
     .toLowerCase()
     .normalize('NFD')
@@ -18,7 +18,7 @@ export function normalizeAnswer(s: string): string {
 }
 
 /** Distância de Levenshtein clássica (inserção/remoção/substituição = 1). */
-export function levenshtein(a: string, b: string): number {
+function levenshtein(a: string, b: string): number {
   if (a === b) return 0;
   if (a.length === 0) return b.length;
   if (b.length === 0) return a.length;

@@ -108,7 +108,12 @@ export default function ProgressScreen() {
   // card e o deck (para dar contexto e permitir tocar e ir até ele).
   const cardLookup = new Map<
     string,
-    { front: string; deckId: string; deckTitle: string; deckEmoji: string }
+    {
+      front: string;
+      deckId: string;
+      deckTitle: string;
+      deckCoverUrl: string | null;
+    }
   >();
   for (const d of decks) {
     for (const c of d.cards) {
@@ -116,7 +121,7 @@ export default function ProgressScreen() {
         front: c.front,
         deckId: d.id,
         deckTitle: d.title,
-        deckEmoji: d.emoji,
+        deckCoverUrl: d.coverUrl,
       });
     }
   }
@@ -355,9 +360,21 @@ export default function ProgressScreen() {
                     >
                       {l.card.front}
                     </Text>
-                    <Text className="text-outline font-inter-regular text-xs mt-0.5">
-                      {l.card.deckEmoji} {l.card.deckTitle}
-                    </Text>
+                    {/* Avatar (capa/livrinho) no lugar do emoji — era o último
+                        emoji de chrome do app. */}
+                    <View className="flex-row items-center gap-1.5 mt-0.5">
+                      <DeckAvatar
+                        coverUrl={l.card.deckCoverUrl}
+                        size={16}
+                        radius={5}
+                      />
+                      <Text
+                        className="text-outline font-inter-regular text-xs"
+                        numberOfLines={1}
+                      >
+                        {l.card.deckTitle}
+                      </Text>
+                    </View>
                   </View>
                   <View className="bg-error/15 rounded-pill px-2.5 py-1">
                     <Text className="text-error font-jakarta-bold text-xs">

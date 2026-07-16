@@ -80,11 +80,9 @@ export const LIGHT_COLORS: ThemePalette = {
   info: '#2874be',
 };
 
-/** Palette padrão (escura) — mantida para compatibilidade com imports existentes. */
-export const COLORS = DARK_COLORS;
-
-// Cores de deck refinadas para harmonizar com a Meia-noite: tons de joia
-// levemente dessaturados que ficam bem como tinta de avatar sobre o índigo.
+// Cores de deck: a UI não mostra mais cor (a capa/foto assumiu esse papel),
+// mas o campo `color` segue no modelo e o import de backup precisa de um
+// default válido — é o único consumidor desta lista.
 export const DECK_COLORS = [
   '#2fb3a6', // teal
   '#4aa3e0', // azul
@@ -97,24 +95,3 @@ export const DECK_COLORS = [
   '#8a94a6', // ardósia
   '#e6e9ee', // névoa
 ];
-
-// Cores antigas → novas, casadas por FAMÍLIA de cor. Assim decks já criados
-// harmonizam na hora (identidade preservada) sem alterar o dado salvo.
-const LEGACY_DECK_COLORS: Record<string, string> = {
-  '#7c3aed': '#a98be2', // violeta
-  '#6d28d9': '#7e8ce8', // índigo
-  '#2563eb': '#4aa3e0', // azul
-  '#0891b2': '#2fb3a6', // ciano → teal
-  '#059669': '#5fb187', // verde
-  '#d97706': '#e2a64e', // âmbar
-  '#dc2626': '#e07658', // vermelho → coral
-  '#db2777': '#e37e8c', // rosa
-  '#000000': '#8a94a6', // preto → ardósia (invisível como tinta no escuro)
-  '#ffffff': '#e6e9ee', // branco → névoa
-};
-
-/** Cor de exibição de um deck: remapeia hexes da paleta antiga para a nova
- * (puramente visual). Cores fora do mapa passam direto. */
-export function resolveDeckColor(color: string): string {
-  return LEGACY_DECK_COLORS[color.toLowerCase()] ?? color;
-}

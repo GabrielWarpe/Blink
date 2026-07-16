@@ -34,7 +34,7 @@ export function makeFlashcard(
  */
 
 /** Teto do intervalo, em dias (100 anos — o mesmo do Anki). Ver `reviewCard`. */
-export const MAX_INTERVAL_DAYS = 36500;
+const MAX_INTERVAL_DAYS = 36500;
 
 /** Protege contra intervalos corrompidos já gravados (NaN, negativo, absurdo). */
 export function sanitizeInterval(days: number): number {
@@ -114,43 +114,3 @@ export function cardMaturity(c: Pick<Flashcard, 'repetitions' | 'interval'>): Ma
   return 'mature';
 }
 
-/**
- * Previsão de revisões para os próximos `days` dias. O primeiro dia (hoje)
- * inclui tudo que já está atrasado, não só o que vence exatamente hoje —
- * senão um usuário que ficou dias sem estudar veria "0" hoje e uma pilha
- * escondida em dias passados. Só considera cards já vistos: novos não têm
- * uma data de vencimento que signifique nada.
- */
-export function forecastReviews(
-  cards: Flashcard[],
-  days: number,
-): { day: Date; count: number }[] {
-  const seen = cards.filter(c => c.repetitions > 0);
-  const today = new Date();
-
-  return Array.from({ length: days }, (_, i) => {
-    const day = new Date(today);
-    day.setDate(day.getDate() + i);
-
-    if (i === 0) {
-      const endToday = new Date(today);
-      endToday.setHours(23, 59, 59, 999);
-      return {
-        day,
-        count: seen.filter(c => new Date(c.nextReview) <= endToday).length,
-      };
-    }
-
-    const dayStart = new Date(day);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(day);
-    dayEnd.setHours(23, 59, 59, 999);
-    return {
-      day,
-      count: seen.filter(c => {
-        const t = new Date(c.nextReview).getTime();
-        return t >= dayStart.getTime() && t <= dayEnd.getTime();
-      }).length,
-    };
-  });
-}

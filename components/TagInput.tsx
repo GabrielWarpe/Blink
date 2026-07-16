@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
-export const MAX_TAGS = 5;
+const MAX_TAGS = 5;
 const MAX_TAG_LENGTH = 24;
 
 /** Normaliza uma tag digitada: apara e colapsa espaços internos. */
