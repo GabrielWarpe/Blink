@@ -13,7 +13,6 @@ import {
 } from '@/components/StudyModePicker';
 import { StreakBadge } from '@/components/StreakBadge';
 import { ProgressRing } from '@/components/ProgressRing';
-import { BrandLogo } from '@/components/BrandLogo';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -79,6 +78,7 @@ export default function HomeScreen() {
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+  const displayName = profile?.name ?? 'Estudante';
 
   // Ação principal do dia (a ÚNICA CTA da tela): revisar > aprender > tudo em
   // dia. O rótulo já leva a contagem embutida ("Revisar 12 cards") — decide
@@ -122,7 +122,13 @@ export default function HomeScreen() {
             <Text className="text-on-surface-variant font-inter-medium text-sm">
               {greeting}
             </Text>
-            <BrandLogo height={26} style={{ marginTop: 2 }} />
+            <Text
+              className="text-on-surface font-jakarta-extrabold text-2xl"
+              style={{ marginTop: 2 }}
+              numberOfLines={1}
+            >
+              {displayName}
+            </Text>
           </View>
           <StreakBadge streak={streak} />
         </View>
