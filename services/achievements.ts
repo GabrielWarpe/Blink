@@ -240,6 +240,12 @@ export interface Achievement {
   title: string;
   body: string;
   earned: (s: AchievementStats) => boolean;
+  /**
+   * Progresso 0..1 rumo ao desbloqueio. Só as ESCADAS têm (limiar numérico
+   * claro); avulsas/patentes ficam sem — proximidade não é definível para uma
+   * condição booleana. Alimenta o card "Quase lá" da galeria (Goal Gradient).
+   */
+  progress?: (s: AchievementStats) => number;
 }
 
 /** Conquista de patente derivada de um tier — desbloquear a patente na tela
@@ -275,6 +281,7 @@ function ladder(
     title,
     body,
     earned: (s: AchievementStats) => pick(s) >= n,
+    progress: (s: AchievementStats) => Math.min(pick(s) / n, 1),
   }));
 }
 
@@ -437,6 +444,23 @@ export async function getUnlocked(userId: string): Promise<string[]> {
   const ids = await db.achievements.getUnlocked(userId);
   const known = new Set(ACHIEVEMENTS.map(a => a.id));
   return ids.filter(id => known.has(id));
+}
+
+/** Conquista bloqueada mais perto do desbloqueio (Goal Gradient — o card
+ * "Quase lá"). Só considera as que têm `progress` (escadas); ignora as já
+ * desbloqueadas e as sem noção de proximidade. `null` se não houver candidata. */
+export function closestLockedAchievement(
+  stats: AchievementStats,
+  unlockedIds: ReadonlySet<string>,
+): { achievement: Achievement; progress: number } | null {
+  let best: { achievement: Achievement; progress: number } | null = null;
+  for (const a of ACHIEVEMENTS) {
+    if (a.progress == null || unlockedIds.has(a.id) || a.earned(stats)) continue;
+    const p = Math.min(Math.max(a.progress(stats), 0), 1);
+    if (p >= 1) continue; // já bateria o limiar — não é "quase"
+    if (best == null || p > best.progress) best = { achievement: a, progress: p };
+  }
+  return best;
 }
 
 /**

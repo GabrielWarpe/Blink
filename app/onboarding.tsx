@@ -29,15 +29,17 @@ interface Slide {
 
 // ── Mini-demos: cada slide mostra a feature "em miniatura" ───────────────────
 
-/** Slide 1: um deck como aparece na lista (emoji + título + tags). */
+/** Slide 1: um deck como aparece na lista (capa/ícone + título + tags). */
 function DeckDemo(colors: ThemePalette) {
   return (
     <View className="w-full bg-surface-container-high rounded-2xl p-4 flex-row items-center gap-3">
+      {/* Ícone de livro em chip tingido — mesmo padrão do DeckAvatar (fallback
+          sem capa). Consistente com o resto do app, sem emoji de chrome. */}
       <View
         className="w-12 h-12 rounded-xl items-center justify-center"
         style={{ backgroundColor: colors.primary + '1f' }}
       >
-        <Text className="text-2xl">🧬</Text>
+        <Ionicons name="book" size={24} color={colors.primary} />
       </View>
       <View className="flex-1">
         <Text className="text-on-surface font-jakarta-bold text-sm">
@@ -140,8 +142,8 @@ const SLIDES: Slide[] = [
   {
     icon: 'sparkles',
     accent: 'primary',
-    title: 'Crie decks em segundos',
-    body: 'Monte seus decks manualmente, anexe imagens aos cards ou deixe a IA gerar tudo a partir de um tópico ou texto.',
+    title: 'Aprenda qualquer assunto',
+    body: 'Digite um tópico e a IA monta o deck em segundos — ou crie os cards você mesmo e anexe imagens.',
     demo: DeckDemo,
   },
   {
@@ -336,7 +338,7 @@ export default function OnboardingScreen() {
       {/* CTA */}
       <View className="px-6 pb-4 pt-2">
         <Button variant="primary" size="lg" className="w-full" onPress={next}>
-          {isLast ? 'Começar' : 'Próximo'}
+          {isLast ? 'Começar a estudar' : 'Próximo'}
         </Button>
       </View>
     </SafeAreaView>

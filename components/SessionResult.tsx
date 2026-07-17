@@ -18,6 +18,8 @@ interface SessionResultProps {
   showTime: boolean;
   /** Nº de cards para "praticar as que não entendi" (errou ou pulou). */
   redoCount: number;
+  /** Acurácia (%) da sessão anterior deste deck; null se for a 1ª (sem âncora). */
+  priorPct?: number | null;
   onRedo: (scope: 'all' | 'wrong') => void;
   onExit: () => void;
   onAchievements?: () => void;
@@ -42,6 +44,7 @@ export function SessionResult({
   seconds,
   showTime,
   redoCount,
+  priorPct,
   onRedo,
   onExit,
   onAchievements,
@@ -51,6 +54,22 @@ export function SessionResult({
 
   const total = correct + wrong + skipped;
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  // Ancoragem/Contraste: o cérebro avalia relativo. Em vez de só o número
+  // absoluto, mostrar o delta contra a última sessão deste deck.
+  const delta = priorPct != null ? pct - priorPct : null;
+  const deltaTint =
+    delta == null || delta === 0
+      ? colors.outline
+      : delta > 0
+        ? colors.success
+        : colors.error;
+  const deltaLabel =
+    delta == null
+      ? null
+      : delta === 0
+        ? 'igual à sua última sessão'
+        : `${delta > 0 ? '▲ +' : '▼ '}${delta}% vs. sua última sessão`;
 
   // "6/55" cabe grande; "1000/2000" precisa encolher para não vazar do anel.
   const ringChars = `${correct}/${total}`.length;
@@ -78,6 +97,15 @@ export function SessionResult({
         <Text className="text-outline font-inter-regular text-sm text-center mt-1">
           {deckTitle}
         </Text>
+
+        {deltaLabel != null && (
+          <Text
+            className="font-inter-semibold text-sm text-center mt-2"
+            style={{ color: deltaTint }}
+          >
+            {deltaLabel}
+          </Text>
+        )}
 
         <View
           className="rounded-card mt-5 p-5 flex-row items-center justify-between"

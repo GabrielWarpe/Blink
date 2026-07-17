@@ -25,12 +25,20 @@ export default function HomeScreen() {
   const colors = useThemeColors();
   const { profile } = useAuth();
   const { decks } = useDecks();
-  const { streak, todayCount } = useStreak();
+  const { streak, todayCount, studiedToday } = useStreak();
   const picker = useStudyModePicker();
 
   const DAILY_GOAL = profile?.daily_goal ?? 20;
   const progress = Math.min(todayCount / DAILY_GOAL, 1);
   const goalMet = todayCount >= DAILY_GOAL && todayCount > 0;
+  // Goal Gradient: a barra nunca começa vazia de verdade — um piso visual de 6%
+  // faz o dia parecer "iniciado" e cria momentum, sem mentir no número (o texto
+  // segue "0 de N"). Mesmo padrão do levels.tsx.
+  const progressFill = Math.max(progress, 0.06);
+  // Loss Aversion: perder dói ~2× mais que ganhar. Com uma sequência viva (≥2
+  // dias) e nada estudado hoje, enquadrar pela PERDA, não pelo ganho. Só ≥2
+  // para não pressionar quem está começando.
+  const streakAtRisk = streak >= 2 && !studiedToday;
 
   // Deck para a CTA "Estudar agora": o estudado mais recentemente, ou o primeiro.
   const recentDeck = [...decks]
@@ -159,22 +167,35 @@ export default function HomeScreen() {
           <View className="flex-row items-center gap-4">
             <View className="flex-1">
               <Text className="text-on-surface font-jakarta-bold text-lg">
-                {goalMet ? 'Meta batida!' : 'Meta diária'}
+                {goalMet
+                  ? 'Meta batida!'
+                  : streakAtRisk
+                    ? 'Sequência em risco'
+                    : 'Meta diária'}
               </Text>
-              <Text className="text-on-surface-variant font-inter-regular text-sm mt-1">
+              <Text
+                className="font-inter-regular text-sm mt-1"
+                style={{
+                  color: streakAtRisk && !goalMet
+                    ? colors.tertiary
+                    : colors.onSurfaceVariant,
+                }}
+              >
                 {goalMet
                   ? `${todayCount} cards hoje — mandou bem!`
-                  : `${todayCount} de ${DAILY_GOAL} cards estudados`}
+                  : streakAtRisk
+                    ? `Sua sequência de ${streak} dias acaba hoje — estude para mantê-la.`
+                    : `${todayCount} de ${DAILY_GOAL} cards estudados`}
               </Text>
               <View className="h-2 bg-surface-container-highest rounded-pill mt-3 overflow-hidden">
                 <View
                   className="h-full rounded-pill bg-primary"
-                  style={{ width: `${progress * 100}%` }}
+                  style={{ width: `${progressFill * 100}%` }}
                 />
               </View>
             </View>
             <ProgressRing
-              progress={progress}
+              progress={progressFill}
               size={72}
               label={goalMet ? '✓' : `${Math.round(progress * 100)}%`}
               sublabel="hoje"

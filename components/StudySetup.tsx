@@ -219,8 +219,12 @@ export function StudySetup({
           )}
         </View>
 
+        {/* Especificidade > vago: o número concreto ("Estudar 12 cards") remove
+            a incerteza sobre o tamanho da sessão melhor que "Começar". */}
         <Button variant="primary" size="lg" onPress={onStart}>
-          Começar
+          {cardCount === 1
+            ? `Estudar 1 ${itemNoun[0]}`
+            : `Estudar ${cardCount} ${itemNoun[1]}`}
         </Button>
       </ScrollView>
     </View>

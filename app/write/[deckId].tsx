@@ -211,6 +211,7 @@ export default function WriteScreen() {
           seconds={session.elapsedSeconds}
           showTime={timed.config.enabled}
           redoCount={session.wrongIds.size}
+          priorPct={session.priorAccuracy}
           onRedo={restart}
           onExit={() => router.back()}
           onAchievements={() => router.replace('/achievements')}

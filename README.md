@@ -1,4 +1,4 @@
-# Recall 📚
+# Blink 📚
 
 App mobile de flashcards com **repetição espaçada** (algoritmo SM-2, estilo Anki), construído com Expo / React Native e Supabase. Crie decks manualmente ou com IA, estude no ritmo certo e acompanhe seu progresso — tudo sincronizado na sua conta.
 

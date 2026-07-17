@@ -288,7 +288,21 @@ export default function CreateDeckScreen() {
           </View>
 
           {/* AI Mode */}
-          {mode === 'ai' && <AiGeneratorForm onGenerated={setGeneratedCards} />}
+          {mode === 'ai' && (
+            <AiGeneratorForm
+              onGenerated={setGeneratedCards}
+              // Smart Default: se o título ainda estiver vazio, adota o tópico
+              // (cortado) como sugestão — o usuário pode editar. Evita a fadiga
+              // de digitar um nome do zero logo após gerar.
+              onTopic={suggestion => {
+                setTitle(prev => {
+                  if (prev.trim()) return prev;
+                  const clean = suggestion.replace(/\s+/g, ' ').trim();
+                  return clean.length > 40 ? clean.slice(0, 40).trim() : clean;
+                });
+              }}
+            />
+          )}
 
           {/* Manual Mode */}
           {mode === 'manual' && (

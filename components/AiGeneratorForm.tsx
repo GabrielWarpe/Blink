@@ -34,6 +34,12 @@ const ATTACHMENT_ICON: Record<Attachment['contentType'], string> = {
 interface AiGeneratorFormProps {
   /** Recebe os cards gerados, já no modelo do app (quiz vira quizOptions). */
   onGenerated: (cards: Flashcard[]) => void;
+  /**
+   * Disparado no momento da geração com uma sugestão de nome (o tópico digitado
+   * ou o nome do arquivo anexado). A tela de criação usa como título padrão do
+   * deck quando ainda vazio — Smart Default, o usuário ainda pode editar.
+   */
+  onTopic?: (suggestion: string) => void;
 }
 
 /**
@@ -41,7 +47,7 @@ interface AiGeneratorFormProps {
  * OU um anexo (PDF, Word, foto), modo flashcards×quiz e quantidade. Usado na
  * criação de deck e em "adicionar cards".
  */
-export function AiGeneratorForm({ onGenerated }: AiGeneratorFormProps) {
+export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) {
   const colors = useThemeColors();
   const [topic, setTopic] = useState('');
   const [count, setCount] = useState('10');
@@ -137,6 +143,11 @@ export function AiGeneratorForm({ onGenerated }: AiGeneratorFormProps) {
               return makeFlashcard(m.front, m.back, [], m.quizOptions);
             });
       onGenerated(cards);
+      // Sugestão de título: o tópico digitado, ou o nome do anexo sem extensão.
+      const suggestion = attachment
+        ? attachment.name.replace(/\.[^.]+$/, '')
+        : topic.trim();
+      if (suggestion) onTopic?.(suggestion);
     } finally {
       setGenerating(false);
     }

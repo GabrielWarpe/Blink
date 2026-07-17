@@ -3,8 +3,16 @@ import { View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { ACHIEVEMENTS, getUnlocked, type Achievement } from '@/services/achievements';
+import {
+  ACHIEVEMENTS,
+  getUnlocked,
+  buildAchievementStats,
+  closestLockedAchievement,
+  type Achievement,
+} from '@/services/achievements';
 import { buildAchievementVisuals } from '@/services/achievementIcons';
+import { db } from '@/services/database';
+import { computeStreak, computeLongestStreak } from '@/utils/streak';
 import { Emblem } from '@/components/Emblem';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +37,11 @@ export default function AchievementsScreen() {
   const colors = useThemeColors();
   const { user } = useAuth();
   const [unlocked, setUnlocked] = useState<Set<string>>(new Set());
+  // "Quase lá": a conquista bloqueada mais perto do desbloqueio (Goal Gradient).
+  const [closest, setClosest] = useState<{
+    achievement: Achievement;
+    progress: number;
+  } | null>(null);
 
   // Os emblemas dependem só da lista estática de conquistas.
   const visuals = useMemo(
@@ -39,7 +52,28 @@ export default function AchievementsScreen() {
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
-      void getUnlocked(user.id).then(ids => setUnlocked(new Set(ids)));
+      void (async () => {
+        const unlockedIds = await getUnlocked(user.id);
+        setUnlocked(new Set(unlockedIds));
+
+        // Stats para a proximidade. O "quase lá" só surge de ESCADAS, cujos
+        // limiares dependem de sessões/decks/streak — não de leech/retenção,
+        // então esses ficam zerados (não afetam nenhuma escada).
+        const [sessions, decks] = await Promise.all([
+          db.sessions.getRecent(user.id, 2000),
+          db.decks.getAll(user.id),
+        ]);
+        const dates = sessions.map(s => s.date);
+        const stats = buildAchievementStats({
+          sessions,
+          decks,
+          currentStreak: computeStreak(dates),
+          longestStreak: computeLongestStreak(dates),
+          leechesTamed: 0,
+          retention30: { total: 0, retained: 0 },
+        });
+        setClosest(closestLockedAchievement(stats, new Set(unlockedIds)));
+      })();
     }, [user?.id]),
   );
 
@@ -125,26 +159,82 @@ export default function AchievementsScreen() {
         windowSize={7}
         removeClippedSubviews
         ListHeaderComponent={
-          <View className="bg-surface-container rounded-card p-5 border border-outline-variant/20 mb-5">
-            <View className="flex-row items-end justify-between mb-3">
-              <Text className="text-on-surface font-jakarta-bold text-lg">
-                Seu progresso
-              </Text>
-              <Text className="text-primary font-jakarta-extrabold text-xl">
-                {unlockedCount}
-                <Text className="text-outline font-inter-regular text-sm">
-                  {' '}
-                  / {total}
+          <>
+            <View className="bg-surface-container rounded-card p-5 border border-outline-variant/20 mb-3">
+              <View className="flex-row items-end justify-between mb-3">
+                <Text className="text-on-surface font-jakarta-bold text-lg">
+                  Seu progresso
                 </Text>
-              </Text>
+                <Text className="text-primary font-jakarta-extrabold text-xl">
+                  {unlockedCount}
+                  <Text className="text-outline font-inter-regular text-sm">
+                    {' '}
+                    / {total}
+                  </Text>
+                </Text>
+              </View>
+              <View className="h-2 bg-surface-container-high rounded-full overflow-hidden">
+                <View
+                  className="h-full rounded-full bg-primary-container"
+                  style={{ width: `${progress * 100}%` }}
+                />
+              </View>
             </View>
-            <View className="h-2 bg-surface-container-high rounded-full overflow-hidden">
-              <View
-                className="h-full rounded-full bg-primary-container"
-                style={{ width: `${progress * 100}%` }}
-              />
-            </View>
-          </View>
+
+            {/* Quase lá: a conquista mais perto de cair. A barra tem piso
+                visual (~8%) — nunca 0%, criando momentum (Goal Gradient). */}
+            {closest != null &&
+              (() => {
+                const v = visuals[closest.achievement.id];
+                if (!v) return null;
+                const barPct = Math.max(closest.progress, 0.08) * 100;
+                return (
+                  <View
+                    className="rounded-card p-4 border mb-5 flex-row items-center gap-3"
+                    style={{
+                      borderColor: colors.tertiary + '4D',
+                      backgroundColor: colors.tertiary + '12',
+                    }}
+                  >
+                    <Emblem
+                      icon={v.icon}
+                      tone="outline"
+                      treatment="tint"
+                      size={44}
+                    />
+                    <View className="flex-1">
+                      <Text
+                        className="font-inter-semibold text-xs"
+                        style={{ color: colors.tertiary }}
+                      >
+                        QUASE LÁ
+                      </Text>
+                      <Text
+                        className="text-on-surface font-jakarta-bold text-sm mt-0.5"
+                        numberOfLines={1}
+                      >
+                        {stripEmoji(closest.achievement.title)}
+                      </Text>
+                      <View className="h-1.5 bg-surface-container-high rounded-full overflow-hidden mt-2">
+                        <View
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${barPct}%`,
+                            backgroundColor: colors.tertiary,
+                          }}
+                        />
+                      </View>
+                    </View>
+                    <Text
+                      className="font-jakarta-extrabold text-base"
+                      style={{ color: colors.tertiary, fontVariant: ['tabular-nums'] }}
+                    >
+                      {Math.round(closest.progress * 100)}%
+                    </Text>
+                  </View>
+                );
+              })()}
+          </>
         }
         ListFooterComponent={
           <Text className="text-outline font-inter-regular text-xs text-center mt-3">

@@ -1,7 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Flashcard, Deck, Grade, StudyPhase, StudyMode } from '@/types';
 import { reviewCard } from '@/services/ai';
 import { db } from '@/services/database';
+import { sessionAccuracy } from '@/utils/stats';
 import { prefetchCardImages } from '@/services/images';
 import {
   fireStreakNotification,
@@ -60,6 +61,23 @@ export function useStudySession(deck: Deck | null, mode: StudyMode = 'flash') {
   // É um ref, não estado: quem decide é o `grade`/`skip` do MESMO tique, com os
   // contadores já calculados — ler um estado aqui pegaria o valor anterior.
   const endAfterCurrentRef = useRef(false);
+
+  // Ancoragem: acurácia da ÚLTIMA sessão passada deste deck, capturada quando o
+  // deck fica disponível — antes de a sessão atual ser gravada, então ela não
+  // se auto-compara. `null` = deck sem sessão anterior (primeira vez → sem
+  // âncora, honesto). O resultado mostra o delta contra este valor.
+  const [priorAccuracy, setPriorAccuracy] = useState<number | null>(null);
+  useEffect(() => {
+    if (!deck || !user) return;
+    let cancelled = false;
+    void db.sessions.getByDeck(deck.id, deck.title, 1).then(prev => {
+      if (cancelled) return;
+      setPriorAccuracy(prev[0] ? sessionAccuracy(prev[0]) : null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [deck?.id, user?.id]);
 
   const start = useCallback(
     (studyCards: Flashcard[]) => {
@@ -349,6 +367,8 @@ export function useStudySession(deck: Deck | null, mode: StudyMode = 'flash') {
     wrongIds,
     /** Tempo final da sessão (só preenchido depois de terminar). */
     elapsedSeconds,
+    /** Acurácia da última sessão passada do deck (ancoragem); null se 1ª vez. */
+    priorAccuracy,
     /** Tem resposta anterior para desfazer? */
     canGoBack,
     /** Lê o tempo corrente sem re-renderizar — para o relógio da tela. */
