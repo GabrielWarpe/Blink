@@ -9,7 +9,7 @@ import { Platform } from 'react-native';
 
 export const TAB_ICON_SIZE = 23;
 export const TAB_ICON_LABEL_GAP = 3;
-export const TAB_LABEL_LINE = 14;
+export const TAB_LABEL_LINE = 15;
 
 const CONTENT_HEIGHT = TAB_ICON_SIZE + TAB_ICON_LABEL_GAP + TAB_LABEL_LINE;
 

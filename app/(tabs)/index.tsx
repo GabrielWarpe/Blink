@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useDecks } from '@/hooks/useDecks';
 import { useStreak } from '@/hooks/useStreak';
 import { getDueCards, getNewCards } from '@/services/ai';
-import { DeckCard } from '@/components/DeckCard';
+import { DeckMiniCard, DECK_MINI_CARD_WIDTH } from '@/components/DeckMiniCard';
 import {
   StudyModePicker,
   useStudyModePicker,
@@ -20,25 +20,35 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { TAB_SCREEN_BOTTOM_INSET } from '@/constants/layout';
 
+const RING_SIZE = 220;
+
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const { profile } = useAuth();
   const { decks } = useDecks();
-  const { streak, todayCount, studiedToday } = useStreak();
+  const { streak, todayCount } = useStreak();
   const picker = useStudyModePicker();
 
   const DAILY_GOAL = profile?.daily_goal ?? 20;
   const progress = Math.min(todayCount / DAILY_GOAL, 1);
   const goalMet = todayCount >= DAILY_GOAL && todayCount > 0;
-  // Goal Gradient: a barra nunca começa vazia de verdade — um piso visual de 6%
+  // Goal Gradient: o anel nunca começa vazio de verdade — um piso visual de 6%
   // faz o dia parecer "iniciado" e cria momentum, sem mentir no número (o texto
-  // segue "0 de N"). Mesmo padrão do levels.tsx.
+  // segue "N de M"). Mesmo padrão do levels.tsx.
   const progressFill = Math.max(progress, 0.06);
+  const remaining = Math.max(DAILY_GOAL - todayCount, 0);
   // Loss Aversion: perder dói ~2× mais que ganhar. Com uma sequência viva (≥2
-  // dias) e nada estudado hoje, enquadrar pela PERDA, não pelo ganho. Só ≥2
-  // para não pressionar quem está começando.
-  const streakAtRisk = streak >= 2 && !studiedToday;
+  // dias) e a meta ainda não batida, enquadrar pela PERDA da sequência, não
+  // pelo ganho genérico da meta. Só ≥2 para não pressionar quem está
+  // começando. Independe de já ter estudado algo hoje — o que protege a
+  // sequência é BATER a meta, não só ter aberto o app.
+  const protectingStreak = streak >= 2 && !goalMet;
+  const ringStatus = goalMet
+    ? 'Meta batida — sequência garantida!'
+    : `faltam ${remaining} ${remaining === 1 ? 'card' : 'cards'} para ${
+        protectingStreak ? 'manter a sequência' : 'bater a meta'
+      }`;
 
   // Deck para a CTA "Estudar agora": o estudado mais recentemente, ou o primeiro.
   const recentDeck = [...decks]
@@ -63,43 +73,36 @@ export default function HomeScreen() {
     .filter(d => newOf(d) > 0)
     .sort((a, b) => newOf(b) - newOf(a))[0];
 
+  // Carrossel "Continuar estudando": quem tem mais devido primeiro.
+  const carouselDecks = [...decks].sort((a, b) => dueOf(b) - dueOf(a)).slice(0, 8);
+
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
 
-  // Ação principal do dia (herói da tela): revisar > aprender > tudo em dia.
+  // Ação principal do dia (a ÚNICA CTA da tela): revisar > aprender > tudo em
+  // dia. O rótulo já leva a contagem embutida ("Revisar 12 cards") — decide
+  // sozinho, sem precisar de um card explicativo ao lado.
   const cta =
     recentDeck == null
       ? null
       : dueCount > 0
         ? {
-            icon: 'refresh' as const,
-            tint: colors.primary,
-            title: 'Revisar hoje',
-            highlight: `${dueCount} ${dueCount === 1 ? 'card' : 'cards'}`,
-            tail: 'esperando revisão.',
-            label: 'Revisar agora',
+            label: `Revisar ${dueCount} ${dueCount === 1 ? 'card' : 'cards'}`,
+            subtitle: `${(topDueDeck ?? recentDeck).title} · o mais urgente`,
             variant: 'primary' as const,
             target: topDueDeck ?? recentDeck,
           }
         : newCount > 0
           ? {
-              icon: 'book' as const,
-              tint: colors.primary,
-              title: 'Pronto pra aprender',
-              highlight: `${newCount} ${newCount === 1 ? 'card novo' : 'cards novos'}`,
-              tail: 'à sua espera.',
-              label: 'Aprender agora',
+              label: `Aprender ${newCount} ${newCount === 1 ? 'card novo' : 'cards novos'}`,
+              subtitle: `${(topNewDeck ?? recentDeck).title} · pronto para aprender`,
               variant: 'primary' as const,
               target: topNewDeck ?? recentDeck,
             }
           : {
-              icon: 'checkmark-done' as const,
-              tint: colors.success,
-              title: 'Tudo em dia',
-              highlight: null,
-              tail: 'Nenhuma revisão pendente por agora.',
               label: `Estudar ${recentDeck.title}`,
+              subtitle: 'Tudo em dia — nenhuma revisão pendente.',
               variant: 'outline' as const,
               target: recentDeck,
             };
@@ -124,90 +127,65 @@ export default function HomeScreen() {
           <StreakBadge streak={streak} />
         </View>
 
-        {/* Herói: ação do dia */}
-        {cta != null && (
-          <Card className="mx-5 mt-4 p-5">
-            <View className="flex-row items-center gap-3 mb-3">
-              <View
-                className="w-11 h-11 rounded-button items-center justify-center"
-                style={{ backgroundColor: cta.tint + '22' }}
+        {/* Anel fundido: meta diária + urgência da sequência num só medidor —
+            a Home tem UM trabalho (te colocar na sessão do dia em 1 toque),
+            não vários cards competindo por atenção. */}
+        <View className="items-center mt-6">
+          <View style={{ width: RING_SIZE, height: RING_SIZE }}>
+            <ProgressRing progress={progressFill} size={RING_SIZE} strokeWidth={16} />
+            <View
+              className="items-center justify-center"
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+            >
+              <Text
+                className="text-on-surface font-jakarta-extrabold"
+                style={{ fontSize: 52, lineHeight: 56, fontVariant: ['tabular-nums'] }}
               >
-                <Ionicons name={cta.icon} size={22} color={cta.tint} />
-              </View>
-              <Text className="text-on-surface font-jakarta-bold text-lg flex-1">
-                {cta.title}
+                {todayCount}
+                <Text
+                  className="text-on-surface-variant font-jakarta-bold"
+                  style={{ fontSize: 24 }}
+                >
+                  /{DAILY_GOAL}
+                </Text>
+              </Text>
+              <Text className="text-on-surface-variant font-inter-regular text-sm mt-1">
+                cards hoje
               </Text>
             </View>
-            <Text className="text-on-surface-variant font-inter-regular text-sm leading-5">
-              {cta.highlight != null ? (
-                <>
-                  Você tem{' '}
-                  <Text className="text-primary font-inter-semibold">
-                    {cta.highlight}
-                  </Text>{' '}
-                  {cta.tail}
-                </>
-              ) : (
-                cta.tail
-              )}
+          </View>
+
+          <View className="flex-row items-center gap-1.5 mt-4">
+            <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+            <Text className="text-on-surface-variant font-inter-medium text-sm">
+              {ringStatus}
             </Text>
+          </View>
+        </View>
+
+        {/* CTA única do dia — o rótulo já leva a contagem, decide sozinho. */}
+        {cta != null && (
+          <View className="px-5 mt-6">
             <Button
               variant={cta.variant}
               size="lg"
-              className="mt-4"
               onPress={() => picker.requestPlay(cta.target)}
             >
               {cta.label}
             </Button>
-          </Card>
+            <Text className="text-outline font-inter-regular text-xs text-center mt-2">
+              {cta.subtitle}
+            </Text>
+          </View>
         )}
 
-        {/* Meta diária (secundária) */}
-        <Card className="mx-5 mt-4 p-5">
-          <View className="flex-row items-center gap-4">
-            <View className="flex-1">
-              <Text className="text-on-surface font-jakarta-bold text-lg">
-                {goalMet
-                  ? 'Meta batida!'
-                  : streakAtRisk
-                    ? 'Sequência em risco'
-                    : 'Meta diária'}
-              </Text>
-              <Text
-                className="font-inter-regular text-sm mt-1"
-                style={{
-                  color: streakAtRisk && !goalMet
-                    ? colors.tertiary
-                    : colors.onSurfaceVariant,
-                }}
-              >
-                {goalMet
-                  ? `${todayCount} cards hoje — mandou bem!`
-                  : streakAtRisk
-                    ? `Sua sequência de ${streak} dias acaba hoje — estude para mantê-la.`
-                    : `${todayCount} de ${DAILY_GOAL} cards estudados`}
-              </Text>
-              <View className="h-2 bg-surface-container-highest rounded-pill mt-3 overflow-hidden">
-                <View
-                  className="h-full rounded-pill bg-primary"
-                  style={{ width: `${progressFill * 100}%` }}
-                />
-              </View>
-            </View>
-            <ProgressRing
-              progress={progressFill}
-              size={72}
-              label={goalMet ? '✓' : `${Math.round(progress * 100)}%`}
-              sublabel="hoje"
-            />
-          </View>
-        </Card>
-
-        {/* Decks */}
-        <View className="mt-7">
+        {/* Continuar estudando: carrossel secundário — menos rolagem, mais
+            decisão. Tocar num card abre o deck; a CTA acima é que "joga". */}
+        <View className="mt-8">
           <View className="flex-row items-center justify-between px-5 mb-3">
             <Text className="text-on-surface font-jakarta-bold text-lg">
-              {decks.length > 0 ? 'Seus decks' : 'Comece agora'}
+              {decks.length > 0 ? 'Continuar estudando' : 'Comece agora'}
             </Text>
             {decks.length > 0 && (
               <TouchableOpacity onPress={() => router.push('/decks')}>
@@ -243,26 +221,31 @@ export default function HomeScreen() {
               </Button>
             </Card>
           ) : (
-            <View className="px-5 gap-3">
-              {decks.slice(0, 4).map(deck => (
-                <DeckCard
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
+            >
+              {carouselDecks.map(deck => (
+                <DeckMiniCard
                   key={deck.id}
                   deck={deck}
+                  dueCount={dueOf(deck)}
                   onPress={() => router.push(`/deck/${deck.id}`)}
-                  onPlay={() => picker.requestPlay(deck)}
                 />
               ))}
               <TouchableOpacity
                 activeOpacity={0.7}
-                className="border border-dashed border-outline-variant rounded-card py-4 flex-row items-center justify-center gap-1.5"
+                className="border border-dashed border-outline-variant rounded-card items-center justify-center gap-1.5"
+                style={{ width: DECK_MINI_CARD_WIDTH, height: DECK_MINI_CARD_WIDTH }}
                 onPress={() => router.push('/deck/create')}
               >
-                <Ionicons name="add" size={18} color={colors.outline} />
-                <Text className="text-outline font-inter-medium text-sm">
+                <Ionicons name="add" size={20} color={colors.outline} />
+                <Text className="text-outline font-inter-medium text-xs">
                   Novo deck
                 </Text>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           )}
         </View>
       </ScrollView>
