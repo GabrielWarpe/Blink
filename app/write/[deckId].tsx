@@ -17,7 +17,7 @@ import type { Deck, Flashcard } from '@/types';
 import { db } from '@/services/database';
 import { useStudySession } from '@/hooks/useStudySession';
 import { useTimedSession } from '@/hooks/useTimedSession';
-import { useFinishPrompt } from '@/hooks/useFinishPrompt';
+import { FinishPromptModal } from '@/components/FinishPromptModal';
 import { useSettings } from '@/contexts/SettingsContext';
 import { checkAnswer } from '@/utils/answer';
 import { Button } from '@/components/ui/Button';
@@ -43,8 +43,6 @@ export default function WriteScreen() {
   const session = useStudySession(deck, 'write');
   // Cronômetro + tela de início: mesma lógica de todos os modos.
   const timed = useTimedSession(session);
-  // Modal "questões sem resposta" ao finalizar.
-  useFinishPrompt(session);
 
   const [draft, setDraft] = useState('');
 
@@ -191,6 +189,7 @@ export default function WriteScreen() {
           seconds={session.elapsedSeconds}
           showTime={timed.config.enabled}
           redoCount={session.wrongIds.size}
+          allCount={deck.cards.length}
           priorPct={session.priorAccuracy}
           onRedo={restart}
           onExit={() => router.back()}
@@ -380,34 +379,66 @@ export default function WriteScreen() {
             {/* Navegação livre: voltar/avançar sem responder; sem resposta =
                 tratado no Finalizar (modal de questões sem resposta). */}
             <View className="flex-row gap-3">
+              {/* Caixa IDÊNTICA à do irmão em qualquer estado: só a cor do
+                  conteúdo muda quando desabilitado (mesma convenção da barra
+                  de abas). Variar fundo/opacity junto fazia os dois "piscarem"
+                  em direções opostas na virada da questão. */}
               <TouchableOpacity
                 onPress={session.prev}
                 disabled={!session.canPrev}
-                activeOpacity={0.7}
-                className="flex-1 rounded-3xl flex-row items-center justify-center gap-1.5 border py-3.5"
+                activeOpacity={0.85}
+                className="flex-1 h-12 rounded-3xl flex-row items-center justify-center gap-1.5 border"
                 style={{
+                  backgroundColor: colors.surfaceContainerHigh,
                   borderColor: colors.outlineVariant,
-                  opacity: session.canPrev ? 1 : 0.4,
                 }}
               >
-                <Ionicons name="chevron-back" size={18} color={colors.onSurface} />
-                <Text className="text-on-surface font-inter-semibold text-sm">
+                <Ionicons
+                  name="chevron-back"
+                  size={18}
+                  color={session.canPrev ? colors.onSurface : colors.outline}
+                />
+                <Text
+                  className="font-inter-semibold text-sm"
+                  style={{
+                    color: session.canPrev ? colors.onSurface : colors.outline,
+                  }}
+                >
                   Anterior
                 </Text>
               </TouchableOpacity>
 
+              {/* Finalizar na MESMA caixa dos irmãos (h-12/rounded-3xl/
+                  text-sm), só preenchido — o <Button> padrão trazia raio de
+                  12px e texto maior, desalinhando a dupla. */}
               {session.isLastPosition || timed.expired ? (
-                <View className="flex-1">
-                  <Button variant="primary" size="md" onPress={handleFinish}>
+                <TouchableOpacity
+                  onPress={handleFinish}
+                  activeOpacity={0.85}
+                  className="flex-1 h-12 rounded-3xl flex-row items-center justify-center gap-1.5 border"
+                  style={{
+                    backgroundColor: colors.primaryContainer,
+                    borderColor: colors.primaryContainer,
+                  }}
+                >
+                  <Text className="text-on-primary-container font-inter-semibold text-sm">
                     Finalizar
-                  </Button>
-                </View>
+                  </Text>
+                  <Ionicons
+                    name="flag"
+                    size={18}
+                    color={colors.onPrimaryContainer}
+                  />
+                </TouchableOpacity>
               ) : (
                 <TouchableOpacity
                   onPress={session.next}
-                  activeOpacity={0.7}
-                  className="flex-1 rounded-3xl flex-row items-center justify-center gap-1.5 border py-3.5"
-                  style={{ borderColor: colors.outlineVariant }}
+                  activeOpacity={0.85}
+                  className="flex-1 h-12 rounded-3xl flex-row items-center justify-center gap-1.5 border"
+                  style={{
+                    backgroundColor: colors.surfaceContainerHigh,
+                    borderColor: colors.outlineVariant,
+                  }}
                 >
                   <Text className="text-on-surface font-inter-semibold text-sm">
                     Próxima
@@ -423,6 +454,13 @@ export default function WriteScreen() {
           </ScrollView>
         )}
       </KeyboardAvoidingView>
+
+      {/* "Questões sem resposta" ao finalizar (modal temático, não Alert). */}
+      <FinishPromptModal
+        pendingFinish={session.pendingFinish}
+        onRedo={session.redoUnanswered}
+        onLeave={session.leaveUnanswered}
+      />
     </SafeAreaView>
   );
 }

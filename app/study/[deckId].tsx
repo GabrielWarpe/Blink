@@ -8,7 +8,7 @@ import { db } from '@/services/database';
 import { getSessionCards } from '@/services/ai';
 import { useStudySession } from '@/hooks/useStudySession';
 import { useTimedSession } from '@/hooks/useTimedSession';
-import { useFinishPrompt } from '@/hooks/useFinishPrompt';
+import { FinishPromptModal } from '@/components/FinishPromptModal';
 import { deckSupportsQuiz, cardSupportsQuiz, hashStr } from '@/utils/practice';
 import { SwipeCard } from '@/components/SwipeCard';
 import { QuizQuestion } from '@/components/QuizQuestion';
@@ -40,8 +40,6 @@ export default function StudySessionScreen() {
   const session = useStudySession(deck, isMixed ? 'mixed' : 'flash');
   // Cronômetro + tela de início: mesma lógica de todos os modos.
   const timed = useTimedSession(session);
-  // Modal "questões sem resposta" ao finalizar.
-  useFinishPrompt(session);
 
   useEffect(() => {
     if (!deckId) return;
@@ -166,6 +164,7 @@ export default function StudySessionScreen() {
           seconds={session.elapsedSeconds}
           showTime={timed.config.enabled}
           redoCount={session.wrongIds.size}
+          allCount={deck.cards.length}
           priorPct={session.priorAccuracy}
           onRedo={restart}
           onExit={() => router.back()}
@@ -309,6 +308,13 @@ export default function StudySessionScreen() {
           )}
         </View>
       )}
+
+      {/* "Questões sem resposta" ao finalizar (modal temático, não Alert). */}
+      <FinishPromptModal
+        pendingFinish={session.pendingFinish}
+        onRedo={session.redoUnanswered}
+        onLeave={session.leaveUnanswered}
+      />
     </SafeAreaView>
   );
 }

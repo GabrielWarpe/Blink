@@ -18,6 +18,13 @@ interface SessionResultProps {
   showTime: boolean;
   /** Nº de cards para "praticar as que não entendi" (errou ou pulou). */
   redoCount: number;
+  /**
+   * Quantos cards o "Todas" vai praticar de verdade — é o DECK inteiro (ou a
+   * parte praticável dele), não o total desta sessão. Tem de vir da MESMA
+   * origem que o `onRedo('all')` usa: o rótulo mostrava o total da sessão
+   * ("Todas (1)") e o clique repunha o deck todo (50).
+   */
+  allCount: number;
   /** Acurácia (%) da sessão anterior deste deck; null se for a 1ª (sem âncora). */
   priorPct?: number | null;
   onRedo: (scope: 'all' | 'wrong') => void;
@@ -44,6 +51,7 @@ export function SessionResult({
   seconds,
   showTime,
   redoCount,
+  allCount,
   priorPct,
   onRedo,
   onExit,
@@ -187,7 +195,7 @@ export function SessionResult({
                 className="font-jakarta-bold text-base"
                 style={{ color: colors.background }}
               >
-                Todas ({total})
+                Todas ({allCount})
               </Text>
             </TouchableOpacity>
             {redoCount > 0 && (

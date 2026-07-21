@@ -8,7 +8,7 @@ import { db } from '@/services/database';
 import { getSessionCards } from '@/services/ai';
 import { useStudySession } from '@/hooks/useStudySession';
 import { useTimedSession } from '@/hooks/useTimedSession';
-import { useFinishPrompt } from '@/hooks/useFinishPrompt';
+import { FinishPromptModal } from '@/components/FinishPromptModal';
 import { deckSupportsQuiz, cardSupportsQuiz } from '@/utils/practice';
 import { QuizQuestion } from '@/components/QuizQuestion';
 import { SessionTimer } from '@/components/SessionTimer';
@@ -28,8 +28,6 @@ export default function QuizScreen() {
   const session = useStudySession(deck, 'quiz');
   // Cronômetro + tela de início: mesma lógica de todos os modos.
   const timed = useTimedSession(session);
-  // Modal "questões sem resposta" ao finalizar.
-  useFinishPrompt(session);
 
 
   useEffect(() => {
@@ -61,11 +59,18 @@ export default function QuizScreen() {
   // foram erradas ao menos uma vez nesta sessão. Prepara direto do estado (sem
   // recarregar o deck): os ids errados são lidos ANTES do reset, que os limpa,
   // e preparar na mesma renderização evita a corrida com o auto-prepare.
+  // Base do "Todas": as questões praticáveis do deck inteiro. É a MESMA lista
+  // que alimenta o rótulo "Todas (N)" no resultado — se as duas saírem de
+  // origens diferentes, o botão promete um número e entrega outro.
+  const practiceBase = deck ? deck.cards.filter(cardSupportsQuiz) : [];
+
   const restart = (scope: 'all' | 'wrong') => {
     if (!deck) return;
     const wrong = session.wrongIds;
-    const base = deck.cards.filter(cardSupportsQuiz);
-    const cards = scope === 'wrong' ? base.filter(c => wrong.has(c.id)) : base;
+    const cards =
+      scope === 'wrong'
+        ? practiceBase.filter(c => wrong.has(c.id))
+        : practiceBase;
     setNoDue(false);
     timed.resetTimed();
     timed.prepare(cards);
@@ -162,6 +167,7 @@ export default function QuizScreen() {
           seconds={session.elapsedSeconds}
           showTime={timed.config.enabled}
           redoCount={session.wrongIds.size}
+          allCount={practiceBase.length}
           priorPct={session.priorAccuracy}
           onRedo={restart}
           onExit={() => router.back()}
@@ -247,6 +253,13 @@ export default function QuizScreen() {
           canPrev={session.canPrev}
         />
       )}
+
+      {/* "Questões sem resposta" ao finalizar (modal temático, não Alert). */}
+      <FinishPromptModal
+        pendingFinish={session.pendingFinish}
+        onRedo={session.redoUnanswered}
+        onLeave={session.leaveUnanswered}
+      />
     </SafeAreaView>
   );
 }

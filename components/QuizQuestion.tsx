@@ -14,7 +14,6 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { buildOptions } from '@/utils/practice';
 import { STRUCK_OPACITY } from '@/constants/study';
 import { TimeUpNotice } from '@/components/TimeUpNotice';
-import { Button } from '@/components/ui/Button';
 import { cardShadow } from '@/components/ui/Card';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -261,34 +260,64 @@ export function QuizQuestion({
       {/* Navegação livre: voltar/avançar sem responder; sem resposta = tratado
           no Finalizar (modal de questões sem resposta). */}
       <View className="flex-row gap-3">
+        {/* Caixa IDÊNTICA à do irmão em qualquer estado: só a cor do conteúdo
+            muda quando desabilitado (mesma convenção da barra de abas). Variar
+            fundo/opacity junto fazia os dois "piscarem" em direções opostas na
+            virada da questão — um acendia enquanto o outro apagava no toque. */}
         <TouchableOpacity
           onPress={onPrev}
           disabled={!canPrev}
-          activeOpacity={0.7}
-          className="flex-1 h-13 rounded-3xl flex-row items-center justify-center gap-1.5 border py-3.5"
+          activeOpacity={0.85}
+          className="flex-1 h-12 rounded-3xl flex-row items-center justify-center gap-1.5 border"
           style={{
+            backgroundColor: colors.surfaceContainerHigh,
             borderColor: colors.outlineVariant,
-            opacity: canPrev ? 1 : 0.4,
           }}
         >
-          <Ionicons name="chevron-back" size={18} color={colors.onSurface} />
-          <Text className="text-on-surface font-inter-semibold text-sm">
+          <Ionicons
+            name="chevron-back"
+            size={18}
+            color={canPrev ? colors.onSurface : colors.outline}
+          />
+          <Text
+            className="font-inter-semibold text-sm"
+            style={{ color: canPrev ? colors.onSurface : colors.outline }}
+          >
             Anterior
           </Text>
         </TouchableOpacity>
 
+        {/* Finalizar é irmão dos outros na MESMA caixa (h-12/rounded-3xl/
+            text-sm), só que preenchido. Com o <Button> padrão ele vinha com
+            raio 12px e texto maior, desalinhando a dupla lado a lado. */}
         {isLastPosition ? (
-          <View className="flex-1">
-            <Button variant="primary" size="md" onPress={onFinish}>
+          <TouchableOpacity
+            onPress={onFinish}
+            activeOpacity={0.85}
+            className="flex-1 h-12 rounded-3xl flex-row items-center justify-center gap-1.5 border"
+            style={{
+              backgroundColor: colors.primaryContainer,
+              borderColor: colors.primaryContainer,
+            }}
+          >
+            <Text className="text-on-primary-container font-inter-semibold text-sm">
               Finalizar
-            </Button>
-          </View>
+            </Text>
+            <Ionicons
+              name="flag"
+              size={18}
+              color={colors.onPrimaryContainer}
+            />
+          </TouchableOpacity>
         ) : (
           <TouchableOpacity
             onPress={onNext}
-            activeOpacity={0.7}
-            className="flex-1 h-13 rounded-3xl flex-row items-center justify-center gap-1.5 border py-3.5"
-            style={{ borderColor: colors.outlineVariant }}
+            activeOpacity={0.85}
+            className="flex-1 h-12 rounded-3xl flex-row items-center justify-center gap-1.5 border"
+            style={{
+              backgroundColor: colors.surfaceContainerHigh,
+              borderColor: colors.outlineVariant,
+            }}
           >
             <Text className="text-on-surface font-inter-semibold text-sm">
               Próxima

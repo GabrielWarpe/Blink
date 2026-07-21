@@ -21,6 +21,12 @@ import { useSettings } from '@/contexts/SettingsContext';
  * enquanto a sessão está aberta (navegação livre) — por isso o SM-2 só é
  * persistido na FINALIZAÇÃO, com a resposta definitiva de cada card.
  */
+/**
+ * Quantos cards têm o SM-2 gravado em paralelo por vez, na finalização. Alto
+ * demais abre conexões demais no celular; 1 (serial) deixa a gravação lenta.
+ */
+const SM2_FLUSH_CHUNK = 10;
+
 export interface CardAnswer {
   correct: boolean;
   /** Índice da alternativa escolhida (quiz) — reexibida marcada ao voltar. */
@@ -189,18 +195,30 @@ export function useStudySession(deck: Deck | null, mode: StudyMode = 'flash') {
         void (async () => {
           // SM-2 com a resposta DEFINITIVA de cada card (a navegação livre
           // permite trocar a resposta, então nada foi gravado antes daqui).
-          for (const card of answered) {
-            const g: Grade = finalAnswers[card.id]!.correct ? 'good' : 'again';
-            const updated = reviewCard(card, g);
-            await db.decks.reviewCard(updated);
-            await db.reviews.log({
-              user_id: user.id,
-              card_id: card.id,
-              playlist_id: deck.id,
-              grade: g,
-              interval_before: card.interval,
-              interval_after: updated.interval,
-            });
+          //
+          // Em LOTES PARALELOS: cada card é independente dos outros, e em
+          // sequência uma sessão de 50 cards viraria ~100 idas ao servidor
+          // enfileiradas DEPOIS que a tela de resultado já apareceu — lento no
+          // celular e, se o app fosse fechado no meio, parte dos cards ficava
+          // sem reagendar. O lote evita abrir conexões demais de uma vez.
+          for (let i = 0; i < answered.length; i += SM2_FLUSH_CHUNK) {
+            await Promise.all(
+              answered.slice(i, i + SM2_FLUSH_CHUNK).map(async card => {
+                const g: Grade = finalAnswers[card.id]!.correct
+                  ? 'good'
+                  : 'again';
+                const updated = reviewCard(card, g);
+                await db.decks.reviewCard(updated);
+                await db.reviews.log({
+                  user_id: user.id,
+                  card_id: card.id,
+                  playlist_id: deck.id,
+                  grade: g,
+                  interval_before: card.interval,
+                  interval_after: updated.interval,
+                });
+              }),
+            );
           }
 
           await db.sessions.create({

@@ -335,27 +335,41 @@ export function SwipeCard({
         {/* Navegação livre: voltar a qualquer questão e alterar a resposta;
             avançar deixa a atual sem resposta (tratada no Finalizar). */}
         <View className="mt-3 flex-row gap-3">
+          {/* Caixa IDÊNTICA à do irmão em qualquer estado: só a cor do
+              conteúdo muda quando desabilitado (mesma convenção da barra de
+              abas). Variar fundo/opacity junto fazia os dois "piscarem" em
+              direções opostas na virada da questão. */}
           <TouchableOpacity
             onPress={onPrev}
             disabled={!canPrev}
-            activeOpacity={0.7}
+            activeOpacity={0.85}
             className="flex-1 h-12 rounded-3xl flex-row items-center justify-center gap-1.5 border"
             style={{
+              backgroundColor: colors.surfaceContainerHigh,
               borderColor: colors.outlineVariant,
-              opacity: canPrev ? 1 : 0.4,
             }}
           >
-            <Ionicons name="chevron-back" size={18} color={colors.onSurface} />
-            <Text className="text-on-surface font-inter-semibold text-sm">
+            <Ionicons
+              name="chevron-back"
+              size={18}
+              color={canPrev ? colors.onSurface : colors.outline}
+            />
+            <Text
+              className="font-inter-semibold text-sm"
+              style={{ color: canPrev ? colors.onSurface : colors.outline }}
+            >
               Anterior
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={isLastPosition ? onFinish : onNext}
-            activeOpacity={0.7}
+            activeOpacity={0.85}
             className="flex-1 h-12 rounded-3xl flex-row items-center justify-center gap-1.5 border"
-            style={{ borderColor: colors.outlineVariant }}
+            style={{
+              backgroundColor: colors.surfaceContainerHigh,
+              borderColor: colors.outlineVariant,
+            }}
           >
             <Text className="text-on-surface font-inter-semibold text-sm">
               {isLastPosition ? 'Finalizar' : 'Próximo'}
