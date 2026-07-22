@@ -29,6 +29,10 @@ export default function StudySessionScreen() {
   const colors = useThemeColors();
   const [deck, setDeck] = useState<Deck | null>(null);
   const [noDue, setNoDue] = useState(false);
+  // O usuário já escolheu explicitamente o que praticar (ex.: "as que não
+  // entendi")? Aí a tela de início NÃO deve reoferecer o deck inteiro — a
+  // sessão está curta porque ele quis, não porque o agendamento limitou.
+  const [scopeChosen, setScopeChosen] = useState(false);
 
   // ── Modo misto (flashcards + quiz intercalados) ───────────────────────────
   // Degrada para flashcards puro se o deck não suportar quiz. Calculado ANTES
@@ -61,6 +65,7 @@ export default function StudySessionScreen() {
   if (!deck) return null;
 
   const practiceAll = () => {
+    setScopeChosen(true);
     setNoDue(false);
     timed.prepare(deck.cards);
   };
@@ -72,6 +77,7 @@ export default function StudySessionScreen() {
     const wrong = session.wrongIds;
     const cards =
       scope === 'wrong' ? deck.cards.filter(c => wrong.has(c.id)) : deck.cards;
+    setScopeChosen(true);
     setNoDue(false);
     timed.resetTimed();
     timed.prepare(cards);
@@ -146,6 +152,10 @@ export default function StudySessionScreen() {
           config={timed.config}
           onChange={timed.setConfig}
           onStart={timed.begin}
+          allCount={scopeChosen ? undefined : deck.cards.length}
+          onStartAll={
+            scopeChosen ? undefined : () => timed.beginWith(deck.cards)
+          }
           onCancel={() => router.back()}
         />
       </SafeAreaView>

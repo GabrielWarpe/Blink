@@ -20,6 +20,14 @@ interface StudySetupProps {
   onChange: (next: StudyTimerConfig) => void;
   onStart: () => void;
   onCancel: () => void;
+  /**
+   * Total praticável do deck. Quando é MAIOR que `cardCount` (a sessão veio
+   * limitada pelo agendamento — só os devidos de hoje), aparece a opção de
+   * praticar tudo. Sem isso, quem já revisou fica preso aos poucos devidos,
+   * sem caminho para estudar o deck inteiro.
+   */
+  allCount?: number;
+  onStartAll?: () => void;
 }
 
 const MODES: { value: StudyTimerMode; label: string; hint: string }[] = [
@@ -44,8 +52,13 @@ export function StudySetup({
   onChange,
   onStart,
   onCancel,
+  allCount,
+  onStartAll,
 }: StudySetupProps) {
   const colors = useThemeColors();
+  // Só faz sentido oferecer "tudo" quando a sessão veio mesmo reduzida.
+  const canPracticeAll =
+    onStartAll != null && allCount != null && allCount > cardCount;
   const set = <K extends keyof StudyTimerConfig>(
     key: K,
     value: StudyTimerConfig[K],
@@ -226,6 +239,24 @@ export function StudySetup({
             ? `Estudar 1 ${itemNoun[0]}`
             : `Estudar ${cardCount} ${itemNoun[1]}`}
         </Button>
+
+        {/* Sessão limitada pelo agendamento → caminho explícito para o deck
+            inteiro, dizendo por que os números diferem. */}
+        {canPracticeAll && (
+          <View>
+            <Button variant="outline" size="lg" onPress={onStartAll}>
+              {`Praticar ${allCount} ${itemNoun[1]}`}
+            </Button>
+            <Text className="text-outline font-inter-regular text-xs text-center mt-2 leading-4">
+              {cardCount === 1
+                ? `Só 1 ${itemNoun[0]} está`
+                : `Só ${cardCount} ${itemNoun[1]} estão`}{' '}
+              para revisar hoje; {allCount - cardCount === 1 ? 'a outra' : 'as outras'}{' '}
+              ainda não {allCount - cardCount === 1 ? 'venceu' : 'venceram'}.
+              Responder de novo reagenda {allCount - cardCount === 1 ? 'ela' : 'elas'}.
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );

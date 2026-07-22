@@ -24,6 +24,10 @@ export default function QuizScreen() {
   const colors = useThemeColors();
   const [deck, setDeck] = useState<Deck | null>(null);
   const [noDue, setNoDue] = useState(false);
+  // O usuário já escolheu explicitamente o que praticar (ex.: "as que não
+  // entendi")? Aí a tela de início NÃO deve reoferecer o deck inteiro — a
+  // sessão está curta porque ele quis, não porque o agendamento limitou.
+  const [scopeChosen, setScopeChosen] = useState(false);
 
   const session = useStudySession(deck, 'quiz');
   // Cronômetro + tela de início: mesma lógica de todos os modos.
@@ -49,21 +53,22 @@ export default function QuizScreen() {
     else setNoDue(true);
   }, [deck, noDue, timed.started, timed.pending, timed.prepare]);
 
+  // Base do "Todas": as questões praticáveis do deck inteiro. É a MESMA lista
+  // que alimenta o rótulo "Todas (N)" no resultado — se as duas saírem de
+  // origens diferentes, o botão promete um número e entrega outro.
+  const practiceBase = deck ? deck.cards.filter(cardSupportsQuiz) : [];
+
   const practiceAll = () => {
     if (!deck) return;
+    setScopeChosen(true);
     setNoDue(false);
-    timed.prepare(deck.cards.filter(cardSupportsQuiz));
+    timed.prepare(practiceBase);
   };
 
   // Refaz a prática: 'all' = todas as questões de novo; 'wrong' = só as que
   // foram erradas ao menos uma vez nesta sessão. Prepara direto do estado (sem
   // recarregar o deck): os ids errados são lidos ANTES do reset, que os limpa,
   // e preparar na mesma renderização evita a corrida com o auto-prepare.
-  // Base do "Todas": as questões praticáveis do deck inteiro. É a MESMA lista
-  // que alimenta o rótulo "Todas (N)" no resultado — se as duas saírem de
-  // origens diferentes, o botão promete um número e entrega outro.
-  const practiceBase = deck ? deck.cards.filter(cardSupportsQuiz) : [];
-
   const restart = (scope: 'all' | 'wrong') => {
     if (!deck) return;
     const wrong = session.wrongIds;
@@ -71,6 +76,7 @@ export default function QuizScreen() {
       scope === 'wrong'
         ? practiceBase.filter(c => wrong.has(c.id))
         : practiceBase;
+    setScopeChosen(true);
     setNoDue(false);
     timed.resetTimed();
     timed.prepare(cards);
@@ -149,6 +155,10 @@ export default function QuizScreen() {
           config={timed.config}
           onChange={timed.setConfig}
           onStart={timed.begin}
+          allCount={scopeChosen ? undefined : practiceBase.length}
+          onStartAll={
+            scopeChosen ? undefined : () => timed.beginWith(practiceBase)
+          }
           onCancel={() => router.back()}
         />
       </SafeAreaView>

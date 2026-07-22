@@ -15,8 +15,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import type { Deck, Flashcard } from '@/types';
 import { db } from '@/services/database';
-import { useStudySession } from '@/hooks/useStudySession';
+import { useStudySession, type CardAnswer } from '@/hooks/useStudySession';
 import { useTimedSession } from '@/hooks/useTimedSession';
+import { gradeAnswer } from '@/lib/api/gradeAnswer';
 import { FinishPromptModal } from '@/components/FinishPromptModal';
 import { useSettings } from '@/contexts/SettingsContext';
 import { checkAnswer } from '@/utils/answer';
@@ -45,6 +46,8 @@ export default function WriteScreen() {
   const timed = useTimedSession(session);
 
   const [draft, setDraft] = useState('');
+  // Aguardando a correção semântica da IA (só nas respostas que o texto rejeitou).
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     if (!deckId) return;
@@ -101,14 +104,9 @@ export default function WriteScreen() {
     );
   }
 
-  const handleVerify = () => {
-    if (!currentCard || saved != null) return;
-    const input = draft.trim();
-    if (input.length === 0) return;
-    Keyboard.dismiss();
-    const verdict = checkAnswer(input, currentCard.back);
-    const correct = verdict === 'exact' || verdict === 'typo';
-    session.answer(correct, { typed: input, typedVerdict: verdict });
+  /** Registra o veredito e dá o retorno tátil. */
+  const commit = (correct: boolean, detail: Omit<CardAnswer, 'correct'>) => {
+    session.answer(correct, detail);
     if (settings.feedbackSounds) {
       void Haptics.notificationAsync(
         correct
@@ -116,6 +114,56 @@ export default function WriteScreen() {
           : Haptics.NotificationFeedbackType.Warning,
       );
     }
+  };
+
+  /**
+   * Compara primeiro por TEXTO (instantâneo e sem custo). Só quando o texto não
+   * bate é que a IA entra como segunda opinião — é lá que mora o problema: numa
+   * resposta longa, exigir transcrição literal reprova quem sabe a matéria.
+   * Qualquer falha da IA cai no veredito local: a sessão nunca trava por rede.
+   */
+  const handleVerify = async () => {
+    if (!currentCard || saved != null || checking) return;
+    const input = draft.trim();
+    if (input.length === 0) return;
+    Keyboard.dismiss();
+
+    // Camadas locais (grátis, instantâneas): texto exato, 1 typo, ou cobertura
+    // alta das palavras-chave. Só o que sobra vai para a IA.
+    const check = checkAnswer(input, currentCard.back);
+    if (check.verdict !== 'wrong' && check.verdict !== 'partial') {
+      commit(true, { typed: input, typedVerdict: check.verdict });
+      return;
+    }
+
+    setChecking(true);
+    const graded = await gradeAnswer({
+      question: currentCard.front,
+      expected: currentCard.back,
+      answer: input,
+    });
+    setChecking(false);
+
+    if (!graded.ok) {
+      // Sem IA: não inventa veredito — diz o que faltou (dado que a cobertura
+      // de palavras-chave já calculou) e deixa o "Minha resposta estava certa"
+      // à mão.
+      commit(false, {
+        typed: input,
+        typedVerdict: 'wrong',
+        typedFeedback:
+          check.missing.length > 0
+            ? `Faltou mencionar: ${check.missing.slice(0, 4).join(', ')}.`
+            : 'Não deu para avaliar pelo significado agora — confira você mesmo.',
+      });
+      return;
+    }
+
+    commit(graded.correct, {
+      typed: input,
+      typedVerdict: graded.correct ? 'ai' : 'wrong',
+      typedFeedback: graded.feedback,
+    });
   };
 
   const handleDontKnow = () => {
@@ -301,6 +349,7 @@ export default function WriteScreen() {
                   variant="primary"
                   size="lg"
                   disabled={draft.trim().length === 0}
+                  loading={checking}
                   onPress={handleVerify}
                 >
                   Verificar
@@ -336,13 +385,24 @@ export default function WriteScreen() {
                         ? '✓ Correto!'
                         : saved.typedVerdict === 'typo'
                           ? '✓ Quase perfeito — só um errinho de digitação'
-                          : saved.typedVerdict === 'idk'
-                            ? 'Sem problema — a resposta era:'
-                            : '✗ Não foi dessa vez. A resposta era:'}
+                          : saved.typedVerdict === 'close'
+                            ? '✓ Correto — você disse o essencial'
+                            : saved.typedVerdict === 'ai'
+                              ? '✓ Correto — você disse o mesmo com outras palavras'
+                              : saved.typedVerdict === 'idk'
+                                ? 'Sem problema — a resposta era:'
+                                : '✗ Não foi dessa vez. A resposta era:'}
                   </Text>
                   <Text className="text-on-surface font-jakarta-bold text-base mt-2 leading-6">
                     {currentCard.back}
                   </Text>
+                  {/* Justificativa da correção semântica: diz O QUE faltou, em
+                      vez de só reprovar. */}
+                  {(saved.typedFeedback?.length ?? 0) > 0 && (
+                    <Text className="text-on-surface-variant font-inter-regular text-xs mt-2 leading-4">
+                      {saved.typedFeedback}
+                    </Text>
+                  )}
                   {saved.typedVerdict === 'wrong' &&
                     (saved.typed?.length ?? 0) > 0 && (
                       <Text className="text-outline font-inter-regular text-xs mt-2">

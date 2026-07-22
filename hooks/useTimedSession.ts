@@ -71,6 +71,24 @@ export function useTimedSession(session: TimedSessionTarget) {
     setStarted(true);
   }, [pending, session, timer]);
 
+  /**
+   * Começa com um conjunto EXPLÍCITO, ignorando o que estava pendente — é o
+   * "praticar o deck todo" a partir da tela de início, quando a sessão foi
+   * montada só com os cards devidos. Função à parte (e não um argumento do
+   * `begin`) porque `begin` é passado direto para `onPress` e receberia o
+   * evento do toque no lugar dos cards.
+   */
+  const beginWith = useCallback(
+    (cards: Flashcard[]) => {
+      if (cards.length === 0) return;
+      timer.reset();
+      setPending(cards);
+      session.start(cards);
+      setStarted(true);
+    },
+    [session, timer],
+  );
+
   const resetTimed = useCallback(() => {
     setPending(null);
     setStarted(false);
@@ -85,6 +103,8 @@ export function useTimedSession(session: TimedSessionTarget) {
     started,
     prepare,
     begin,
+    /** Começa com um conjunto explícito (ex.: praticar o deck inteiro). */
+    beginWith,
     /** Zera sessão + cronômetro + pendência (para "refazer"). */
     resetTimed,
     config,

@@ -35,6 +35,8 @@ export interface CardAnswer {
   typed?: string;
   typedVerdict?: string;
   typedOverridden?: boolean;
+  /** Justificativa da correção semântica por IA (o que faltou / o que acertou). */
+  typedFeedback?: string;
 }
 
 /**
