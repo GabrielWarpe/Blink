@@ -69,20 +69,38 @@ export function TagInput({ tags, onChange, suggestions = [] }: TagInputProps) {
         </View>
       )}
 
-      {/* Campo de adição */}
+      {/* Campo de adição — a tag é confirmada por TRÊS caminhos: tecla done,
+          botão "+" e ao perder o foco (onBlur). Antes só a tecla done contava,
+          então quem digitava e tocava direto em "Salvar" perdia o rascunho em
+          silêncio. Os três chamam o mesmo addTag (normaliza, respeita o limite
+          e ignora duplicata). */}
       {!atLimit ? (
-        <TextInput
-          value={draft}
-          onChangeText={setDraft}
-          onSubmitEditing={() => addTag(draft)}
-          placeholder="Ex: inglês, prova, capítulo 3..."
-          placeholderTextColor={colors.outline}
-          returnKeyType="done"
-          submitBehavior="submit"
-          maxLength={MAX_TAG_LENGTH}
-          className="bg-surface-container rounded-button px-4 py-3 text-on-surface font-inter-regular text-sm border border-outline-variant/30"
-          selectionColor={colors.primary}
-        />
+        <View className="flex-row items-center gap-2">
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            onSubmitEditing={() => addTag(draft)}
+            onBlur={() => addTag(draft)}
+            placeholder="Ex: inglês, prova, capítulo 3..."
+            placeholderTextColor={colors.outline}
+            returnKeyType="done"
+            submitBehavior="submit"
+            maxLength={MAX_TAG_LENGTH}
+            className="flex-1 bg-surface-container rounded-button px-4 py-3 text-on-surface font-inter-regular text-sm border border-outline-variant/30"
+            selectionColor={colors.primary}
+          />
+          <TouchableOpacity
+            onPress={() => addTag(draft)}
+            disabled={draft.trim().length === 0}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Adicionar tag"
+            className="w-11 h-11 rounded-button items-center justify-center bg-primary-container"
+            style={{ opacity: draft.trim().length === 0 ? 0.4 : 1 }}
+          >
+            <Ionicons name="add" size={22} color={colors.onPrimaryContainer} />
+          </TouchableOpacity>
+        </View>
       ) : (
         <Text className="text-outline font-inter-regular text-xs">
           Máximo de {MAX_TAGS} tags por deck.

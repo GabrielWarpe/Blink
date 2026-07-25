@@ -11,3 +11,8 @@ dist/
 
 expo-env.d.ts
 # @end expo-cli
+
+# Graphify - local cache e config específica de máquina
+graphify-out/cache/
+graphify-out/.graphify_python
+graphify-out/.graphify_root

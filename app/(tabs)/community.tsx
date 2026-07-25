@@ -19,8 +19,6 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { TAB_SCREEN_BOTTOM_INSET } from '@/constants/layout';
 
 const TRENDING_CARD_WIDTH = 168;
-/** Quantas tags viram chip — mais que isso e a rolagem horizontal vira ruído. */
-const MAX_CATEGORY_CHIPS = 8;
 
 export default function CommunityScreen() {
   const router = useRouter();
@@ -55,18 +53,19 @@ export default function CommunityScreen() {
     return () => clearTimeout(t);
   }, [search, load]);
 
-  // Categorias: derivadas das tags REAIS dos decks carregados (não existe
-  // coluna de categoria no banco) — as mais frequentes primeiro, "Todos" na
-  // frente. Chips substituem a ordenação manual como filtro primário.
+  // Categorias: TODAS as tags dos decks carregados, em ordem ALFABÉTICA
+  // estável (localeCompare 'pt' lida com acento/caixa) — mesma convenção da
+  // aba Decks. Ordem fixa em vez de por frequência: um chip nunca troca de
+  // posição ao adicionar/remover a tag de um deck, e nenhuma tag rara fica de
+  // fora (sem chip = deck inalcançável no filtro). A linha rola na horizontal,
+  // então lista longa não custa layout.
+  // Nota: as tags vêm só dos decks já carregados — o listCommunityDecks traz
+  // no máximo ~100 linhas; quando a comunidade crescer, vale paginar/derivar
+  // as categorias no servidor.
   const categories = useMemo(() => {
-    const freq = new Map<string, number>();
-    for (const d of decks) {
-      for (const tag of d.tags) freq.set(tag, (freq.get(tag) ?? 0) + 1);
-    }
-    return [...freq.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .map(([tag]) => tag)
-      .slice(0, MAX_CATEGORY_CHIPS);
+    const set = new Set<string>();
+    for (const d of decks) for (const tag of d.tags) set.add(tag);
+    return [...set].sort((a, b) => a.localeCompare(b, 'pt'));
   }, [decks]);
   // Se a categoria ativa saiu da lista (nova busca mudou os decks), volta a
   // "Todos" em vez de filtrar por algo que não existe mais.

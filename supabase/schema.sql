@@ -1,5 +1,5 @@
 -- ============================================================================
--- Recall — Schema do banco de dados (execute no Supabase SQL Editor)
+-- Blink — Schema do banco de dados (execute no Supabase SQL Editor)
 -- ============================================================================
 
 -- Perfis de usuário
@@ -128,6 +128,11 @@ alter table playlists add column if not exists tags text[] not null default '{}'
 alter table playlists add column if not exists cover_url text;
 alter table playlists add column if not exists description text;
 alter table flashcards add column if not exists quiz_options text[] not null default '{}';
+-- Modo da sessão ('flash'|'quiz'|'write'|'mixed') e tempo real de tela ativa.
+-- Anuláveis DE PROPÓSITO: sessões antigas não têm valor conhecido — null, não
+-- zero (o insert do app já é tolerante à ausência das colunas).
+alter table study_sessions add column if not exists mode text;
+alter table study_sessions add column if not exists active_seconds integer;
 
 -- Excluir um deck NÃO pode apagar o histórico de sessões (o XP e a sequência
 -- são derivados dele). Migra o vínculo de CASCADE para SET NULL.

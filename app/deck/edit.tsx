@@ -56,7 +56,20 @@ export default function EditDeckScreen() {
 
   useEffect(() => {
     if (!id) return;
-    void db.decks.getOne(id).then(d => {
+    let cancelled = false;
+    // Espera as DUAS consultas (o deck e o estado de publicação) ANTES de
+    // liberar o form — só então setLoading(false). Antes cada uma resolvia
+    // solta e o Salvar (atrás de `loading`) liberava assim que a PRIMEIRA
+    // terminava: havia uma janela em que salvar rodava com isPublic ainda no
+    // inicial (false) e PULAVA a republicação em silêncio — o deck salvava com
+    // a tag nova, mas o snapshot da comunidade ficava com as tags antigas.
+    // `cancelled` evita setState depois de a tela desmontar.
+    void (async () => {
+      const [d, pub] = await Promise.all([
+        db.decks.getOne(id),
+        getPublishedFor(id),
+      ]);
+      if (cancelled) return;
       if (d) {
         setTitle(d.title);
         setDescription(d.description);
@@ -69,14 +82,14 @@ export default function EditDeckScreen() {
           );
         }
       }
-      setLoading(false);
-    });
-    // Estado de publicação atual (para o toggle refletir o que já está público).
-    void getPublishedFor(id).then(pub => {
       setIsPublic(pub != null);
       setWasPublic(pub != null);
       if (pub?.license) setLicense(pub.license);
-    });
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const handleSave = async () => {

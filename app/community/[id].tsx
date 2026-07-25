@@ -272,6 +272,24 @@ export default function CommunityDeckScreen() {
           </Text>
         </View>
 
+        {/* Tags do deck — mesma fonte que alimenta o filtro por categoria da
+            aba Comunidade; até aqui não havia como conferir se a tag entrou na
+            publicação. Só aparece quando há tags. */}
+        {deck.tags.length > 0 && (
+          <View className="flex-row flex-wrap gap-2">
+            {deck.tags.map(tag => (
+              <View
+                key={tag}
+                className="bg-surface-container-high rounded-full px-3 py-1.5"
+              >
+                <Text className="text-outline font-inter-medium text-xs">
+                  #{tag}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* Baixar — o selo só aparece enquanto a cópia EXISTE nos seus decks;
             excluiu a cópia? o botão volta e dá para baixar de novo. */}
         {hasCopy ? (

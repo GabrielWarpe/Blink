@@ -6,9 +6,10 @@ App mobile de flashcards com **repetição espaçada** (algoritmo SM-2, estilo A
 
 - **Decks e flashcards** — crie, edite e organize decks com emoji, cor, capa, tags e imagens nos cards
 - **Geração com IA** — gere cards automaticamente a partir de um tópico, texto, imagem ou PDF (Claude)
-- **Repetição espaçada (SM-2)** — cada card é reagendado conforme sua avaliação: *De novo*, *Difícil*, *Bom* ou *Fácil* (com gestos de swipe)
-- **Modos de prática** — flashcards clássicos, **Quiz** de alternativas e modo **Escrever** (digite a resposta)
-- **Progresso e hábito** — meta diária, sequência (streak), heatmap de atividade, XP/níveis e 20 conquistas
+- **Repetição espaçada (SM-2)** — avaliação **binária** (*Errei* / *Entendi*, também por gesto de swipe) reagenda cada card na hora certa
+- **4 modos de prática** — flashcards clássicos, **Quiz** de alternativas, **Escrever** (digite a resposta, com correção semântica por IA) e **Alternado** (flashcards + quiz intercalados)
+- **Comunidade** — publique decks (modelo *snapshot*, com licença por deck), descubra/baixe decks de outros e avalie com estrelas — uma das **5 abas** (Início · Decks · Comunidade · Progresso · Perfil)
+- **Progresso e hábito** — meta diária, sequência (streak), heatmap de atividade, XP/níveis e **73 conquistas**
 - **Lembretes inteligentes** — notificações locais com base nos cards devidos dos próximos dias
 - **Personalização** — tema claro/escuro/sistema, cor de destaque, tamanho de fonte, redução de movimento
 - **Tudo na conta** — decks, sessões, conquistas, configurações e onboarding sincronizados via Supabase (multi-aparelho)
@@ -23,7 +24,7 @@ App mobile de flashcards com **repetição espaçada** (algoritmo SM-2, estilo A
 | Animações | react-native-reanimated 4 |
 | Backend | Supabase (Auth, Postgres com RLS, Storage) |
 | Imagens | expo-image (cache memória+disco, prefetch nas sessões) |
-| IA | API da Anthropic (Claude) para gerar flashcards |
+| IA | Claude via **Edge Function** do Supabase (chave secreta no servidor) — gera cards e corrige respostas do modo Escrever |
 
 ## Como rodar
 
@@ -58,9 +59,20 @@ EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anon
 ```
 
-Para a geração de cards com IA (opcional), defina também `EXPO_PUBLIC_ANTHROPIC_API_KEY`.
+Só as chaves do Supabase acima entram no app — `URL` e `anon` são públicas por
+design (protegidas por RLS).
 
 > O `.env.local` está no `.gitignore` — nunca commite credenciais.
+
+> ⚠️ **A chave da Anthropic NÃO vai aqui.** Ela é um segredo de servidor: fica
+> nas Edge Functions do Supabase, definida como secret, e nunca no app.
+> ```bash
+> supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+> supabase functions deploy generate-cards
+> supabase functions deploy grade-answer
+> ```
+> **Nunca** use o prefixo `EXPO_PUBLIC_` para essa chave — variáveis
+> `EXPO_PUBLIC_*` são embutidas no bundle do app, onde qualquer usuário as lê.
 
 ### 5. Iniciar
 
