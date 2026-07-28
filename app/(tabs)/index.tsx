@@ -17,13 +17,16 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { TAB_SCREEN_BOTTOM_INSET } from '@/constants/layout';
+import { useTabBarInset } from '@/hooks/useTabBarInset';
+import { useTabBarScroll } from '@/hooks/useTabBarScroll';
 
 const RING_SIZE = 220;
 
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const tabBar = useTabBarInset();
+  const tabScroll = useTabBarScroll();
   const { profile } = useAuth();
   const { decks } = useDecks();
   const { streak, todayCount } = useStreak();
@@ -112,8 +115,9 @@ export default function HomeScreen() {
     // uma faixa morta acima da barra que cortava o último card.
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       <ScrollView
+        {...tabScroll}
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: TAB_SCREEN_BOTTOM_INSET }}
+        contentContainerStyle={{ paddingBottom: tabBar.contentInset }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}

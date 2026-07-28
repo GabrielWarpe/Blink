@@ -13,6 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useDecks } from '@/hooks/useDecks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useTabBarInset } from '@/hooks/useTabBarInset';
+import { useTabBarScroll } from '@/hooks/useTabBarScroll';
 import {
   exportDeck,
   exportDecks,
@@ -49,6 +51,8 @@ export default function DecksScreen() {
   const { user } = useAuth();
   const { decks, reload, deleteDeck } = useDecks();
   const colors = useThemeColors();
+  const tabBar = useTabBarInset();
+  const tabScroll = useTabBarScroll();
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [sort, setSort] = useState<'recent' | 'alpha' | 'count'>('recent');
@@ -345,11 +349,12 @@ export default function DecksScreen() {
       </View>
 
       <FlatList
+        {...tabScroll}
         data={sorted}
         keyExtractor={d => d.id}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingBottom: 120,
+          paddingBottom: tabBar.contentInset,
           gap: 12,
         }}
         showsVerticalScrollIndicator={false}
@@ -415,11 +420,13 @@ export default function DecksScreen() {
         )}
       />
 
-      {/* FAB */}
+      {/* FAB — ancorado ACIMA da barra flutuante (que é `position: absolute`);
+          com o `bottom` fixo de antes ele ficaria atrás dela. */}
       <TouchableOpacity
-        className="absolute bottom-8 right-5 w-14 h-14 bg-primary-container rounded-full items-center justify-center"
+        className="absolute right-5 w-14 h-14 bg-primary-container rounded-full items-center justify-center"
         onPress={() => router.push('/deck/create')}
         style={{
+          bottom: tabBar.barTop + 16,
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 4 },

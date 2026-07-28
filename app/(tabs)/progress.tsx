@@ -23,7 +23,8 @@ import {
   STUDY_MODE_LABEL,
   STUDY_MODE_ICON,
 } from '@/utils/stats';
-import { TAB_SCREEN_BOTTOM_INSET } from '@/constants/layout';
+import { useTabBarInset } from '@/hooks/useTabBarInset';
+import { useTabBarScroll } from '@/hooks/useTabBarScroll';
 
 const DAYS = 7;
 
@@ -31,6 +32,8 @@ export default function ProgressScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const colors = useThemeColors();
+  const tabBar = useTabBarInset();
+  const tabScroll = useTabBarScroll();
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [leeches, setLeeches] = useState<{ cardId: string; againCount: number }[]>([]);
   const { streak } = useStreak();
@@ -152,8 +155,9 @@ export default function ProgressScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       <ScrollView
+        {...tabScroll}
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: TAB_SCREEN_BOTTOM_INSET }}
+        contentContainerStyle={{ paddingBottom: tabBar.contentInset }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}

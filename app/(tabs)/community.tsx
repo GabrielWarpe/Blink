@@ -16,13 +16,16 @@ import { StarRating } from '@/components/StarRating';
 import { Input } from '@/components/ui/Input';
 import { cardShadow } from '@/components/ui/Card';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { TAB_SCREEN_BOTTOM_INSET } from '@/constants/layout';
+import { useTabBarInset } from '@/hooks/useTabBarInset';
+import { useTabBarScroll } from '@/hooks/useTabBarScroll';
 
 const TRENDING_CARD_WIDTH = 168;
 
 export default function CommunityScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const tabBar = useTabBarInset();
+  const tabScroll = useTabBarScroll();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [decks, setDecks] = useState<CommunityDeckRow[]>([]);
@@ -95,10 +98,11 @@ export default function CommunityScreen() {
         // JUNTO com o conteúdo (não ficam fixos), então nada de "tela cortada
         // em duas" — ao descer, os chips somem naturalmente.
         <ScrollView
+          {...tabScroll}
           className="flex-1"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: TAB_SCREEN_BOTTOM_INSET }}
+          contentContainerStyle={{ paddingBottom: tabBar.contentInset }}
         >
           {/* Header */}
           <View className="px-5 pt-6 pb-3">

@@ -20,6 +20,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useStreak } from '@/hooks/useStreak';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useTabBarInset } from '@/hooks/useTabBarInset';
+import { useTabBarScroll } from '@/hooks/useTabBarScroll';
 import { GoalSlider } from '@/components/GoalSlider';
 import { Card, cardShadow } from '@/components/ui/Card';
 import { ACHIEVEMENTS, getUnlocked } from '@/services/achievements';
@@ -31,6 +33,8 @@ export default function ProfileScreen() {
   const { settings, update } = useSettings();
   const { streak } = useStreak();
   const colors = useThemeColors();
+  const tabBar = useTabBarInset();
+  const tabScroll = useTabBarScroll();
 
   const name = profile?.name ?? 'Estudante';
   const initial = (name.trim()[0] ?? 'R').toUpperCase();
@@ -144,7 +148,8 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       <ScrollView
-        contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
+        {...tabScroll}
+        contentContainerStyle={{ padding: 20, paddingBottom: tabBar.contentInset }}
         showsVerticalScrollIndicator={false}
       >
         {/* Header — único acesso às configurações */}

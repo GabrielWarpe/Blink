@@ -1,5 +1,14 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
+// TouchableOpacity do gesture-handler, não do react-native: este card só é
+// usado dentro de SwipeableDeckRow, aninhado num GestureDetector (Gesture.Pan).
+// O Touchable do RN puro roda no sistema de resposta a toque legado, que
+// disputa o mesmo toque com o gesture-handler — num arrasto curto/rápido que
+// não passa claramente do limiar do Pan, o legado ainda registra como toque
+// válido e dispara onPress (navega para o deck) no meio do que deveria ser só
+// um gesto de arrastar. Usar o Touchable do próprio gesture-handler tira essa
+// disputa: os dois passam a ser arbitrados pelo mesmo sistema.
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -31,11 +40,25 @@ export function DeckCard({ deck, onPress, onPlay }: DeckCardProps) {
       : 'Nunca estudado';
 
   return (
+    // Estilo em objeto, não `className`, nos dois TouchableOpacity deste
+    // arquivo: são o do gesture-handler (ver import acima), e o layout em
+    // linha (flex-row/items-center/gap) não estava sendo aplicado de volta
+    // pelo interop do NativeWind — os filhos caíam em coluna. Estilo inline
+    // não depende desse interop, funciona igual em qualquer componente.
     <TouchableOpacity
       onPress={onPress}
-      className="bg-surface-container rounded-card p-4 flex-row items-center gap-3"
-      style={cardShadow}
       activeOpacity={0.8}
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          padding: 16,
+          borderRadius: 14,
+          backgroundColor: colors.surfaceContainer,
+        },
+        cardShadow,
+      ]}
     >
       <DeckAvatar coverUrl={deck.coverUrl} size={48} radius={12} />
       <View className="flex-1">
@@ -63,7 +86,14 @@ export function DeckCard({ deck, onPress, onPlay }: DeckCardProps) {
           onPress={onPlay}
           activeOpacity={0.8}
           hitSlop={10}
-          className="w-10 h-10 rounded-full bg-primary-container items-center justify-center"
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 9999,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.primaryContainer,
+          }}
         >
           <Ionicons name="play" size={18} color="#dffbf7" />
         </TouchableOpacity>
