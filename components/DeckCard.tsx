@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useGlass } from '@/hooks/useGlass';
+import { CARD_RADIUS } from '@/constants/radius';
 // TouchableOpacity do gesture-handler, não do react-native: este card só é
 // usado dentro de SwipeableDeckRow, aninhado num GestureDetector (Gesture.Pan).
 // O Touchable do RN puro roda no sistema de resposta a toque legado, que
@@ -29,6 +32,7 @@ interface DeckCardProps {
 
 export function DeckCard({ deck, onPress, onPlay }: DeckCardProps) {
   const colors = useThemeColors();
+  const glass = useGlass();
   const totalCards = deck.cards.length;
 
   const studiedLabel =
@@ -54,12 +58,22 @@ export function DeckCard({ deck, onPress, onPlay }: DeckCardProps) {
           alignItems: 'center',
           gap: 12,
           padding: 16,
-          borderRadius: 14,
+          borderRadius: CARD_RADIUS,
           backgroundColor: colors.surfaceContainer,
+          // Borda fina de luz — mesmo tratamento de vidro do `ui/Card`.
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: glass.border,
         },
         cardShadow,
       ]}
     >
+      <LinearGradient
+        pointerEvents="none"
+        colors={glass.sheen}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 0.6 }}
+        style={[StyleSheet.absoluteFill, { borderRadius: CARD_RADIUS }]}
+      />
       <DeckAvatar coverUrl={deck.coverUrl} size={48} radius={12} />
       <View className="flex-1">
         <Text

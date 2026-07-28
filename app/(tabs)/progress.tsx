@@ -12,6 +12,7 @@ import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { DeckAvatar } from '@/components/DeckAvatar';
 import { Emblem } from '@/components/Emblem';
 import { Card, cardShadow } from '@/components/ui/Card';
+import { useGlassEdge, GlassSheen } from '@/components/ui/GlassSurface';
 import { useStreak } from '@/hooks/useStreak';
 import { useDecks } from '@/hooks/useDecks';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +33,7 @@ export default function ProgressScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const colors = useThemeColors();
+  const edge = useGlassEdge();
   const tabBar = useTabBarInset();
   const tabScroll = useTabBarScroll();
   const [sessions, setSessions] = useState<StudySession[]>([]);
@@ -459,8 +461,9 @@ export default function ProgressScreen() {
                     <View
                       key={session.id}
                       className="bg-surface-container rounded-card px-4 py-3 flex-row items-center"
-                      style={cardShadow}
+                      style={[cardShadow, edge]}
                     >
+                      <GlassSheen />
                       <View className="flex-1">
                         <Text className="text-on-surface font-inter-medium text-sm">
                           {session.deckTitle}
@@ -535,11 +538,13 @@ function StatCard({
   value: string;
   label: string;
 }) {
+  const edge = useGlassEdge();
   return (
     <View
       className="bg-surface-container rounded-card p-4 flex-1 min-w-[140px]"
-      style={cardShadow}
+      style={[cardShadow, edge]}
     >
+      <GlassSheen />
       <View
         className="w-8 h-8 rounded-button items-center justify-center mb-2"
         style={{ backgroundColor: tint + '22' }}

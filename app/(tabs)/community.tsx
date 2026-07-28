@@ -18,12 +18,14 @@ import { cardShadow } from '@/components/ui/Card';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useTabBarScroll } from '@/hooks/useTabBarScroll';
+import { useGlassEdge, GlassSheen } from '@/components/ui/GlassSurface';
 
 const TRENDING_CARD_WIDTH = 168;
 
 export default function CommunityScreen() {
   const router = useRouter();
   const colors = useThemeColors();
+  const edge = useGlassEdge();
   const tabBar = useTabBarInset();
   const tabScroll = useTabBarScroll();
   const [search, setSearch] = useState('');
@@ -271,8 +273,9 @@ export default function CommunityScreen() {
                     activeOpacity={0.85}
                     onPress={() => router.push(`/community/${item.id}` as Href)}
                     className="bg-surface-container rounded-card p-3 flex-row items-center gap-3"
-                    style={cardShadow}
+                    style={[cardShadow, edge]}
                   >
+                    <GlassSheen />
                     <DeckAvatar coverUrl={item.cover_url} size={48} radius={12} />
                     <View className="flex-1">
                       <Text

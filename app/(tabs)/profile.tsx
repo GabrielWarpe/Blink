@@ -9,6 +9,8 @@ import {
   Image,
   Modal,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -24,6 +26,7 @@ import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useTabBarScroll } from '@/hooks/useTabBarScroll';
 import { GoalSlider } from '@/components/GoalSlider';
 import { Card, cardShadow } from '@/components/ui/Card';
+import { useGlassEdge, GlassSheen } from '@/components/ui/GlassSurface';
 import { ACHIEVEMENTS, getUnlocked } from '@/services/achievements';
 import { GOAL_MIN, GOAL_MAX } from '@/constants/study';
 
@@ -33,6 +36,7 @@ export default function ProfileScreen() {
   const { settings, update } = useSettings();
   const { streak } = useStreak();
   const colors = useThemeColors();
+  const edge = useGlassEdge();
   const tabBar = useTabBarInset();
   const tabScroll = useTabBarScroll();
 
@@ -312,8 +316,9 @@ export default function ProfileScreen() {
           onPress={() => router.push('/achievements')}
           activeOpacity={0.8}
           className="flex-row items-center gap-3 px-4 py-3.5 bg-surface-container rounded-card mt-4"
-          style={cardShadow}
+          style={[cardShadow, edge]}
         >
+          <GlassSheen />
           <View className="w-10 h-10 rounded-button items-center justify-center bg-surface-container-high">
             <Ionicons name="trophy-outline" size={20} color={colors.tertiary} />
           </View>
@@ -347,7 +352,13 @@ export default function ProfileScreen() {
         animationType="fade"
         onRequestClose={() => setEditingName(false)}
       >
-        <View className="flex-1 bg-black/50 items-center justify-center px-8">
+        {/* O KeyboardAvoidingView tem de ficar DENTRO do Modal: ele é uma
+            janela própria, então um wrapper na tela por baixo não alcança o
+            diálogo. Sem isto, num aparelho menor o teclado cobre o campo. */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          className="flex-1 items-center justify-center px-8 bg-black/50"
+        >
           <View className="w-full bg-surface-container-high rounded-card p-5">
             <Text className="text-on-surface font-jakarta-bold text-lg mb-3">
               Editar nome
@@ -385,7 +396,7 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

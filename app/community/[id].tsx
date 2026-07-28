@@ -8,6 +8,8 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
@@ -200,210 +202,225 @@ export default function CommunityDeckScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      {/* Header */}
-      <View className="flex-row items-center px-3 pt-2 pb-2">
-        <TouchableOpacity onPress={() => router.back()} className="p-2">
-          <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
-        </TouchableOpacity>
-        <Text className="flex-1 text-on-surface font-jakarta-bold text-base ml-1" numberOfLines={1}>
-          Deck da comunidade
-        </Text>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: 20, paddingBottom: 48, gap: 16 }}
-        showsVerticalScrollIndicator={false}
+      {/* O campo de comentário da avaliação é multilinha e fica no FIM da
+          página: sem isto o teclado cobria o que estava sendo digitado, e
+          não dava para rolar nem fechar. Mesmo padrão das outras 9 telas
+          com formulário (ex.: deck/edit.tsx). */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        className="flex-1"
       >
-        {/* Capa + título */}
-        {deck.cover_url ? (
-          <Image
-            source={{ uri: deck.cover_url }}
-            style={{ width: '100%', height: 160, borderRadius: 16 }}
-            resizeMode="cover"
-          />
-        ) : null}
-
-        <View>
-          <Text className="text-on-surface font-jakarta-extrabold text-2xl">
-            {deck.title}
+        {/* Header */}
+        <View className="flex-row items-center px-3 pt-2 pb-2">
+          <TouchableOpacity onPress={() => router.back()} className="p-2">
+            <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
+          </TouchableOpacity>
+          <Text className="flex-1 text-on-surface font-jakarta-bold text-base ml-1" numberOfLines={1}>
+            Deck da comunidade
           </Text>
-          {deck.description ? (
-            <Text className="text-on-surface-variant font-inter-regular text-sm mt-2 leading-5">
-              {deck.description}
-            </Text>
-          ) : null}
         </View>
 
-        {/* Autor + métricas */}
-        <View className="flex-row items-center gap-2">
-          <MiniAvatar url={deck.author_avatar_url} name={deck.author_name} />
-          <View className="flex-1">
-            <Text className="text-on-surface-variant font-inter-medium text-sm" numberOfLines={1}>
-              {deck.author_name ?? 'Anônimo'}
+        <ScrollView
+          contentContainerStyle={{ padding: 20, paddingBottom: 48, gap: 16 }}
+          showsVerticalScrollIndicator={false}
+          // Toque em botão continua funcionando com o teclado aberto...
+          keyboardShouldPersistTaps="handled"
+          // ...e arrastar a página fecha o teclado. Num campo MULTILINHA o
+          // Enter insere quebra de linha em vez de fechar, então sem isto
+          // não sobrava nenhuma saída.
+          keyboardDismissMode="on-drag"
+        >
+          {/* Capa + título */}
+          {deck.cover_url ? (
+            <Image
+              source={{ uri: deck.cover_url }}
+              style={{ width: '100%', height: 160, borderRadius: 16 }}
+              resizeMode="cover"
+            />
+          ) : null}
+
+          <View>
+            <Text className="text-on-surface font-jakarta-extrabold text-2xl">
+              {deck.title}
             </Text>
-            {isDerived(deck) && (
-              <Text className="text-outline font-inter-regular text-xs" numberOfLines={1}>
-                Adaptado de {deck.original_author_name ?? 'outro autor'}
+            {deck.description ? (
+              <Text className="text-on-surface-variant font-inter-regular text-sm mt-2 leading-5">
+                {deck.description}
+              </Text>
+            ) : null}
+          </View>
+
+          {/* Autor + métricas */}
+          <View className="flex-row items-center gap-2">
+            <MiniAvatar url={deck.author_avatar_url} name={deck.author_name} />
+            <View className="flex-1">
+              <Text className="text-on-surface-variant font-inter-medium text-sm" numberOfLines={1}>
+                {deck.author_name ?? 'Anônimo'}
+              </Text>
+              {isDerived(deck) && (
+                <Text className="text-outline font-inter-regular text-xs" numberOfLines={1}>
+                  Adaptado de {deck.original_author_name ?? 'outro autor'}
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity onPress={handleReport} hitSlop={8} className="p-1">
+              <Ionicons name="flag-outline" size={18} color={colors.outline} />
+            </TouchableOpacity>
+          </View>
+
+          <View className="flex-row items-center gap-4">
+            <View className="flex-row items-center gap-1.5">
+              <StarRating value={deck.rating_avg} size={16} />
+              <Text className="text-outline font-inter-medium text-sm">
+                {deck.rating_count > 0
+                  ? `${deck.rating_avg.toFixed(1)} (${deck.rating_count})`
+                  : 'sem notas'}
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-1">
+              <Ionicons name="download-outline" size={15} color={colors.outline} />
+              <Text className="text-outline font-inter-medium text-sm">
+                {deck.downloads_count}
+              </Text>
+            </View>
+            <Text className="text-outline font-inter-regular text-sm">
+              {deck.card_count} cards
+            </Text>
+          </View>
+
+          {/* Tags do deck — mesma fonte que alimenta o filtro por categoria da
+              aba Comunidade; até aqui não havia como conferir se a tag entrou na
+              publicação. Só aparece quando há tags. */}
+          {deck.tags.length > 0 && (
+            <View className="flex-row flex-wrap gap-2">
+              {deck.tags.map(tag => (
+                <View
+                  key={tag}
+                  className="bg-surface-container-high rounded-full px-3 py-1.5"
+                >
+                  <Text className="text-outline font-inter-medium text-xs">
+                    #{tag}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Baixar — o selo só aparece enquanto a cópia EXISTE nos seus decks;
+              excluiu a cópia? o botão volta e dá para baixar de novo. */}
+          {hasCopy ? (
+            <View className="flex-row items-center justify-center gap-2 py-3 rounded-card bg-surface-container" style={cardShadow}>
+              <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+              <Text className="text-on-surface font-inter-semibold text-sm">
+                Já está nos seus decks
+              </Text>
+            </View>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              onPress={() => void handleDownload()}
+              loading={downloading}
+            >
+              {downloading
+                ? 'Baixando...'
+                : canRate
+                  ? 'Baixar de novo'
+                  : 'Baixar deck'}
+            </Button>
+          )}
+
+          {/* Prévia dos cards */}
+          <View className="gap-2">
+            <Text className="text-on-surface font-jakarta-bold text-base">
+              Prévia
+            </Text>
+            {cards.slice(0, PREVIEW_LIMIT).map(c => (
+              <Card key={c.id} className="p-4">
+                <Text className="text-on-surface font-inter-semibold text-sm leading-5">
+                  {c.front}
+                </Text>
+                <Text className="text-outline font-inter-regular text-xs mt-1.5 leading-4">
+                  {c.back}
+                </Text>
+              </Card>
+            ))}
+            {cards.length > PREVIEW_LIMIT && (
+              <Text className="text-outline font-inter-regular text-xs text-center mt-1">
+                + {cards.length - PREVIEW_LIMIT} cards ao baixar
               </Text>
             )}
           </View>
-          <TouchableOpacity onPress={handleReport} hitSlop={8} className="p-1">
-            <Ionicons name="flag-outline" size={18} color={colors.outline} />
-          </TouchableOpacity>
-        </View>
 
-        <View className="flex-row items-center gap-4">
-          <View className="flex-row items-center gap-1.5">
-            <StarRating value={deck.rating_avg} size={16} />
-            <Text className="text-outline font-inter-medium text-sm">
-              {deck.rating_count > 0
-                ? `${deck.rating_avg.toFixed(1)} (${deck.rating_count})`
-                : 'sem notas'}
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-1">
-            <Ionicons name="download-outline" size={15} color={colors.outline} />
-            <Text className="text-outline font-inter-medium text-sm">
-              {deck.downloads_count}
-            </Text>
-          </View>
-          <Text className="text-outline font-inter-regular text-sm">
-            {deck.card_count} cards
-          </Text>
-        </View>
-
-        {/* Tags do deck — mesma fonte que alimenta o filtro por categoria da
-            aba Comunidade; até aqui não havia como conferir se a tag entrou na
-            publicação. Só aparece quando há tags. */}
-        {deck.tags.length > 0 && (
-          <View className="flex-row flex-wrap gap-2">
-            {deck.tags.map(tag => (
-              <View
-                key={tag}
-                className="bg-surface-container-high rounded-full px-3 py-1.5"
+          {/* Sua avaliação — quem já baixou ALGUM DIA pode avaliar, mesmo que
+              tenha excluído a cópia (usou o deck, a opinião vale). */}
+          {canRate && (
+            <View className="gap-3 bg-surface-container rounded-card p-4" style={cardShadow}>
+              <Text className="text-on-surface font-jakarta-bold text-base">
+                Sua avaliação
+              </Text>
+              <StarRating value={stars} size={30} onChange={setStars} />
+              <TextInput
+                placeholder="Escreva um comentário (opcional)"
+                placeholderTextColor={colors.outline}
+                value={comment}
+                onChangeText={setComment}
+                multiline
+                className="bg-surface-container-high rounded-button px-4 py-3 text-on-surface font-inter-regular text-sm border border-outline-variant"
+                style={{ minHeight: 64, textAlignVertical: 'top' }}
+              />
+              <Button
+                variant="primary"
+                size="md"
+                onPress={() => void handleSubmitRating()}
+                loading={submitting}
+                disabled={stars < 1}
               >
-                <Text className="text-outline font-inter-medium text-xs">
-                  #{tag}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Baixar — o selo só aparece enquanto a cópia EXISTE nos seus decks;
-            excluiu a cópia? o botão volta e dá para baixar de novo. */}
-        {hasCopy ? (
-          <View className="flex-row items-center justify-center gap-2 py-3 rounded-card bg-surface-container" style={cardShadow}>
-            <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-            <Text className="text-on-surface font-inter-semibold text-sm">
-              Já está nos seus decks
-            </Text>
-          </View>
-        ) : (
-          <Button
-            variant="primary"
-            size="lg"
-            onPress={() => void handleDownload()}
-            loading={downloading}
-          >
-            {downloading
-              ? 'Baixando...'
-              : canRate
-                ? 'Baixar de novo'
-                : 'Baixar deck'}
-          </Button>
-        )}
-
-        {/* Prévia dos cards */}
-        <View className="gap-2">
-          <Text className="text-on-surface font-jakarta-bold text-base">
-            Prévia
-          </Text>
-          {cards.slice(0, PREVIEW_LIMIT).map(c => (
-            <Card key={c.id} className="p-4">
-              <Text className="text-on-surface font-inter-semibold text-sm leading-5">
-                {c.front}
-              </Text>
-              <Text className="text-outline font-inter-regular text-xs mt-1.5 leading-4">
-                {c.back}
-              </Text>
-            </Card>
-          ))}
-          {cards.length > PREVIEW_LIMIT && (
-            <Text className="text-outline font-inter-regular text-xs text-center mt-1">
-              + {cards.length - PREVIEW_LIMIT} cards ao baixar
-            </Text>
+                {submitting ? 'Enviando...' : 'Enviar avaliação'}
+              </Button>
+            </View>
           )}
-        </View>
 
-        {/* Sua avaliação — quem já baixou ALGUM DIA pode avaliar, mesmo que
-            tenha excluído a cópia (usou o deck, a opinião vale). */}
-        {canRate && (
-          <View className="gap-3 bg-surface-container rounded-card p-4" style={cardShadow}>
+          {/* Avaliações da comunidade */}
+          <View className="gap-3">
             <Text className="text-on-surface font-jakarta-bold text-base">
-              Sua avaliação
+              Avaliações {reviews.length > 0 ? `(${reviews.length})` : ''}
             </Text>
-            <StarRating value={stars} size={30} onChange={setStars} />
-            <TextInput
-              placeholder="Escreva um comentário (opcional)"
-              placeholderTextColor={colors.outline}
-              value={comment}
-              onChangeText={setComment}
-              multiline
-              className="bg-surface-container-high rounded-button px-4 py-3 text-on-surface font-inter-regular text-sm border border-outline-variant"
-              style={{ minHeight: 64, textAlignVertical: 'top' }}
-            />
-            <Button
-              variant="primary"
-              size="md"
-              onPress={() => void handleSubmitRating()}
-              loading={submitting}
-              disabled={stars < 1}
-            >
-              {submitting ? 'Enviando...' : 'Enviar avaliação'}
-            </Button>
-          </View>
-        )}
-
-        {/* Avaliações da comunidade */}
-        <View className="gap-3">
-          <Text className="text-on-surface font-jakarta-bold text-base">
-            Avaliações {reviews.length > 0 ? `(${reviews.length})` : ''}
-          </Text>
-          {reviews.length === 0 ? (
-            <Text className="text-outline font-inter-regular text-sm">
-              Ainda sem avaliações. Baixe e seja o primeiro a avaliar!
-            </Text>
-          ) : (
-            reviews.map(r => (
-              <View
-                key={r.id}
-                className="bg-surface-container rounded-card p-4 gap-2"
-                style={cardShadow}
-              >
-                <View className="flex-row items-center gap-2">
-                  <MiniAvatar url={r.reviewer_avatar_url} name={r.reviewer_name} size={26} />
-                  <Text className="text-on-surface font-inter-semibold text-sm flex-1" numberOfLines={1}>
-                    {r.reviewer_name ?? 'Anônimo'}
-                  </Text>
-                  <Text className="text-outline font-inter-regular text-xs">
-                    {formatDistanceToNow(new Date(r.created_at), {
-                      addSuffix: true,
-                      locale: ptBR,
-                    })}
-                  </Text>
+            {reviews.length === 0 ? (
+              <Text className="text-outline font-inter-regular text-sm">
+                Ainda sem avaliações. Baixe e seja o primeiro a avaliar!
+              </Text>
+            ) : (
+              reviews.map(r => (
+                <View
+                  key={r.id}
+                  className="bg-surface-container rounded-card p-4 gap-2"
+                  style={cardShadow}
+                >
+                  <View className="flex-row items-center gap-2">
+                    <MiniAvatar url={r.reviewer_avatar_url} name={r.reviewer_name} size={26} />
+                    <Text className="text-on-surface font-inter-semibold text-sm flex-1" numberOfLines={1}>
+                      {r.reviewer_name ?? 'Anônimo'}
+                    </Text>
+                    <Text className="text-outline font-inter-regular text-xs">
+                      {formatDistanceToNow(new Date(r.created_at), {
+                        addSuffix: true,
+                        locale: ptBR,
+                      })}
+                    </Text>
+                  </View>
+                  <StarRating value={r.stars} size={13} />
+                  {r.comment ? (
+                    <Text className="text-on-surface-variant font-inter-regular text-sm leading-5">
+                      {r.comment}
+                    </Text>
+                  ) : null}
                 </View>
-                <StarRating value={r.stars} size={13} />
-                {r.comment ? (
-                  <Text className="text-on-surface-variant font-inter-regular text-sm leading-5">
-                    {r.comment}
-                  </Text>
-                ) : null}
-              </View>
-            ))
-          )}
-        </View>
-      </ScrollView>
+              ))
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

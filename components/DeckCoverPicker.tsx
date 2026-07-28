@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { CARD_RADIUS } from '@/constants/radius';
 import { pickDeckCover, type CardImage } from '@/services/images';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -29,7 +30,7 @@ export function DeckCoverPicker({ cover, onChange }: DeckCoverPickerProps) {
           {cover ? (
             <Image
               source={{ uri: cover.uri }}
-              style={{ width: 72, height: 72, borderRadius: 14 }}
+              style={{ width: 72, height: 72, borderRadius: CARD_RADIUS }}
               resizeMode="cover"
             />
           ) : (
@@ -38,7 +39,7 @@ export function DeckCoverPicker({ cover, onChange }: DeckCoverPickerProps) {
               style={{
                 width: 72,
                 height: 72,
-                borderRadius: 14,
+                borderRadius: CARD_RADIUS,
                 backgroundColor: colors.primary + '22',
               }}
             >

@@ -9,6 +9,8 @@ import {
   Share,
   TextInput,
   useColorScheme,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -154,285 +156,294 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      {/* Header */}
-      <View className="flex-row items-center px-3 pt-2 pb-3 border-b border-outline-variant/15">
-        <TouchableOpacity onPress={() => router.back()} className="p-2">
-          <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
-        </TouchableOpacity>
-        <Text className="flex-1 text-on-surface font-jakarta-bold text-lg ml-1">
-          Configurações
-        </Text>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        className="flex-1"
       >
-        {/* ── Conta ── */}
-        <SettingsSection title="Conta">
-          <SettingsRow
-            icon="person-circle"
-            iconColor={colors.primary}
-            title={profile?.name ?? 'Minha conta'}
-            subtitle={user?.email ?? undefined}
-          />
-        </SettingsSection>
+        {/* Header */}
+        <View className="flex-row items-center px-3 pt-2 pb-3 border-b border-outline-variant/15">
+          <TouchableOpacity onPress={() => router.back()} className="p-2">
+            <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
+          </TouchableOpacity>
+          <Text className="flex-1 text-on-surface font-jakarta-bold text-lg ml-1">
+            Configurações
+          </Text>
+        </View>
 
-        {/* ── Estudo ── */}
-        <SettingsSection title="Estudo">
-          <SettingsRow
-            icon="flag"
-            iconColor="#ffb690"
-            title="Meta diária de cartões"
-            subtitle={`Entre ${GOAL_MIN} e ${GOAL_MAX} cartões por dia`}
-            rightSlot={
-              <TextInput
-                value={dailyGoal}
-                onChangeText={setDailyGoal}
-                onEndEditing={() => void saveDailyGoal()}
-                keyboardType="number-pad"
-                returnKeyType="done"
-                className="text-on-surface font-inter-semibold text-base w-14 text-right"
-                selectionColor={colors.primary}
-              />
-            }
-          />
-          <SettingsRow
-            icon="shuffle"
-            iconColor={colors.primary}
-            title="Embaralhar cartões"
-            toggle={{
-              value: settings.shuffle,
-              onValueChange: v => update('shuffle', v),
-            }}
-          />
-          <SettingsRow
-            icon="eye"
-            iconColor="#ffb690"
-            title="Mostrar resposta automática"
-            toggle={{
-              value: settings.autoReveal,
-              onValueChange: v => update('autoReveal', v),
-            }}
-          />
-          {/* Cronômetro das sessões (todos os modos): este é o PADRÃO da conta.
-              A tela de início permite mudar só para aquela sessão, sem tocar
-              aqui. */}
-          <SettingsRow
-            icon="stopwatch"
-            iconColor={colors.primary}
-            title="Cronômetro"
-            subtitle="Padrão ao iniciar uma sessão"
-            toggle={{
-              value: settings.studyTimer,
-              onValueChange: v => update('studyTimer', v),
-            }}
-          />
-          {settings.studyTimer && (
-            <>
-              <SettingsRow
-                icon="swap-vertical"
-                iconColor="#ffb690"
-                title="Modo do cronômetro"
-                value={
-                  settings.studyTimerMode === 'down' ? 'Regressivo' : 'Crescente'
-                }
-                onPress={() =>
-                  pickOption('Modo do cronômetro', ['Crescente', 'Regressivo'], o =>
-                    update('studyTimerMode', o === 'Regressivo' ? 'down' : 'up'),
-                  )
-                }
-              />
-              {settings.studyTimerMode === 'down' && (
+        <ScrollView
+          contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
+          showsVerticalScrollIndicator={false}
+          // O campo da meta diária usa teclado numérico, que no iOS não
+          // tem tecla de fechar: arrastar a página é a saída.
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          {/* ── Conta ── */}
+          <SettingsSection title="Conta">
+            <SettingsRow
+              icon="person-circle"
+              iconColor={colors.primary}
+              title={profile?.name ?? 'Minha conta'}
+              subtitle={user?.email ?? undefined}
+            />
+          </SettingsSection>
+
+          {/* ── Estudo ── */}
+          <SettingsSection title="Estudo">
+            <SettingsRow
+              icon="flag"
+              iconColor="#ffb690"
+              title="Meta diária de cartões"
+              subtitle={`Entre ${GOAL_MIN} e ${GOAL_MAX} cartões por dia`}
+              rightSlot={
+                <TextInput
+                  value={dailyGoal}
+                  onChangeText={setDailyGoal}
+                  onEndEditing={() => void saveDailyGoal()}
+                  keyboardType="number-pad"
+                  returnKeyType="done"
+                  className="text-on-surface font-inter-semibold text-base w-14 text-right"
+                  selectionColor={colors.primary}
+                />
+              }
+            />
+            <SettingsRow
+              icon="shuffle"
+              iconColor={colors.primary}
+              title="Embaralhar cartões"
+              toggle={{
+                value: settings.shuffle,
+                onValueChange: v => update('shuffle', v),
+              }}
+            />
+            <SettingsRow
+              icon="eye"
+              iconColor="#ffb690"
+              title="Mostrar resposta automática"
+              toggle={{
+                value: settings.autoReveal,
+                onValueChange: v => update('autoReveal', v),
+              }}
+            />
+            {/* Cronômetro das sessões (todos os modos): este é o PADRÃO da conta.
+                A tela de início permite mudar só para aquela sessão, sem tocar
+                aqui. */}
+            <SettingsRow
+              icon="stopwatch"
+              iconColor={colors.primary}
+              title="Cronômetro"
+              subtitle="Padrão ao iniciar uma sessão"
+              toggle={{
+                value: settings.studyTimer,
+                onValueChange: v => update('studyTimer', v),
+              }}
+            />
+            {settings.studyTimer && (
+              <>
                 <SettingsRow
-                  icon="hourglass"
-                  iconColor={colors.tertiary}
-                  title="Tempo limite"
-                  subtitle="O quiz encerra após a questão em tela"
-                  value={`${settings.studyTimerMinutes} min`}
+                  icon="swap-vertical"
+                  iconColor="#ffb690"
+                  title="Modo do cronômetro"
+                  value={
+                    settings.studyTimerMode === 'down' ? 'Regressivo' : 'Crescente'
+                  }
                   onPress={() =>
-                    pickOption(
-                      'Tempo limite',
-                      TIMER_LIMIT_STEPS.map(m => `${m} min`),
-                      o =>
-                        update('studyTimerMinutes', clampTimerLimit(parseInt(o, 10))),
+                    pickOption('Modo do cronômetro', ['Crescente', 'Regressivo'], o =>
+                      update('studyTimerMode', o === 'Regressivo' ? 'down' : 'up'),
                     )
                   }
                 />
-              )}
-              <SettingsRow
-                icon="eye-off"
-                iconColor={colors.primary}
-                title="Mostrar o relógio"
-                subtitle="Oculto, o tempo continua sendo medido"
-                toggle={{
-                  value: settings.studyTimerVisible,
-                  onValueChange: v => update('studyTimerVisible', v),
-                }}
-              />
-            </>
-          )}
-        </SettingsSection>
+                {settings.studyTimerMode === 'down' && (
+                  <SettingsRow
+                    icon="hourglass"
+                    iconColor={colors.tertiary}
+                    title="Tempo limite"
+                    subtitle="O quiz encerra após a questão em tela"
+                    value={`${settings.studyTimerMinutes} min`}
+                    onPress={() =>
+                      pickOption(
+                        'Tempo limite',
+                        TIMER_LIMIT_STEPS.map(m => `${m} min`),
+                        o =>
+                          update('studyTimerMinutes', clampTimerLimit(parseInt(o, 10))),
+                      )
+                    }
+                  />
+                )}
+                <SettingsRow
+                  icon="eye-off"
+                  iconColor={colors.primary}
+                  title="Mostrar o relógio"
+                  subtitle="Oculto, o tempo continua sendo medido"
+                  toggle={{
+                    value: settings.studyTimerVisible,
+                    onValueChange: v => update('studyTimerVisible', v),
+                  }}
+                />
+              </>
+            )}
+          </SettingsSection>
 
-        {/* ── Aparência ── */}
-        <SettingsSection title="Aparência">
-          <SettingsRow
-            icon="contrast"
-            iconColor={colors.primary}
-            title="Tema"
-            subtitle={
-              settings.theme === 'Sistema'
-                ? `Sistema (${scheme === 'light' ? 'claro' : 'escuro'})`
-                : undefined
-            }
-            value={settings.theme}
-            onPress={() =>
-              pickOption('Tema', ['Claro', 'Escuro', 'Sistema'], v =>
-                update('theme', v),
-              )
-            }
-          />
-          <SettingsRow
-            icon="text"
-            iconColor="#7cc6ff"
-            title="Tamanho da fonte"
-            value={settings.fontSize}
-            onPress={() =>
-              pickOption('Tamanho da fonte', ['Pequeno', 'Médio', 'Grande'], v =>
-                update('fontSize', v),
-              )
-            }
-          />
-        </SettingsSection>
-
-        {/* ── Notificações ── */}
-        <SettingsSection title="Notificações">
-          <SettingsRow
-            icon="notifications"
-            iconColor="#ffb690"
-            title="Lembrete de estudo"
-            subtitle={
-              settings.studyReminder
-                ? `Só quando houver revisões, às ${settings.reminderTime}`
-                : undefined
-            }
-            toggle={{
-              value: settings.studyReminder,
-              onValueChange: v => void toggleNotification('studyReminder', v),
-            }}
-          />
-          {settings.studyReminder && (
-            <TimePickerRow
-              value={settings.reminderTime}
-              onChange={v => update('reminderTime', v)}
+          {/* ── Aparência ── */}
+          <SettingsSection title="Aparência">
+            <SettingsRow
+              icon="contrast"
+              iconColor={colors.primary}
+              title="Tema"
+              subtitle={
+                settings.theme === 'Sistema'
+                  ? `Sistema (${scheme === 'light' ? 'claro' : 'escuro'})`
+                  : undefined
+              }
+              value={settings.theme}
+              onPress={() =>
+                pickOption('Tema', ['Claro', 'Escuro', 'Sistema'], v =>
+                  update('theme', v),
+                )
+              }
             />
-          )}
-          <SettingsRow
-            icon="flame"
-            iconColor="#ff8a65"
-            title="Alerta de sequência"
-            subtitle={settings.streakAlert ? 'Todos os dias às 21:00' : undefined}
-            toggle={{
-              value: settings.streakAlert,
-              onValueChange: v => void toggleNotification('streakAlert', v),
-            }}
-          />
-        </SettingsSection>
+            <SettingsRow
+              icon="text"
+              iconColor="#7cc6ff"
+              title="Tamanho da fonte"
+              value={settings.fontSize}
+              onPress={() =>
+                pickOption('Tamanho da fonte', ['Pequeno', 'Médio', 'Grande'], v =>
+                  update('fontSize', v),
+                )
+              }
+            />
+          </SettingsSection>
 
-        {/* ── Feedback ── */}
-        <SettingsSection title="Feedback">
-          <SettingsRow
-            icon="phone-portrait"
-            iconColor={colors.primary}
-            title="Feedback tátil (vibração)"
-            subtitle="Vibra ao virar e avaliar os cartões durante o estudo"
-            toggle={{
-              value: settings.feedbackSounds,
-              onValueChange: v => {
-                // Vibra na hora de ligar — confirmação tátil imediata de que
-                // o recurso está funcionando, sem precisar entrar no estudo.
-                if (v) {
-                  void Haptics.notificationAsync(
-                    Haptics.NotificationFeedbackType.Success,
-                  );
-                }
-                update('feedbackSounds', v);
-              },
-            }}
-          />
-        </SettingsSection>
+          {/* ── Notificações ── */}
+          <SettingsSection title="Notificações">
+            <SettingsRow
+              icon="notifications"
+              iconColor="#ffb690"
+              title="Lembrete de estudo"
+              subtitle={
+                settings.studyReminder
+                  ? `Só quando houver revisões, às ${settings.reminderTime}`
+                  : undefined
+              }
+              toggle={{
+                value: settings.studyReminder,
+                onValueChange: v => void toggleNotification('studyReminder', v),
+              }}
+            />
+            {settings.studyReminder && (
+              <TimePickerRow
+                value={settings.reminderTime}
+                onChange={v => update('reminderTime', v)}
+              />
+            )}
+            <SettingsRow
+              icon="flame"
+              iconColor="#ff8a65"
+              title="Alerta de sequência"
+              subtitle={settings.streakAlert ? 'Todos os dias às 21:00' : undefined}
+              toggle={{
+                value: settings.streakAlert,
+                onValueChange: v => void toggleNotification('streakAlert', v),
+              }}
+            />
+          </SettingsSection>
 
-        {/* ── Acessibilidade ── */}
-        <SettingsSection title="Acessibilidade">
-          <SettingsRow
-            icon="pause-circle"
-            iconColor="#ffb690"
-            title="Reduzir animações"
-            toggle={{
-              value: settings.reduceMotion,
-              onValueChange: v => update('reduceMotion', v),
-            }}
-          />
-          <SettingsRow
-            icon="hand-left"
-            iconColor="#7cc6ff"
-            title="Gestos de swipe"
-            subtitle="Desligado: avalie só pelos botões"
-            toggle={{
-              value: settings.swipeGestures,
-              onValueChange: v => update('swipeGestures', v),
-            }}
-          />
-        </SettingsSection>
+          {/* ── Feedback ── */}
+          <SettingsSection title="Feedback">
+            <SettingsRow
+              icon="phone-portrait"
+              iconColor={colors.primary}
+              title="Feedback tátil (vibração)"
+              subtitle="Vibra ao virar e avaliar os cartões durante o estudo"
+              toggle={{
+                value: settings.feedbackSounds,
+                onValueChange: v => {
+                  // Vibra na hora de ligar — confirmação tátil imediata de que
+                  // o recurso está funcionando, sem precisar entrar no estudo.
+                  if (v) {
+                    void Haptics.notificationAsync(
+                      Haptics.NotificationFeedbackType.Success,
+                    );
+                  }
+                  update('feedbackSounds', v);
+                },
+              }}
+            />
+          </SettingsSection>
 
-        {/* ── App ── */}
-        <SettingsSection title="App">
-          <SettingsRow
-            icon="share-social"
-            iconColor={colors.primary}
-            title="Compartilhar app"
-            onPress={handleShare}
-          />
-          <SettingsRow
-            icon="chatbox-ellipses"
-            iconColor="#ffb690"
-            title="Enviar feedback"
-            subtitle="Abre seu app de e-mail"
-            onPress={handleFeedback}
-          />
-          <SettingsRow
-            icon="information-circle"
-            iconColor="#7cc6ff"
-            title="Sobre"
-            value={`v${APP_VERSION}`}
-            onPress={handleAbout}
-          />
-        </SettingsSection>
+          {/* ── Acessibilidade ── */}
+          <SettingsSection title="Acessibilidade">
+            <SettingsRow
+              icon="pause-circle"
+              iconColor="#ffb690"
+              title="Reduzir animações"
+              toggle={{
+                value: settings.reduceMotion,
+                onValueChange: v => update('reduceMotion', v),
+              }}
+            />
+            <SettingsRow
+              icon="hand-left"
+              iconColor="#7cc6ff"
+              title="Gestos de swipe"
+              subtitle="Desligado: avalie só pelos botões"
+              toggle={{
+                value: settings.swipeGestures,
+                onValueChange: v => update('swipeGestures', v),
+              }}
+            />
+          </SettingsSection>
 
-        {/* ── Footer ── */}
-        <View className="gap-4 mt-2">
-          <TouchableOpacity
-            onPress={handleSignOut}
-            activeOpacity={0.8}
-            className="bg-error/15 rounded-card py-3.5 flex-row items-center justify-center gap-2"
-          >
-            <Ionicons name="log-out-outline" size={18} color={colors.error} />
-            <Text className="text-error font-inter-semibold text-base">
-              Sair da conta
-            </Text>
-          </TouchableOpacity>
+          {/* ── App ── */}
+          <SettingsSection title="App">
+            <SettingsRow
+              icon="share-social"
+              iconColor={colors.primary}
+              title="Compartilhar app"
+              onPress={handleShare}
+            />
+            <SettingsRow
+              icon="chatbox-ellipses"
+              iconColor="#ffb690"
+              title="Enviar feedback"
+              subtitle="Abre seu app de e-mail"
+              onPress={handleFeedback}
+            />
+            <SettingsRow
+              icon="information-circle"
+              iconColor="#7cc6ff"
+              title="Sobre"
+              value={`v${APP_VERSION}`}
+              onPress={handleAbout}
+            />
+          </SettingsSection>
 
-          <TouchableOpacity onPress={handleDeleteAccount} className="items-center">
-            <Text className="text-outline font-inter-regular text-sm underline">
-              Excluir conta
-            </Text>
-          </TouchableOpacity>
-        </View>
+          {/* ── Footer ── */}
+          <View className="gap-4 mt-2">
+            <TouchableOpacity
+              onPress={handleSignOut}
+              activeOpacity={0.8}
+              className="bg-error/15 rounded-card py-3.5 flex-row items-center justify-center gap-2"
+            >
+              <Ionicons name="log-out-outline" size={18} color={colors.error} />
+              <Text className="text-error font-inter-semibold text-base">
+                Sair da conta
+              </Text>
+            </TouchableOpacity>
 
-        <Text className="text-outline font-inter-regular text-xs text-center mt-6">
-          Blink v{APP_VERSION}
-        </Text>
-      </ScrollView>
+            <TouchableOpacity onPress={handleDeleteAccount} className="items-center">
+              <Text className="text-outline font-inter-regular text-sm underline">
+                Excluir conta
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text className="text-outline font-inter-regular text-xs text-center mt-6">
+            Blink v{APP_VERSION}
+          </Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

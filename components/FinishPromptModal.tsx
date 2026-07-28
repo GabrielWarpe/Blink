@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { cardShadow } from '@/components/ui/Card';
+import { GlassSurface, GlassBackdrop } from '@/components/ui/GlassSurface';
 
 interface Props {
   /** Nº de questões sem resposta; `null` = não perguntar nada. */
@@ -30,11 +30,9 @@ export function FinishPromptModal({ pendingFinish, onRedo, onLeave }: Props) {
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={() => {}}>
-      <View className="flex-1 bg-black/60 items-center justify-center px-6">
-        <View
-          className="w-full bg-surface-container rounded-card p-5"
-          style={cardShadow}
-        >
+      <View className="flex-1 items-center justify-center px-6">
+        <GlassBackdrop />
+        <GlassSurface blur className="w-full p-5">
           <View
             className="w-12 h-12 rounded-button items-center justify-center mb-4"
             style={{ backgroundColor: colors.tertiary + '22' }}
@@ -69,7 +67,7 @@ export function FinishPromptModal({ pendingFinish, onRedo, onLeave }: Props) {
               onPress={onLeave}
             />
           </View>
-        </View>
+        </GlassSurface>
       </View>
     </Modal>
   );

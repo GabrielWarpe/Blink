@@ -1,10 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Modal, Pressable, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  Modal,
+  Pressable,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { Deck } from '@/types';
 import { deckSupportsQuiz } from '@/utils/practice';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useGlass } from '@/hooks/useGlass';
+import { androidBlurMethod } from '@/constants/glass';
+import { GlassBackdrop } from '@/components/ui/GlassSurface';
 
 /**
  * Orquestra o play de um deck: se ele NÃO suporta quiz, navega direto para os
@@ -50,6 +61,7 @@ interface ModeOption {
 export function StudyModePicker({ deck, onClose }: StudyModePickerProps) {
   const router = useRouter();
   const colors = useThemeColors();
+  const glass = useGlass();
   const [step, setStep] = useState<'mode' | 'mix'>('mode');
 
   // Sempre reabre no passo 1.
@@ -113,11 +125,19 @@ export function StudyModePicker({ deck, onClose }: StudyModePickerProps) {
       animationType="slide"
       onRequestClose={onClose}
     >
-      <Pressable className="flex-1 bg-black/60 justify-end" onPress={onClose}>
+      <Pressable className="flex-1 justify-end" onPress={onClose}>
+        <GlassBackdrop />
         <Pressable
-          className="bg-surface-container rounded-t-3xl overflow-hidden"
+          className="rounded-t-3xl overflow-hidden"
+          style={{ backgroundColor: glass.tint }}
           onPress={e => e.stopPropagation()}
         >
+          <BlurView
+            intensity={glass.blurIntensity}
+            tint={glass.blurTint}
+            experimentalBlurMethod={androidBlurMethod}
+            style={StyleSheet.absoluteFill}
+          />
           {/* Header */}
           <View className="px-5 py-4 border-b border-outline-variant/30 flex-row items-center gap-2">
             {step === 'mix' && (

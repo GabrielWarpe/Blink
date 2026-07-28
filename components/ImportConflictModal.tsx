@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Modal, Pressable, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { cardShadow } from '@/components/ui/Card';
+import { GlassSurface, GlassBackdrop } from '@/components/ui/GlassSurface';
 import type {
   DeckConflict,
   ConflictAction,
@@ -87,11 +87,9 @@ export function ImportConflictModal({
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <View className="flex-1 bg-black/60 items-center justify-center px-6">
-        <View
-          className="w-full bg-surface-container rounded-card p-5"
-          style={cardShadow}
-        >
+      <View className="flex-1 items-center justify-center px-6">
+        <GlassBackdrop />
+        <GlassSurface blur className="w-full p-5">
           {confirmingReplace ? (
             <>
               <View
@@ -215,7 +213,7 @@ export function ImportConflictModal({
               </TouchableOpacity>
             </>
           )}
-        </View>
+        </GlassSurface>
       </View>
     </Modal>
   );

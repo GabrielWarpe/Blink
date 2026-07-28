@@ -1,7 +1,19 @@
 import React from 'react';
-import { View, Text, Modal, Pressable, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  Modal,
+  Pressable,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useGlass } from '@/hooks/useGlass';
+import { androidBlurMethod } from '@/constants/glass';
+import { GlassBackdrop } from '@/components/ui/GlassSurface';
 import { DeckAvatar } from '@/components/DeckAvatar';
 import type { CardImportTarget } from '@/services/backup';
 
@@ -34,6 +46,7 @@ export function DeckPickerModal({
   onPick,
 }: Props) {
   const colors = useThemeColors();
+  const glass = useGlass();
   const newTitle = sourceTitle && sourceTitle.trim() ? sourceTitle : 'Cartões importados';
 
   return (
@@ -43,12 +56,19 @@ export function DeckPickerModal({
       animationType="slide"
       onRequestClose={onCancel}
     >
-      <Pressable className="flex-1 bg-black/60 justify-end" onPress={onCancel}>
+      <Pressable className="flex-1 justify-end" onPress={onCancel}>
+        <GlassBackdrop />
         <Pressable
-          className="bg-surface-container rounded-t-3xl overflow-hidden"
-          style={{ maxHeight: '80%' }}
+          className="rounded-t-3xl overflow-hidden"
+          style={{ maxHeight: '80%', backgroundColor: glass.tint }}
           onPress={e => e.stopPropagation()}
         >
+          <BlurView
+            intensity={glass.blurIntensity}
+            tint={glass.blurTint}
+            experimentalBlurMethod={androidBlurMethod}
+            style={StyleSheet.absoluteFill}
+          />
           <View className="px-5 py-4 border-b border-outline-variant/30">
             <Text className="text-on-surface font-jakarta-bold text-base">
               Adicionar {cardCount} {cardCount === 1 ? 'cartão' : 'cartões'}

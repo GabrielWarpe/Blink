@@ -63,9 +63,12 @@ module.exports = {
         'inter-medium': ['Inter_500Medium'],
         'inter-semibold': ['Inter_600SemiBold'],
       },
+      // ⚠️ `card` e `button` são espelhados em `constants/radius.ts`, que o
+      // lado JS usa onde precisa do número (recorte de BlurView, gradiente
+      // sobreposto, estilo inline). Mudou aqui, mude lá.
       borderRadius: {
-        card: '14px',
-        button: '12px',
+        card: '18px',
+        button: '14px',
         pill: '9999px',
       },
     },

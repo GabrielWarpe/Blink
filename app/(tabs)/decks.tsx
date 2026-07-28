@@ -6,13 +6,16 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  StyleSheet,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useDecks } from '@/hooks/useDecks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useGlass } from '@/hooks/useGlass';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useTabBarScroll } from '@/hooks/useTabBarScroll';
 import {
@@ -51,6 +54,7 @@ export default function DecksScreen() {
   const { user } = useAuth();
   const { decks, reload, deleteDeck } = useDecks();
   const colors = useThemeColors();
+  const glass = useGlass();
   const tabBar = useTabBarInset();
   const tabScroll = useTabBarScroll();
   const [search, setSearch] = useState('');
@@ -421,12 +425,17 @@ export default function DecksScreen() {
       />
 
       {/* FAB — ancorado ACIMA da barra flutuante (que é `position: absolute`);
-          com o `bottom` fixo de antes ele ficaria atrás dela. */}
+          com o `bottom` fixo de antes ele ficaria atrás dela.
+          Fica OPACO na cor de destaque, sem virar vidro: é a ação primária da
+          tela e precisa saltar. Ganha só o brilho e a borda, para pertencer ao
+          mesmo material do resto. */}
       <TouchableOpacity
-        className="absolute right-5 w-14 h-14 bg-primary-container rounded-full items-center justify-center"
+        className="absolute right-5 w-14 h-14 bg-primary-container rounded-full items-center justify-center overflow-hidden"
         onPress={() => router.push('/deck/create')}
         style={{
           bottom: tabBar.barTop + 16,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: glass.border,
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 4 },
@@ -435,6 +444,13 @@ export default function DecksScreen() {
         }}
         activeOpacity={0.85}
       >
+        <LinearGradient
+          pointerEvents="none"
+          colors={glass.sheen}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 0.7 }}
+          style={StyleSheet.absoluteFill}
+        />
         <Ionicons name="add" size={28} color="#dffbf7" />
       </TouchableOpacity>
 

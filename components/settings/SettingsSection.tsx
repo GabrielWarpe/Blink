@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { useGlassEdge, GlassSheen } from '@/components/ui/GlassSurface';
 
 interface SettingsSectionProps {
   title?: string;
@@ -13,6 +14,7 @@ export function SettingsSection({
   children,
 }: SettingsSectionProps) {
   const items = React.Children.toArray(children).filter(Boolean);
+  const edge = useGlassEdge();
 
   return (
     <View className="mb-6">
@@ -21,7 +23,11 @@ export function SettingsSection({
           {title}
         </Text>
       )}
-      <View className="bg-surface-container rounded-card border border-outline-variant/20 overflow-hidden">
+      <View
+        className="bg-surface-container rounded-card overflow-hidden"
+        style={edge}
+      >
+        <GlassSheen />
         {items.map((child, i) => (
           <View key={i}>
             {i > 0 && <View className="h-px bg-outline-variant/15 ml-[52px]" />}

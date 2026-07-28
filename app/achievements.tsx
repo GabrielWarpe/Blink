@@ -16,6 +16,7 @@ import { computeStreak, computeLongestStreak } from '@/utils/streak';
 import { Emblem } from '@/components/Emblem';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGlassEdge, GlassSheen } from '@/components/ui/GlassSurface';
 
 const EMBLEM_SIZE = 48;
 
@@ -33,6 +34,7 @@ function stripEmoji(title: string): string {
 }
 
 export default function AchievementsScreen() {
+  const edge = useGlassEdge();
   const router = useRouter();
   const colors = useThemeColors();
   const { user } = useAuth();
@@ -100,9 +102,10 @@ export default function AchievementsScreen() {
 
       return (
         <View
-          className="bg-surface-container rounded-card p-4 border border-outline-variant/20 flex-row items-center gap-3 mb-3"
-          style={{ opacity: isUnlocked ? 1 : 0.5 }}
+          className="bg-surface-container rounded-card p-4 flex-row items-center gap-3 mb-3"
+          style={[{ opacity: isUnlocked ? 1 : 0.5 }, edge]}
         >
+          <GlassSheen />
           {/* Bloqueada mostra a MESMA silhueta, só que apagada: dá pra ver o
               que se está perseguindo, e a cor vira a recompensa. */}
           <Emblem
@@ -160,7 +163,11 @@ export default function AchievementsScreen() {
         removeClippedSubviews
         ListHeaderComponent={
           <>
-            <View className="bg-surface-container rounded-card p-5 border border-outline-variant/20 mb-3">
+            <View
+              className="bg-surface-container rounded-card p-5 mb-3"
+              style={edge}
+            >
+              <GlassSheen />
               <View className="flex-row items-end justify-between mb-3">
                 <Text className="text-on-surface font-jakarta-bold text-lg">
                   Seu progresso

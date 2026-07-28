@@ -9,11 +9,11 @@
  */
 
 /**
- * 21, não 23: encolhe a barra inteira um pouco (ícone é o único fator que
- * reduz a altura sem mexer no risco de corte do rótulo — o rótulo sempre fica
- * a exatamente `TAB_ITEM_PAD_V` da base do item, INDEPENDENTE do ícone).
+ * Ícone + folga + linha do rótulo + `TAB_ITEM_PAD_V * 2` somam a altura da
+ * pílula ativa, hoje fixada em 48 (22 + 2 + 12 + 12) — ver `TAB_ITEM_HEIGHT`.
+ * Mexer em qualquer um destes quatro muda essa altura.
  */
-export const TAB_ICON_SIZE = 21;
+export const TAB_ICON_SIZE = 22;
 export const TAB_ICON_LABEL_GAP = 2;
 /**
  * 9, não 10: rótulo menor por pedido direto + dá a folga horizontal que a
@@ -29,9 +29,9 @@ export const TAB_LABEL_BLOCK = TAB_ICON_LABEL_GAP + TAB_LABEL_LINE;
 /**
  * Respiro vertical dentro da pílula do item (a que marca a aba ativa).
  * Enxuto de propósito: junto com `TAB_BAR_PAD`, era daqui que vinha quase
- * metade da altura da barra em espaço morto.
+ * metade da altura da barra em espaço morto. Em 6, a pílula fecha em 48px.
  */
-export const TAB_ITEM_PAD_V = 5;
+export const TAB_ITEM_PAD_V = 6;
 /**
  * Respiro entre a pílula do item e a borda da barra.
  *
@@ -41,8 +41,13 @@ export const TAB_ITEM_PAD_V = 5;
  * "acompanhar" a curva da barra. A conta está em `TAB_BAR_RADIUS`.
  */
 export const TAB_BAR_PAD = 5;
-/** Recuo lateral da pílula ativa dentro da sua célula. */
-export const TAB_ITEM_INSET = 1;
+/**
+ * Recuo lateral da pílula ativa dentro da sua célula. Zero: a pílula ocupa a
+ * célula inteira, que é o que fecha a largura-alvo de 72px (ver
+ * `TAB_BAR_SIDE_MARGIN`). Não gera encosto visual entre abas — existe uma
+ * pílula só, que desliza.
+ */
+export const TAB_ITEM_INSET = 0;
 /**
  * Raio da pílula ativa — uniforme nos 4 cantos. NÃO é `altura / 2`: a curva de
  * um raio `r` invade a faixa `[0, r]` a partir da base do item, onde mora o
@@ -87,7 +92,20 @@ export const TAB_ITEM_HEIGHT_COMPACT = TAB_ICON_SIZE + TAB_ITEM_PAD_V * 2;
 export const TAB_BAR_HEIGHT_COMPACT =
   TAB_ITEM_HEIGHT_COMPACT + TAB_BAR_PAD * 2;
 
-/** Margem lateral entre a barra e a borda da tela. */
+/**
+ * Margem lateral entre a barra e a borda da tela.
+ *
+ * A largura da pílula é DERIVADA (largura da barra ÷ 5 abas), nunca fixa —
+ * é o que faz a barra funcionar em qualquer tela.
+ *
+ * Sobre o "72px" da referência de design que originou estas medidas: aquele
+ * layout tinha 4 ABAS, e a pílula ocupava exatamente 1/4 da barra. 72 não é um
+ * absoluto, é `largura da barra ÷ 4`. Com 5 abas o equivalente é ÷ 5, o que dá
+ * uma pílula naturalmente mais estreita. Tentar cravar os 72px aqui só era
+ * possível apertando esta margem para 10, e aí a barra encostava nas bordas e
+ * perdia a leitura de "flutuante" — que é o ponto do componente. A altura (48)
+ * essa sim é absoluta e foi mantida: não depende da contagem de abas.
+ */
 export const TAB_BAR_SIDE_MARGIN = 16;
 /** Distância entre a barra e o inset seguro de baixo (indicador de home). */
 export const TAB_BAR_BOTTOM_MARGIN = 12;
