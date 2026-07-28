@@ -8,46 +8,72 @@
  *      senão o último card fica escondido POR BAIXO da barra.
  */
 
-export const TAB_ICON_SIZE = 23;
-export const TAB_ICON_LABEL_GAP = 3;
 /**
- * 10, não 11: o rótulo mais longo ("Comunidade") mede ~63px a 11px, e a célula
- * de uma aba tem ~61px úteis numa tela de 390 — a 11px ele saía reticente.
+ * 21, não 23: encolhe a barra inteira um pouco (ícone é o único fator que
+ * reduz a altura sem mexer no risco de corte do rótulo — o rótulo sempre fica
+ * a exatamente `TAB_ITEM_PAD_V` da base do item, INDEPENDENTE do ícone).
  */
-export const TAB_LABEL_SIZE = 10;
-export const TAB_LABEL_LINE = 14;
+export const TAB_ICON_SIZE = 21;
+export const TAB_ICON_LABEL_GAP = 2;
+/**
+ * 9, não 10: rótulo menor por pedido direto + dá a folga horizontal que a
+ * pílula mais arredondada (`TAB_ITEM_RADIUS`) gasta no rótulo mais longo
+ * ("Comunidade") — as duas mudanças foram pensadas juntas.
+ */
+export const TAB_LABEL_SIZE = 9;
+export const TAB_LABEL_LINE = 12;
 
 /** Bloco do rótulo (folga + linha). Some inteiro quando a barra encolhe. */
 export const TAB_LABEL_BLOCK = TAB_ICON_LABEL_GAP + TAB_LABEL_LINE;
 
-/** Respiro vertical dentro da pílula do item (a que marca a aba ativa). */
-export const TAB_ITEM_PAD_V = 7;
 /**
- * Respiro entre a pílula do item e a borda da barra. 10, não 7: é o que dá
- * folga confortável (~7px) entre a pílula ativa e a curva do canto da barra
- * externa nas abas das pontas — ver `TAB_BAR_RADIUS`.
+ * Respiro vertical dentro da pílula do item (a que marca a aba ativa).
+ * Enxuto de propósito: junto com `TAB_BAR_PAD`, era daqui que vinha quase
+ * metade da altura da barra em espaço morto.
  */
-export const TAB_BAR_PAD = 10;
+export const TAB_ITEM_PAD_V = 5;
+/**
+ * Respiro entre a pílula do item e a borda da barra.
+ *
+ * Caiu de 10 para 5: com a barra em cápsula (ver `TAB_BAR_RADIUS`), a folga
+ * contra a curva do canto nas abas das pontas não vem mais deste valor —
+ * vem de a pílula ter raio próprio grande o bastante para a curva dela
+ * "acompanhar" a curva da barra. A conta está em `TAB_BAR_RADIUS`.
+ */
+export const TAB_BAR_PAD = 5;
 /** Recuo lateral da pílula ativa dentro da sua célula. */
 export const TAB_ITEM_INSET = 1;
 /**
- * Raio da pílula ativa — uniforme nos 4 cantos, moderado de propósito (não
- * `altura / 2`, que vira estádio/cápsula plena e faz a curva comer a faixa do
- * rótulo, que mora colado na base do item — `labelBase: bottom: 0` em
- * TabBarIcon.tsx). A 14 a curva soma menos de 2px de invasão na linha mais
- * baixa do texto, imperceptível; a folga do rótulo mais longo ("Comunidade")
- * praticamente não muda em relação a um raio maior.
+ * Raio da pílula ativa — uniforme nos 4 cantos. NÃO é `altura / 2`: a curva de
+ * um raio `r` invade a faixa `[0, r]` a partir da base do item, onde mora o
+ * rótulo colado (`labelBase: bottom: 0` em TabBarIcon.tsx, sempre a
+ * `TAB_ITEM_PAD_V` da base).
+ *
+ * Folga do rótulo mais longo ("Comunidade", ~50px a 9px de fonte): a ~6px da
+ * base a curva come `18 − √(18² − 12²)` ≈ 4,6px de cada lado, deixando ~58px
+ * úteis numa pílula de ~68px. Sobra ~8px. Se algum dia apertar, a válvula é
+ * `TAB_LABEL_SIZE`, não este valor.
  */
-export const TAB_ITEM_RADIUS = 14;
+export const TAB_ITEM_RADIUS = 18;
 /**
- * Raio da barra externa (o "vidro"). Também moderado, pela mesma razão da
- * pílula: um raio pleno (`altura/2`) faz a barra virar uma cápsula cujos
- * cantos avançam sobre TODA a altura das abas das pontas (Início/Perfil), e a
- * pílula ativa dessas duas sai visualmente por cima do vidro. Com este valor
- * (bem abaixo de `altura/2`) sobram ~7px de folga entre a pílula ativa e a
- * curva nas duas pontas — sem precisar de nenhum ajuste especial por aba.
+ * Raio da barra externa (o "vidro") — agora praticamente uma CÁPSULA, como a
+ * do Instagram (altura expandida 55, metade 27,5; este valor fica logo abaixo).
+ *
+ * Antes isso era proibido: com a barra em cápsula, os cantos avançam sobre
+ * toda a altura das abas das pontas e a pílula ativa saía por cima do vidro.
+ * O que mudou é que a pílula agora tem raio próprio grande (`TAB_ITEM_RADIUS`)
+ * e a barra ficou mais baixa, então as duas curvas "acompanham" uma à outra em
+ * vez de se cruzarem. Verificado nos DOIS estados, medindo do centro do canto
+ * da barra até o ponto mais distante do canto da pílula:
+ *   - expandido: barra r=26 em (26,26); pílula r=18 em (24,23) → 3,6 + 18 =
+ *     21,6 ≤ 26. Folga ~4,4px.
+ *   - encolhido: a barra mede 41, então o raio CLAMPA em 20,5 (raio maior que
+ *     metade do lado menor sempre clampa), e a pílula clampa em 15,5 →
+ *     1 + 15,5 = 16,5 ≤ 20,5. Folga ~4px.
+ * Mexer em `TAB_BAR_PAD`, `TAB_ITEM_PAD_V` ou nos raios exige refazer essa
+ * conta — foi ela que reabriu o bug das pontas duas vezes.
  */
-export const TAB_BAR_RADIUS = 22;
+export const TAB_BAR_RADIUS = 26;
 
 export const TAB_ITEM_HEIGHT =
   TAB_ICON_SIZE + TAB_LABEL_BLOCK + TAB_ITEM_PAD_V * 2;

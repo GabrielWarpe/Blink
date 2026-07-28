@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, Platform, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'nativewind';
 import Animated, {
   useSharedValue,
@@ -49,17 +50,31 @@ const barShadow = Platform.select({
 /**
  * Vidro: tint sobre o desfoque + realce de borda.
  *
- * São os dois valores do componente que NÃO saem de token de tema, e por um
- * motivo: vidro é alfa sobre o que está atrás, não uma cor da paleta. O tint
- * nasce do `surfaceContainer` de cada tema com alfa; a borda é um realce branco
- * (a luz "pegando" a quina do vidro), como em iOS/Instagram.
+ * São valores do componente que NÃO saem de token de tema, e por um motivo:
+ * vidro é alfa sobre o que está atrás, não uma cor da paleta. O tint nasce do
+ * `surfaceContainer` de cada tema com alfa; a borda é um realce branco (a luz
+ * "pegando" a quina do vidro), como em iOS/Instagram.
  *
  * Alfa BAIXO de propósito: acima de ~0,5 o vidro vira cor chapada e o desfoque
  * deixa de ser perceptível — que foi exatamente o problema da primeira versão.
+ * Reduzido de novo aqui (mais "liquid glass" = mais transparência real, não só
+ * mais desfoque) — a borda subiu um pouco no escuro pra compensar, senão a
+ * barra perde contorno contra fundos escuros.
  */
 const GLASS = {
-  dark: { tint: 'rgba(18,24,33,0.40)', border: 'rgba(255,255,255,0.14)' },
-  light: { tint: 'rgba(255,255,255,0.50)', border: 'rgba(255,255,255,0.85)' },
+  dark: { tint: 'rgba(18,24,33,0.32)', border: 'rgba(255,255,255,0.20)' },
+  light: { tint: 'rgba(255,255,255,0.38)', border: 'rgba(255,255,255,0.85)' },
+};
+
+/**
+ * Brilho no topo do vidro — a luz "pegando" a superfície, como no material
+ * "liquid glass" da Apple. Um gradiente MUITO sutil (alfa baixo, esmaece em
+ * 55% da altura), renderizado por cima de tudo (`pointerEvents="none"`, então
+ * nunca captura toque) para não competir com ícone/rótulo.
+ */
+const SHEEN = {
+  dark: ['rgba(255,255,255,0.14)', 'rgba(255,255,255,0)'] as const,
+  light: ['rgba(255,255,255,0.30)', 'rgba(255,255,255,0)'] as const,
 };
 
 /** Mola da troca de aba: leve avanço no fim, sem tremor. */
@@ -114,11 +129,13 @@ export function FloatingTabBar({
   }));
 
   // O desfoque afrouxa junto com o encolhimento: barra menor pede menos peso.
+  // Valores mais altos que antes (mais "liquid glass") — o tint mais baixo
+  // (ver GLASS) só lê como vidro de verdade com desfoque forte por trás.
   const blurProps = useAnimatedProps(() => ({
     intensity: interpolate(
       collapsed.value,
       [0, 1],
-      [dark ? 65 : 75, dark ? 45 : 55],
+      [dark ? 72 : 85, dark ? 50 : 62],
     ),
   }));
 
@@ -240,6 +257,14 @@ export function FloatingTabBar({
             </AnimatedPressable>
           );
         })}
+
+        <LinearGradient
+          pointerEvents="none"
+          colors={dark ? SHEEN.dark : SHEEN.light}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 0.55 }}
+          style={StyleSheet.absoluteFill}
+        />
       </AnimatedBlurView>
     </Animated.View>
   );
