@@ -5,12 +5,12 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 833 nodes · 2160 edges · 73 communities (34 shown, 39 thin omitted)
-- Extraction: 97% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 54 edges (avg confidence: 0.75)
+- 833 nodes · 1940 edges · 78 communities (38 shown, 40 thin omitted)
+- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 54 edges (avg confidence: 0.75)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b02e4d6a`
+- Built from commit: `80fe6faf`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -66,6 +66,7 @@
 - @react-native-async-storage/async-storage
 - react-native-gesture-handler
 - react-native-reanimated
+- achievements.ts
 - react-native-screens
 - react-native-svg
 - react-native-url-polyfill
@@ -73,42 +74,46 @@
 - tailwindcss
 - graphify reference: GitHub clone and cross-repo merge
 - progress.tsx
+- notifications.ts
 - expo-notifications
 - @react-native-community/datetimepicker
 - react-native-worklets
 - graphify reference: transcribe video and audio
 - CLAUDE.md
 - extraction-spec.md
+- supabase.ts
 - expo-font
 - expo-secure-store
 - expo-linear-gradient
 - expo-notifications
 - expo-splash-screen
 - react-native-safe-area-context
+- GoalSlider.tsx
+- expo
 
 ## God Nodes (most connected - your core abstractions)
-1. `useThemeColors()` - 123 edges
-2. `useAuth()` - 50 edges
+1. `useThemeColors()` - 96 edges
+2. `useAuth()` - 39 edges
 3. `expo-router` - 31 edges
-4. `useSettings()` - 29 edges
-5. `db` - 24 edges
-6. `Deck` - 22 edges
-7. `Flashcard` - 20 edges
-8. `Button()` - 19 edges
-9. `DecksScreen()` - 17 edges
-10. `useStudySession()` - 17 edges
+4. `useSettings()` - 23 edges
+5. `db` - 21 edges
+6. `Flashcard` - 20 edges
+7. `Deck` - 19 edges
+8. `useStudySession()` - 17 edges
+9. `Button()` - 16 edges
+10. `expo` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `TabsLayout()` --calls--> `useAuth()`  [EXTRACTED]
   app/(tabs)/_layout.tsx → contexts/AuthContext.tsx
-- `ThemeController()` --calls--> `useSettings()`  [EXTRACTED]
-  app/_layout.tsx → contexts/SettingsContext.tsx
-- `MiniAvatar()` --calls--> `useThemeColors()`  [EXTRACTED]
-  app/community/[id].tsx → hooks/useThemeColors.ts
-- `AuthorReply()` --calls--> `useThemeColors()`  [EXTRACTED]
-  app/community/[id].tsx → hooks/useThemeColors.ts
-- `Metric()` --calls--> `useThemeColors()`  [EXTRACTED]
-  app/community/[id].tsx → hooks/useThemeColors.ts
+- `DeckDetailScreen()` --indirect_call--> `sessionAccuracy()`  [INFERRED]
+  app/deck/[id].tsx → utils/stats.ts
+- `SlideFace()` --calls--> `useThemeColors()`  [EXTRACTED]
+  app/onboarding.tsx → hooks/useThemeColors.ts
+- `ImportConflictModal()` --calls--> `useThemeColors()`  [EXTRACTED]
+  components/ImportConflictModal.tsx → hooks/useThemeColors.ts
+- `graphify knowledge graph workflow` --conceptually_related_to--> `Blink (flashcards app)`  [INFERRED]
+  CLAUDE.md → README.md
 
 ## Import Cycles
 - None detected.
@@ -125,39 +130,39 @@
 - **Blink Brand Identity System (mark + wordmark + palette + theme variant)** — assets_brand_blink_logo_light, assets_brand_blink_logo_light_wordmark, assets_brand_blink_logo_light_flashcard_mascot, assets_brand_blink_logo_light_brand_palette, assets_brand_blink_logo_light_theme_variant_asset_pair [INFERRED 0.85]
 - **Flashcard Recall Visual Metaphor (card stack, flip arrow, wink)** — assets_brand_blink_logo_light_flashcard_mascot, assets_brand_blink_logo_light_card_flip_arrow, assets_brand_blink_logo_light_winking_face_motif [INFERRED 0.85]
 
-## Communities (73 total, 39 thin omitted)
+## Communities (78 total, 40 thin omitted)
 
 ### Community 0 - "useThemeColors"
-Cohesion: 0.07
-Nodes (59): ForgotPasswordScreen(), LoginScreen(), mapAuthError(), FieldErrors, RegisterScreen(), AddCardsScreen(), Mode, CardEditorScreen() (+51 more)
+Cohesion: 0.06
+Nodes (61): ForgotPasswordScreen(), LoginScreen(), mapAuthError(), FieldErrors, RegisterScreen(), AddCardsScreen(), Mode, CardEditorScreen() (+53 more)
 
 ### Community 1 - "types/index.ts"
-Cohesion: 0.06
-Nodes (64): QuizScreen(), SettingsScreen(), StudySessionScreen(), shuffle(), WriteScreen(), AiGeneratorFormProps, FinishPromptModal(), FlashCard() (+56 more)
+Cohesion: 0.08
+Nodes (53): OnboardingScreen(), QuizScreen(), StudySessionScreen(), shuffle(), WriteScreen(), AiGeneratorFormProps, FinishPromptModal(), FlashCard() (+45 more)
 
 ### Community 2 - "achievements.ts"
-Cohesion: 0.05
-Nodes (69): AchievementsScreen(), stripEmoji(), LevelsScreen(), ProfileScreen(), ProgressScreen(), StatCard(), Emblem(), EmblemProps (+61 more)
+Cohesion: 0.17
+Nodes (21): LevelsScreen(), Emblem(), EmblemProps, GameIcon(), GameIconProps, GAME_ICON_PATHS, GameIconName, AchievementVisual (+13 more)
 
 ### Community 3 - "FloatingTabBar.tsx"
-Cohesion: 0.15
-Nodes (15): TabsLayout(), AnimatedBlurView, AnimatedPressable, barShadow, FloatingTabBar(), GLASS, SHEEN, SLIDE_SPRING (+7 more)
+Cohesion: 0.09
+Nodes (26): TabsLayout(), AnimatedBlurView, AnimatedPressable, barShadow, GLASS, SHEEN, SLIDE_SPRING, IoniconName (+18 more)
 
 ### Community 4 - "decks.tsx"
-Cohesion: 0.12
-Nodes (25): APP, applyDeckImport(), BackupError, BackupResult, buildImportPlan(), CardBundleFile, CardExport, createDeck() (+17 more)
+Cohesion: 0.08
+Nodes (37): accuracyColor(), DeckDetailScreen(), Tab, ConflictResolution, ImportConflictModal(), Props, getDueCards(), APP (+29 more)
 
 ### Community 5 - "database.ts"
-Cohesion: 0.08
-Nodes (57): AuthorReply(), CommunityDeckScreen(), Metric(), MiniAvatar(), PublishDeckScreen(), EditDeckScreen(), PublishToggle(), PublishToggleProps (+49 more)
+Cohesion: 0.11
+Nodes (36): CommunityDeckScreen(), PublishDeckScreen(), EditDeckScreen(), PublishToggle(), PublishToggleProps, ReviewComposer(), ReviewComposerProps, normalizeTag() (+28 more)
 
 ### Community 6 - "app/_layout.tsx"
-Cohesion: 0.08
-Nodes (23): FONT_BASE, FONT_SCALE, LEADING_BASE, NotificationController(), RootNavigator(), THEME_MAP, ThemeController(), ThemeVarsView() (+15 more)
+Cohesion: 0.19
+Nodes (10): AuthContext, AuthContextType, AuthProvider(), parseRecoveryLink(), OnboardingContext, OnboardingContextType, OnboardingProvider(), useOnboarding() (+2 more)
 
 ### Community 7 - "expo"
-Cohesion: 0.05
-Nodes (41): backgroundColor, foregroundImage, adaptiveIcon, package, typedRoutes, expo, android, assetBundlePatterns (+33 more)
+Cohesion: 0.04
+Nodes (38): backgroundColor, foregroundImage, adaptiveIcon, package, typedRoutes, expo, android, assetBundlePatterns (+30 more)
 
 ### Community 8 - "Blink (flashcards app)"
 Cohesion: 0.11
@@ -177,7 +182,7 @@ Nodes (8): AnswerCheck, AnswerVerdict, checkAnswer(), keywords(), levenshtein(),
 
 ### Community 12 - "dependencies"
 Cohesion: 0.18
-Nodes (11): expo, expo-blur, expo-font, @expo-google-fonts/inter, dependencies, expo, expo-blur, expo-font (+3 more)
+Nodes (11): date-fns, expo-blur, expo-font, @expo-google-fonts/inter, dependencies, date-fns, expo-blur, expo-font (+3 more)
 
 ### Community 13 - "generate-cards/index.ts"
 Cohesion: 0.18
@@ -208,8 +213,8 @@ Cohesion: 0.48
 Nodes (7): Blink Logo (Light Theme Variant), Brand Palette (Navy #12203A + Teal #17C1A6), Card Flip Arrow (Spaced Repetition Cue), Flashcard Stack Mascot Mark, Light/Dark Theme Logo Variant Convention, Winking Face Motif, Blink Wordmark
 
 ### Community 20 - "settings.tsx"
-Cohesion: 0.15
-Nodes (18): accuracyColor(), DeckDetailScreen(), Tab, HomeScreen(), ActivityHeatmap(), ActivityHeatmapProps, alphaHex(), levelFor() (+10 more)
+Cohesion: 0.20
+Nodes (11): useActiveTimer(), CardAnswer, AchievementStats, Maturity, reviewCard(), DeckOrigin, Grade, StudyMode (+3 more)
 
 ### Community 22 - "metro.config.js"
 Cohesion: 0.50
@@ -228,28 +233,44 @@ Cohesion: 0.50
 Nodes (3): For /graphify add, For --watch, graphify reference: add a URL and watch a folder
 
 ### Community 36 - "expo-image-picker"
-Cohesion: 0.12
-Nodes (23): COMMUNITY_SORTS, CommunityScreen(), LIST_TITLE, DECK_SORTS, DeckSort, DecksScreen(), FilterSheet(), SortOption (+15 more)
+Cohesion: 0.18
+Nodes (14): COMMUNITY_SORTS, CommunityScreen(), LIST_TITLE, DECK_SORTS, DeckSort, DecksScreen(), FilterSheet(), FilterSheetProps (+6 more)
 
 ### Community 37 - "Deck"
-Cohesion: 0.31
-Nodes (7): DeckAvatar(), DeckAvatarProps, DeckCard(), DeckCardProps, DeckMiniCard(), DeckMiniCardProps, Deck
+Cohesion: 0.17
+Nodes (13): SettingsScreen(), SettingsRow(), SettingsRowProps, dateToHm(), hmToDate(), TimePickerRow(), TimePickerRowProps, Toggle() (+5 more)
 
 ### Community 40 - "expo-secure-store"
 Cohesion: 0.50
 Nodes (3): For git commit hook, For native CLAUDE.md integration, graphify reference: commit hook and native CLAUDE.md integration
+
+### Community 42 - "date-fns"
+Cohesion: 0.18
+Nodes (13): NewDeckInput, sanitizeInterval(), NewCardInput, NewFlashcardRow, rowsToDeck(), rowToFlashcard(), CardReviewRow, CardType (+5 more)
+
+### Community 51 - "achievements.ts"
+Cohesion: 0.23
+Nodes (11): AchievementsScreen(), stripEmoji(), buildAchievementVisuals(), accuracyOf(), Achievement, buildAchievementStats(), closestLockedAchievement(), getUnlocked() (+3 more)
 
 ### Community 55 - "graphify reference: incremental update and cluster-only"
 Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ### Community 61 - "progress.tsx"
-Cohesion: 0.15
-Nodes (18): DeckOption, DeckPickerModal(), Props, FilterSheetProps, Props, ModeOption, StudyModePicker(), StudyModePickerProps (+10 more)
+Cohesion: 0.07
+Nodes (48): HomeScreen(), ProgressScreen(), StatCard(), ActivityHeatmap(), ActivityHeatmapProps, alphaHex(), levelFor(), DeckAvatar() (+40 more)
+
+### Community 62 - "notifications.ts"
+Cohesion: 0.31
+Nodes (10): checkAchievements(), dateAt(), dueCountAt(), ensureAndroidChannel(), fireNotification(), fireStreakNotification(), parseTime(), ReminderConfig (+2 more)
 
 ### Community 63 - "expo-notifications"
-Cohesion: 0.36
-Nodes (6): ConflictResolution, ImportConflictModal(), Props, ConflictAction, DeckConflict, ImportDeck
+Cohesion: 0.62
+Nodes (5): useStreak(), addDays(), computeLongestStreak(), computeStreak(), localDay()
+
+### Community 69 - "supabase.ts"
+Cohesion: 0.33
+Nodes (5): GradeErrorCode, GradeParams, GradeResult, ExpoSecureStoreAdapter, supabase
 
 ## Ambiguous Edges - Review These
 - `Blink Product Identity` → `Spaced Repetition Card Review Loop`  [AMBIGUOUS]
@@ -258,9 +279,9 @@ Nodes (6): ConflictResolution, ImportConflictModal(), Props, ConflictAction, Dec
   assets/brand/blink_logo_dark_1.png · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **237 isolated node(s):** `name`, `slug`, `version`, `orientation`, `userInterfaceStyle` (+232 more)
+- **239 isolated node(s):** `COMMUNITY_SORTS`, `LIST_TITLE`, `DeckSort`, `DECK_SORTS`, `THEME_MAP` (+234 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **39 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **40 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -269,13 +290,13 @@ _Questions this graph is uniquely positioned to answer:_
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
 - **What is the exact relationship between `Blink Wordmark` and `Spaced Repetition Product Metaphor`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `useThemeColors()` connect `useThemeColors` to `types/index.ts`, `achievements.ts`, `FloatingTabBar.tsx`, `expo-image-picker`, `database.ts`, `app/_layout.tsx`, `Deck`, `expo`, `settings.tsx`, `progress.tsx`, `expo-notifications`?**
-  _High betweenness centrality (0.105) - this node is a cross-community bridge._
-- **Why does `expo-router` connect `expo-image-picker` to `useThemeColors`, `types/index.ts`, `achievements.ts`, `FloatingTabBar.tsx`, `database.ts`, `app/_layout.tsx`, `expo`, `settings.tsx`, `progress.tsx`?**
-  _High betweenness centrality (0.053) - this node is a cross-community bridge._
-- **Why does `plugins` connect `expo` to `expo-image-picker`?**
+- **Why does `expo-router` connect `useThemeColors` to `types/index.ts`, `achievements.ts`, `FloatingTabBar.tsx`, `decks.tsx`, `database.ts`, `Deck`, `expo`, `expo-image-picker`, `date-fns`, `achievements.ts`, `progress.tsx`, `expo-notifications`?**
+  _High betweenness centrality (0.104) - this node is a cross-community bridge._
+- **Why does `useThemeColors()` connect `types/index.ts` to `useThemeColors`, `achievements.ts`, `FloatingTabBar.tsx`, `decks.tsx`, `database.ts`, `Deck`, `achievements.ts`, `progress.tsx`?**
+  _High betweenness centrality (0.079) - this node is a cross-community bridge._
+- **Why does `plugins` connect `expo` to `useThemeColors`?**
   _High betweenness centrality (0.043) - this node is a cross-community bridge._
-- **What connects `name`, `slug`, `version` to the rest of the system?**
-  _237 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `COMMUNITY_SORTS`, `LIST_TITLE`, `DeckSort` to the rest of the system?**
+  _239 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `useThemeColors` be split into smaller, more focused modules?**
-  _Cohesion score 0.07377295995182175 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05811965811965812 - nodes in this community are weakly interconnected._
