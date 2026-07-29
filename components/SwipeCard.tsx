@@ -251,7 +251,7 @@ export function SwipeCard({
               activeOpacity={0.85}
               className="bg-primary-container rounded-button py-4 flex-row items-center justify-center gap-2"
             >
-              <Ionicons name="sync-outline" size={18} color="#dffbf7" />
+              <Ionicons name="sync-outline" size={18} color={colors.onPrimaryContainer} />
               <Text className="text-on-primary-container font-inter-semibold text-base">
                 Ver resposta
               </Text>

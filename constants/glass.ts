@@ -34,7 +34,7 @@ export interface GlassTokens {
 }
 
 export const GLASS_DARK: GlassTokens = {
-  tint: 'rgba(18,24,33,0.55)',
+  tint: 'rgba(18,18,18,0.55)', // surfaceContainer do tema escuro
   border: 'rgba(255,255,255,0.12)',
   sheen: ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0)'],
   blurIntensity: 60,
@@ -44,7 +44,7 @@ export const GLASS_DARK: GlassTokens = {
 };
 
 export const GLASS_LIGHT: GlassTokens = {
-  tint: 'rgba(255,255,255,0.60)',
+  tint: 'rgba(248,248,246,0.60)', // surfaceContainer do tema claro
   border: 'rgba(255,255,255,0.85)',
   sheen: ['rgba(255,255,255,0.35)', 'rgba(255,255,255,0)'],
   blurIntensity: 70,

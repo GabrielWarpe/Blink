@@ -20,7 +20,7 @@ interface SettingsRowProps {
 
 export function SettingsRow({
   icon,
-  iconColor = '#56d2c6',
+  iconColor,
   title,
   subtitle,
   value,
@@ -30,7 +30,9 @@ export function SettingsRow({
   destructive = false,
 }: SettingsRowProps) {
   const colors = useThemeColors();
-  const color = destructive ? colors.error : iconColor;
+  // Sem `iconColor`, o ícone segue o texto do tema (monocromático). O default
+  // era um teal cravado — sobra da identidade antiga.
+  const color = destructive ? colors.error : (iconColor ?? colors.onSurface);
   const pressable = onPress != null && toggle == null && rightSlot == null;
 
   const inner = (

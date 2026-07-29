@@ -178,7 +178,11 @@ function RootNavigator() {
   if (loading || onboardingDone === null) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator size="large" color="#56d2c6" />
+        {/* Hex cravado de propósito: esta tela roda ANTES de o tema resolver
+            (é o estado de carregamento inicial), então não dá pra usar
+            `useThemeColors`. Branco = a cor de destaque do tema escuro, que é
+            o padrão do app. */}
+        <ActivityIndicator size="large" color="#ffffff" />
       </View>
     );
   }
@@ -187,7 +191,7 @@ function RootNavigator() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#0b0f14' },
+        contentStyle: { backgroundColor: '#000000' },
         animation: 'slide_from_right',
       }}
     >

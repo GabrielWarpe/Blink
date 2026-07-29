@@ -40,7 +40,6 @@ export function TimePickerRow({ value, onChange }: TimePickerRowProps) {
     <>
       <SettingsRow
         icon="time"
-        iconColor="#7cc6ff"
         title="Horário do lembrete"
         value={value}
         onPress={() => setShow(true)}

@@ -80,7 +80,7 @@ export default function RegisterScreen() {
     return (
       <SafeAreaView className="flex-1 bg-background items-center justify-center px-8">
         <View className="w-16 h-16 rounded-2xl bg-green-500/20 items-center justify-center mb-5">
-          <Ionicons name="mail-unread" size={32} color="#4ade80" />
+          <Ionicons name="mail-unread" size={32} color={colors.success} />
         </View>
         <Text className="text-on-surface font-jakarta-bold text-2xl text-center">
           Confirme seu e-mail

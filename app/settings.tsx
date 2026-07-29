@@ -192,7 +192,6 @@ export default function SettingsScreen() {
           <SettingsSection title="Estudo">
             <SettingsRow
               icon="flag"
-              iconColor="#ffb690"
               title="Meta diária de cartões"
               subtitle={`Entre ${GOAL_MIN} e ${GOAL_MAX} cartões por dia`}
               rightSlot={
@@ -218,7 +217,6 @@ export default function SettingsScreen() {
             />
             <SettingsRow
               icon="eye"
-              iconColor="#ffb690"
               title="Mostrar resposta automática"
               toggle={{
                 value: settings.autoReveal,
@@ -242,7 +240,6 @@ export default function SettingsScreen() {
               <>
                 <SettingsRow
                   icon="swap-vertical"
-                  iconColor="#ffb690"
                   title="Modo do cronômetro"
                   value={
                     settings.studyTimerMode === 'down' ? 'Regressivo' : 'Crescente'
@@ -304,7 +301,6 @@ export default function SettingsScreen() {
             />
             <SettingsRow
               icon="text"
-              iconColor="#7cc6ff"
               title="Tamanho da fonte"
               value={settings.fontSize}
               onPress={() =>
@@ -319,7 +315,6 @@ export default function SettingsScreen() {
           <SettingsSection title="Notificações">
             <SettingsRow
               icon="notifications"
-              iconColor="#ffb690"
               title="Lembrete de estudo"
               subtitle={
                 settings.studyReminder
@@ -339,7 +334,6 @@ export default function SettingsScreen() {
             )}
             <SettingsRow
               icon="flame"
-              iconColor="#ff8a65"
               title="Alerta de sequência"
               subtitle={settings.streakAlert ? 'Todos os dias às 21:00' : undefined}
               toggle={{
@@ -376,7 +370,6 @@ export default function SettingsScreen() {
           <SettingsSection title="Acessibilidade">
             <SettingsRow
               icon="pause-circle"
-              iconColor="#ffb690"
               title="Reduzir animações"
               toggle={{
                 value: settings.reduceMotion,
@@ -385,7 +378,6 @@ export default function SettingsScreen() {
             />
             <SettingsRow
               icon="hand-left"
-              iconColor="#7cc6ff"
               title="Gestos de swipe"
               subtitle="Desligado: avalie só pelos botões"
               toggle={{
@@ -405,14 +397,12 @@ export default function SettingsScreen() {
             />
             <SettingsRow
               icon="chatbox-ellipses"
-              iconColor="#ffb690"
               title="Enviar feedback"
               subtitle="Abre seu app de e-mail"
               onPress={handleFeedback}
             />
             <SettingsRow
               icon="information-circle"
-              iconColor="#7cc6ff"
               title="Sobre"
               value={`v${APP_VERSION}`}
               onPress={handleAbout}

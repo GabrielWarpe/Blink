@@ -48,6 +48,11 @@ const ACTIVE_SCALE = 1.06;
  * de opacidade. Isso resolve de uma vez a troca do glifo, a troca do peso da
  * fonte e a mudança de cor — tudo em opacidade, que é a propriedade mais barata
  * de animar e não depende de animar a cor de uma fonte de ícone (frágil).
+ *
+ * O ativo usa `onSurface` (claro), não `onPrimaryContainer` (escuro): a pílula
+ * do indicador deixou de ser branca sólida e virou um realce translúcido do
+ * vidro (ver `GLASS.indicator` em `FloatingTabBar`) — texto escuro por cima
+ * dela ficaria ilegível.
  */
 export function TabBarIcon({
   icon,
@@ -99,7 +104,7 @@ export function TabBarIcon({
     borderColor: interpolateColor(
       progress.value,
       [0, 1],
-      [colors.outline, colors.onPrimaryContainer],
+      [colors.outline, colors.onSurface],
     ),
   }));
 
@@ -158,7 +163,7 @@ export function TabBarIcon({
             <Ionicons
               name={icon}
               size={TAB_ICON_SIZE}
-              color={colors.onPrimaryContainer}
+              color={colors.onSurface}
             />
           </Animated.View>
         </View>
@@ -183,7 +188,7 @@ export function TabBarIcon({
           style={[
             labelBase,
             {
-              color: colors.onPrimaryContainer,
+              color: colors.onSurface,
               fontFamily: 'Inter_600SemiBold',
             },
             activeLabelStyle,

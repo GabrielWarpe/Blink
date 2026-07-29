@@ -62,8 +62,21 @@ const barShadow = Platform.select({
  * barra perde contorno contra fundos escuros.
  */
 const GLASS = {
-  dark: { tint: 'rgba(18,24,33,0.32)', border: 'rgba(255,255,255,0.20)' },
-  light: { tint: 'rgba(255,255,255,0.38)', border: 'rgba(255,255,255,0.85)' },
+  dark: {
+    tint: 'rgba(18,18,18,0.32)',
+    border: 'rgba(255,255,255,0.20)',
+    // Pílula da aba ativa. É um REALCE DO PRÓPRIO VIDRO (branco de alfa
+    // baixo), não `primaryContainer`: com o destaque monocromático, aquele
+    // token virou branco quase sólido, e a pílula passou a ser a coisa mais
+    // clara da tela inteira — gritava em vez de marcar. Assim ela lê como
+    // "esta parte do vidro está acesa".
+    indicator: 'rgba(255,255,255,0.14)',
+  },
+  light: {
+    tint: 'rgba(248,248,246,0.38)',
+    border: 'rgba(255,255,255,0.85)',
+    indicator: 'rgba(0,0,0,0.07)',
+  },
 };
 
 /**
@@ -210,7 +223,7 @@ export function FloatingTabBar({
                 top: TAB_BAR_PAD,
                 width: cellWidth - TAB_ITEM_INSET * 2,
                 borderRadius: TAB_ITEM_RADIUS,
-                backgroundColor: colors.primaryContainer,
+                backgroundColor: glass.indicator,
               },
               indicatorStyle,
             ]}

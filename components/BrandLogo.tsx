@@ -10,7 +10,7 @@ const LIGHT_RATIO = 1001 / 362;
 // A variante "escura" NÃO é um wordmark transparente equivalente: é um selo
 // autocontido — cartão arredondado preenchido com o próprio #0F1D33 da marca,
 // texto claro por cima, e só as bordas arredondadas ficam transparentes.
-// Colado direto sobre o fundo real do tema escuro (~#0b0f14, um pouco
+// Colado direto sobre o fundo real do tema escuro (hoje preto puro, diferente
 // diferente), apareceria como um retângulo flutuando. Por isso ele é sempre
 // envolvido num contêiner da MESMA cor exata (#0F1D33) — as duas se fundem
 // numa só mancha de cor, e o conjunto lê como um selo de marca proposital,

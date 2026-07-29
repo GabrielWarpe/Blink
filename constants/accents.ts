@@ -7,21 +7,24 @@ export interface AccentColors {
 }
 
 /**
- * Cor de destaque única do app: Teal ("Meia-noite", petróleo-teal).
- * A escolha de cor pelo usuário foi removida — o destaque é fixo.
+ * Destaque MONOCROMÁTICO: branco no escuro, quase-preto no claro. O app não
+ * tem mais cor de marca no chrome — a cor vem das capas dos decks. Espelha a
+ * família `primary*` de `constants/theme.ts`; os dois precisam bater.
+ *
+ * (A escolha de cor pelo usuário foi removida antes disto — o destaque é fixo.)
  */
 export const ACCENT: { light: AccentColors; dark: AccentColors } = {
   dark: {
-    primary: '#56d2c6',
-    primaryContainer: '#178c87',
-    onPrimary: '#04302c',
-    onPrimaryContainer: '#dffbf7',
+    primary: '#c9c9c9',
+    primaryContainer: '#bdbdbd',
+    onPrimary: '#000000',
+    onPrimaryContainer: '#000000',
   },
   light: {
-    primary: '#0e6e69',
-    primaryContainer: '#178c87',
+    primary: '#111111',
+    primaryContainer: '#111111',
     onPrimary: '#ffffff',
-    onPrimaryContainer: '#dffbf7',
+    onPrimaryContainer: '#f3f3f0',
   },
 };
 

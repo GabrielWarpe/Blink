@@ -1,21 +1,27 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
   FlatList,
+  TextInput,
   TouchableOpacity,
   Alert,
-  ScrollView,
-  StyleSheet,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolate,
+  Easing,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useDecks } from '@/hooks/useDecks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useGlass } from '@/hooks/useGlass';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useTabBarScroll } from '@/hooks/useTabBarScroll';
 import {
@@ -40,13 +46,26 @@ import {
   StudyModePicker,
   useStudyModePicker,
 } from '@/components/StudyModePicker';
-import { Input } from '@/components/ui/Input';
 import { cardShadow } from '@/components/ui/Card';
+import { GlassSurface } from '@/components/ui/GlassSurface';
+import {
+  DeckFilterSheet,
+  type DeckSort,
+} from '@/components/DeckFilterSheet';
 import {
   ImportConflictModal,
   type ConflictResolution,
 } from '@/components/ImportConflictModal';
 import { DeckPickerModal } from '@/components/DeckPickerModal';
+
+/** Altura do cabeçalho flutuante — a lista reserva isso no topo. */
+const HEADER_HEIGHT = 60;
+/** Altura da barra de busca quando revelada. */
+const SEARCH_HEIGHT = 56;
+/** Quanto puxar além do topo para revelar a busca. */
+const PULL_TO_REVEAL = 40;
+/** A partir daqui a busca se esconde de novo (só se estiver vazia). */
+const SCROLL_TO_HIDE = 60;
 
 export default function DecksScreen() {
   const router = useRouter();
@@ -54,13 +73,46 @@ export default function DecksScreen() {
   const { user } = useAuth();
   const { decks, reload, deleteDeck } = useDecks();
   const colors = useThemeColors();
-  const glass = useGlass();
   const tabBar = useTabBarInset();
   const tabScroll = useTabBarScroll();
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
-  const [sort, setSort] = useState<'recent' | 'alpha' | 'count'>('recent');
+  const [sort, setSort] = useState<DeckSort>('recent');
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // ── Busca revelada ao puxar (padrão iOS: Mail/Mensagens) ────────────────
+  // Fica escondida por padrão para não comer altura em toda rolagem. Puxar o
+  // conteúdo além do topo revela; rolar para dentro da lista esconde de novo —
+  // mas NUNCA enquanto houver texto digitado, senão o filtro sumiria da vista
+  // ainda valendo.
+  const searchH = useSharedValue(0);
+  const searchOpen = useRef(false);
+  const searchRef = useRef<TextInput>(null);
+
+  const toggleSearch = (open: boolean) => {
+    if (searchOpen.current === open) return;
+    searchOpen.current = open;
+    searchH.value = withTiming(open ? SEARCH_HEIGHT : 0, {
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+    });
+    if (!open) searchRef.current?.blur();
+  };
+
+  // O `useTabBarScroll` também precisa deste evento (encolhe a barra de abas),
+  // então os dois são compostos aqui em vez de disputar o `onScroll`.
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    tabScroll.onScroll(e);
+    const y = e.nativeEvent.contentOffset.y;
+    if (y < -PULL_TO_REVEAL) toggleSearch(true);
+    else if (y > SCROLL_TO_HIDE && search.length === 0) toggleSearch(false);
+  };
+
+  const searchStyle = useAnimatedStyle(() => ({
+    height: searchH.value,
+    opacity: interpolate(searchH.value, [0, SEARCH_HEIGHT], [0, 1]),
+  }));
   // Estado dos modais de importação.
   const [conflictState, setConflictState] = useState<{
     newDecks: ImportDeck[];
@@ -78,6 +130,8 @@ export default function DecksScreen() {
   );
   const effectiveTag =
     activeTag !== null && allTags.includes(activeTag) ? activeTag : null;
+  /** Há filtro valendo? Marca o ícone para o estado não ficar escondido. */
+  const hasFilter = effectiveTag !== null || sort !== 'recent';
 
   const filtered = decks.filter(
     d =>
@@ -93,12 +147,6 @@ export default function DecksScreen() {
     const bt = new Date(b.lastStudied ?? b.createdAt).getTime();
     return bt - at;
   });
-
-  const SORTS: { key: typeof sort; label: string }[] = [
-    { key: 'recent', label: 'Recentes' },
-    { key: 'alpha', label: 'A–Z' },
-    { key: 'count', label: 'Mais cards' },
-  ];
 
   const handleExport = async () => {
     if (!user || busy) return;
@@ -237,131 +285,56 @@ export default function DecksScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View className="px-5 pt-6 pb-4">
-        <View className="flex-row items-center justify-between mb-4">
-          <Text
-            className="text-on-surface font-jakarta-extrabold text-3xl"
-            style={{ letterSpacing: -0.5 }}
-          >
-            Decks
-          </Text>
-          <TouchableOpacity
-            onPress={confirmBackup}
-            disabled={busy}
-            activeOpacity={0.8}
-            className="w-10 h-10 items-center justify-center rounded-button bg-surface-container"
-            style={{ opacity: busy ? 0.5 : 1, ...cardShadow }}
-          >
-            <Ionicons
-              name="swap-vertical"
-              size={20}
-              color={colors.onSurface}
-            />
-          </TouchableOpacity>
-        </View>
-        <Input
-          placeholder="Buscar decks..."
-          value={search}
-          onChangeText={setSearch}
-        />
-        {decks.length > 1 && (
-          <View className="flex-row gap-2 mt-3">
-            {SORTS.map(s => {
-              const active = sort === s.key;
-              return (
-                <TouchableOpacity
-                  key={s.key}
-                  onPress={() => setSort(s.key)}
-                  activeOpacity={0.8}
-                  className={`px-3.5 py-1.5 rounded-pill ${
-                    active
-                      ? 'bg-primary-container'
-                      : 'bg-surface-container-high'
-                  }`}
-                >
-                  <Text
-                    className={`font-inter-medium text-xs ${
-                      active
-                        ? 'text-on-primary-container'
-                        : 'text-on-surface-variant'
-                    }`}
-                  >
-                    {s.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-
-        {/* Filtro por tag */}
-        {allTags.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            className="mt-3"
-          >
-            <View className="flex-row gap-2">
-              <TouchableOpacity
-                onPress={() => setActiveTag(null)}
-                activeOpacity={0.8}
-                className={`px-3.5 py-1.5 rounded-pill ${
-                  effectiveTag === null
-                    ? 'bg-primary-container'
-                    : 'bg-surface-container-high'
-                }`}
-              >
-                <Text
-                  className={`font-inter-medium text-xs ${
-                    effectiveTag === null
-                      ? 'text-on-primary-container'
-                      : 'text-on-surface-variant'
-                  }`}
-                >
-                  Todas
-                </Text>
-              </TouchableOpacity>
-              {allTags.map(tag => {
-                const active = effectiveTag === tag;
-                return (
-                  <TouchableOpacity
-                    key={tag}
-                    onPress={() => setActiveTag(active ? null : tag)}
-                    activeOpacity={0.8}
-                    className={`px-3.5 py-1.5 rounded-pill ${
-                      active
-                        ? 'bg-primary-container'
-                        : 'bg-surface-container-high'
-                    }`}
-                  >
-                    <Text
-                      className={`font-inter-medium text-xs ${
-                        active
-                          ? 'text-on-primary-container'
-                          : 'text-on-surface-variant'
-                      }`}
-                    >
-                      #{tag}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
-        )}
-      </View>
-
+      {/* Busca revelada ao puxar + lista. A lista fica ATRÁS do cabeçalho
+          flutuante (por isso o paddingTop): assim os cards passam por baixo do
+          botão de vidro e o desfoque tem o que borrar — sobre fundo chapado,
+          vidro não mostra nada. */}
       <FlatList
-        {...tabScroll}
         data={sorted}
         keyExtractor={d => d.id}
+        onScroll={handleScroll}
+        scrollEventThrottle={tabScroll.scrollEventThrottle}
         contentContainerStyle={{
           paddingHorizontal: 20,
+          paddingTop: HEADER_HEIGHT,
           paddingBottom: tabBar.contentInset,
           gap: 12,
         }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={
+          <Animated.View style={[{ overflow: 'hidden' }, searchStyle]}>
+            <View
+              className="flex-row items-center bg-surface-container-high rounded-button px-3.5 border border-outline-variant"
+              style={{ height: SEARCH_HEIGHT - 12, marginBottom: 12 }}
+            >
+              <Ionicons name="search" size={18} color={colors.outline} />
+              <TextInput
+                ref={searchRef}
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Buscar decks..."
+                placeholderTextColor={colors.outline}
+                className="flex-1 px-2 text-on-surface font-inter-regular text-base"
+                selectionColor={colors.primary}
+                returnKeyType="search"
+              />
+              <TouchableOpacity
+                onPress={() => setFiltersOpen(true)}
+                hitSlop={10}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="options-outline"
+                  size={20}
+                  // Marca quando há filtro ativo — sem isso o estado ficaria
+                  // escondido dentro do pop-up.
+                  color={hasFilter ? colors.primary : colors.outline}
+                />
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        }
         ListEmptyComponent={
           <View className="items-center mt-16 px-6">
             <View
@@ -424,35 +397,59 @@ export default function DecksScreen() {
         )}
       />
 
-      {/* FAB — ancorado ACIMA da barra flutuante (que é `position: absolute`);
-          com o `bottom` fixo de antes ele ficaria atrás dela.
-          Fica OPACO na cor de destaque, sem virar vidro: é a ação primária da
-          tela e precisa saltar. Ganha só o brilho e a borda, para pertencer ao
-          mesmo material do resto. */}
-      <TouchableOpacity
-        className="absolute right-5 w-14 h-14 bg-primary-container rounded-full items-center justify-center overflow-hidden"
-        onPress={() => router.push('/deck/create')}
-        style={{
-          bottom: tabBar.barTop + 16,
-          borderWidth: StyleSheet.hairlineWidth,
-          borderColor: glass.border,
-          elevation: 8,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.4,
-          shadowRadius: 10,
-        }}
-        activeOpacity={0.85}
+      {/* Cabeçalho flutuante: (+) de vidro centralizado + backup à direita.
+          Sem título — a aba já diz onde você está. Fica SOBRE a lista para os
+          cards passarem por baixo do vidro (é isso que dá o que desfocar). */}
+      <View
+        pointerEvents="box-none"
+        className="absolute left-0 right-0 top-0 flex-row items-center justify-between px-5"
+        style={{ height: HEADER_HEIGHT }}
       >
-        <LinearGradient
-          pointerEvents="none"
-          colors={glass.sheen}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 0.7 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <Ionicons name="add" size={28} color="#dffbf7" />
-      </TouchableOpacity>
+        {/* Espelha a largura do botão da direita, para o (+) ficar de fato
+            centralizado na tela e não deslocado. */}
+        <View style={{ width: 40 }} />
+
+        <TouchableOpacity
+          onPress={() => router.push('/deck/create')}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Criar deck"
+        >
+          <GlassSurface
+            blur
+            radius={24}
+            style={{
+              width: 48,
+              height: 48,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons name="add" size={26} color={colors.onSurface} />
+          </GlassSurface>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={confirmBackup}
+          disabled={busy}
+          activeOpacity={0.8}
+          className="w-10 h-10 items-center justify-center rounded-button bg-surface-container"
+          style={{ opacity: busy ? 0.5 : 1, ...cardShadow }}
+        >
+          <Ionicons name="swap-vertical" size={20} color={colors.onSurface} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Filtros (ordenação + tag) — abertos pelo ícone dentro da busca */}
+      <DeckFilterSheet
+        visible={filtersOpen}
+        sort={sort}
+        onSortChange={setSort}
+        tags={allTags}
+        activeTag={effectiveTag}
+        onTagChange={setActiveTag}
+        onClose={() => setFiltersOpen(false)}
+      />
 
       {/* Conflito de baralho na importação */}
       <ImportConflictModal

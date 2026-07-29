@@ -109,7 +109,7 @@ export function DeckCard({ deck, onPress, onPlay }: DeckCardProps) {
             backgroundColor: colors.primaryContainer,
           }}
         >
-          <Ionicons name="play" size={18} color="#dffbf7" />
+          <Ionicons name="play" size={18} color={colors.onPrimaryContainer} />
         </TouchableOpacity>
       ) : (
         <Ionicons name="chevron-forward" size={18} color={colors.outline} />

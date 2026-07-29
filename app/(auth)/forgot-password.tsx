@@ -76,7 +76,7 @@ export default function ForgotPasswordScreen() {
           {sent ? (
             <View className="items-center">
               <View className="w-16 h-16 rounded-2xl bg-green-500/20 items-center justify-center mb-5">
-                <Ionicons name="checkmark-circle" size={32} color="#4ade80" />
+                <Ionicons name="checkmark-circle" size={32} color={colors.success} />
               </View>
               <Text className="text-on-surface font-jakarta-bold text-2xl text-center">
                 Link enviado!
@@ -100,7 +100,7 @@ export default function ForgotPasswordScreen() {
           ) : (
             <>
               <View className="w-14 h-14 rounded-2xl bg-primary-container items-center justify-center mb-5">
-                <Ionicons name="key" size={28} color="#ede0ff" />
+                <Ionicons name="key" size={28} color={colors.onPrimaryContainer} />
               </View>
               <Text className="text-on-surface font-jakarta-extrabold text-3xl">
                 Recuperar senha
