@@ -1,21 +1,13 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   FlatList,
-  TextInput,
   TouchableOpacity,
   Alert,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolate,
-  Easing,
-} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,25 +39,24 @@ import {
   useStudyModePicker,
 } from '@/components/StudyModePicker';
 import { cardShadow } from '@/components/ui/Card';
-import { GlassSurface } from '@/components/ui/GlassSurface';
+import { FilterSheet, type SortOption } from '@/components/FilterSheet';
 import {
-  DeckFilterSheet,
-  type DeckSort,
-} from '@/components/DeckFilterSheet';
+  RevealSearchBar,
+  useRevealSearch,
+} from '@/components/RevealSearchBar';
 import {
   ImportConflictModal,
   type ConflictResolution,
 } from '@/components/ImportConflictModal';
 import { DeckPickerModal } from '@/components/DeckPickerModal';
 
-/** Altura do cabeçalho flutuante — a lista reserva isso no topo. */
-const HEADER_HEIGHT = 60;
-/** Altura da barra de busca quando revelada. */
-const SEARCH_HEIGHT = 56;
-/** Quanto puxar além do topo para revelar a busca. */
-const PULL_TO_REVEAL = 40;
-/** A partir daqui a busca se esconde de novo (só se estiver vazia). */
-const SCROLL_TO_HIDE = 60;
+type DeckSort = 'recent' | 'alpha' | 'count';
+
+const DECK_SORTS: readonly SortOption<DeckSort>[] = [
+  { key: 'recent', label: 'Recentes' },
+  { key: 'alpha', label: 'A–Z' },
+  { key: 'count', label: 'Mais cards' },
+];
 
 export default function DecksScreen() {
   const router = useRouter();
@@ -81,38 +72,15 @@ export default function DecksScreen() {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  // ── Busca revelada ao puxar (padrão iOS: Mail/Mensagens) ────────────────
-  // Fica escondida por padrão para não comer altura em toda rolagem. Puxar o
-  // conteúdo além do topo revela; rolar para dentro da lista esconde de novo —
-  // mas NUNCA enquanto houver texto digitado, senão o filtro sumiria da vista
-  // ainda valendo.
-  const searchH = useSharedValue(0);
-  const searchOpen = useRef(false);
-  const searchRef = useRef<TextInput>(null);
-
-  const toggleSearch = (open: boolean) => {
-    if (searchOpen.current === open) return;
-    searchOpen.current = open;
-    searchH.value = withTiming(open ? SEARCH_HEIGHT : 0, {
-      duration: 220,
-      easing: Easing.out(Easing.cubic),
-    });
-    if (!open) searchRef.current?.blur();
-  };
+  const reveal = useRevealSearch(search);
 
   // O `useTabBarScroll` também precisa deste evento (encolhe a barra de abas),
   // então os dois são compostos aqui em vez de disputar o `onScroll`.
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     tabScroll.onScroll(e);
-    const y = e.nativeEvent.contentOffset.y;
-    if (y < -PULL_TO_REVEAL) toggleSearch(true);
-    else if (y > SCROLL_TO_HIDE && search.length === 0) toggleSearch(false);
+    reveal.onScroll(e);
   };
 
-  const searchStyle = useAnimatedStyle(() => ({
-    height: searchH.value,
-    opacity: interpolate(searchH.value, [0, SEARCH_HEIGHT], [0, 1]),
-  }));
   // Estado dos modais de importação.
   const [conflictState, setConflictState] = useState<{
     newDecks: ImportDeck[];
@@ -285,10 +253,9 @@ export default function DecksScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
-      {/* Busca revelada ao puxar + lista. A lista fica ATRÁS do cabeçalho
-          flutuante (por isso o paddingTop): assim os cards passam por baixo do
-          botão de vidro e o desfoque tem o que borrar — sobre fundo chapado,
-          vidro não mostra nada. */}
+      {/* Cabeçalho + busca revelada ao puxar viajam DENTRO da lista, como nas
+          outras abas: título à esquerda, ações à direita, rolando junto com o
+          conteúdo em vez de flutuar sobre ele. */}
       <FlatList
         data={sorted}
         keyExtractor={d => d.id}
@@ -296,44 +263,62 @@ export default function DecksScreen() {
         scrollEventThrottle={tabScroll.scrollEventThrottle}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingTop: HEADER_HEIGHT,
           paddingBottom: tabBar.contentInset,
           gap: 12,
         }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
-          <Animated.View style={[{ overflow: 'hidden' }, searchStyle]}>
-            <View
-              className="flex-row items-center bg-surface-container-high rounded-button px-3.5 border border-outline-variant"
-              style={{ height: SEARCH_HEIGHT - 12, marginBottom: 12 }}
-            >
-              <Ionicons name="search" size={18} color={colors.outline} />
-              <TextInput
-                ref={searchRef}
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Buscar decks..."
-                placeholderTextColor={colors.outline}
-                className="flex-1 px-2 text-on-surface font-inter-regular text-base"
-                selectionColor={colors.primary}
-                returnKeyType="search"
-              />
-              <TouchableOpacity
-                onPress={() => setFiltersOpen(true)}
-                hitSlop={10}
-                activeOpacity={0.7}
+          <View>
+            {/* Header — mesmo ritmo (pt-6 / pb-4 / text-3xl) das demais abas.
+                O padding horizontal já vem do contentContainerStyle. */}
+            <View className="pt-6 pb-4 flex-row items-center justify-between">
+              <Text
+                className="text-on-surface font-jakarta-extrabold text-3xl"
+                style={{ letterSpacing: -0.5 }}
               >
-                <Ionicons
-                  name="options-outline"
-                  size={20}
-                  // Marca quando há filtro ativo — sem isso o estado ficaria
-                  // escondido dentro do pop-up.
-                  color={hasFilter ? colors.primary : colors.outline}
-                />
-              </TouchableOpacity>
+                Decks
+              </Text>
+
+              <View className="flex-row items-center gap-3">
+                <TouchableOpacity
+                  onPress={confirmBackup}
+                  disabled={busy}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Exportar ou importar baralhos"
+                  className="w-10 h-10 items-center justify-center rounded-button bg-surface-container"
+                  style={{ opacity: busy ? 0.5 : 1, ...cardShadow }}
+                >
+                  <Ionicons
+                    name="swap-vertical"
+                    size={20}
+                    color={colors.onSurface}
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => router.push('/deck/create')}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Criar deck"
+                  className="w-10 h-10 items-center justify-center rounded-button bg-surface-container"
+                  style={cardShadow}
+                >
+                  <Ionicons name="add" size={22} color={colors.onSurface} />
+                </TouchableOpacity>
+              </View>
             </View>
-          </Animated.View>
+
+            <RevealSearchBar
+              search={reveal}
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Buscar decks..."
+              onOpenFilters={() => setFiltersOpen(true)}
+              hasFilter={hasFilter}
+            />
+          </View>
         }
         ListEmptyComponent={
           <View className="items-center mt-16 px-6">
@@ -397,52 +382,10 @@ export default function DecksScreen() {
         )}
       />
 
-      {/* Cabeçalho flutuante: (+) de vidro centralizado + backup à direita.
-          Sem título — a aba já diz onde você está. Fica SOBRE a lista para os
-          cards passarem por baixo do vidro (é isso que dá o que desfocar). */}
-      <View
-        pointerEvents="box-none"
-        className="absolute left-0 right-0 top-0 flex-row items-center justify-between px-5"
-        style={{ height: HEADER_HEIGHT }}
-      >
-        {/* Espelha a largura do botão da direita, para o (+) ficar de fato
-            centralizado na tela e não deslocado. */}
-        <View style={{ width: 40 }} />
-
-        <TouchableOpacity
-          onPress={() => router.push('/deck/create')}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Criar deck"
-        >
-          <GlassSurface
-            blur
-            radius={24}
-            style={{
-              width: 48,
-              height: 48,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Ionicons name="add" size={26} color={colors.onSurface} />
-          </GlassSurface>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={confirmBackup}
-          disabled={busy}
-          activeOpacity={0.8}
-          className="w-10 h-10 items-center justify-center rounded-button bg-surface-container"
-          style={{ opacity: busy ? 0.5 : 1, ...cardShadow }}
-        >
-          <Ionicons name="swap-vertical" size={20} color={colors.onSurface} />
-        </TouchableOpacity>
-      </View>
-
       {/* Filtros (ordenação + tag) — abertos pelo ícone dentro da busca */}
-      <DeckFilterSheet
+      <FilterSheet
         visible={filtersOpen}
+        sorts={DECK_SORTS}
         sort={sort}
         onSortChange={setSort}
         tags={allTags}

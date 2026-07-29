@@ -5,15 +5,21 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { listCommunityDecks } from '@/services/community';
+import { listCommunityDecks, type CommunitySort } from '@/services/community';
 import type { CommunityDeckRow } from '@/types/db';
 import { DeckAvatar } from '@/components/DeckAvatar';
 import { StarRating } from '@/components/StarRating';
-import { Input } from '@/components/ui/Input';
+import { FilterSheet, type SortOption } from '@/components/FilterSheet';
+import {
+  RevealSearchBar,
+  useRevealSearch,
+} from '@/components/RevealSearchBar';
 import { cardShadow } from '@/components/ui/Card';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
@@ -21,6 +27,19 @@ import { useTabBarScroll } from '@/hooks/useTabBarScroll';
 import { useGlassEdge, GlassSheen } from '@/components/ui/GlassSurface';
 
 const TRENDING_CARD_WIDTH = 168;
+
+const COMMUNITY_SORTS: readonly SortOption<CommunitySort>[] = [
+  { key: 'top', label: 'Melhor avaliados' },
+  { key: 'downloads', label: 'Mais baixados' },
+  { key: 'recent', label: 'Recentes' },
+];
+
+/** Título da lista densa — segue a ordenação escolhida. */
+const LIST_TITLE: Record<CommunitySort, string> = {
+  top: 'Mais bem avaliados',
+  downloads: 'Mais baixados',
+  recent: 'Publicados recentemente',
+};
 
 export default function CommunityScreen() {
   const router = useRouter();
@@ -30,20 +49,30 @@ export default function CommunityScreen() {
   const tabScroll = useTabBarScroll();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
+  const [sort, setSort] = useState<CommunitySort>('top');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [decks, setDecks] = useState<CommunityDeckRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 'top' (nota, depois downloads) já serve de base pras duas seções: "Em
-  // alta" reordena por downloads no cliente, "Mais bem avaliados" usa a
-  // própria ordem do servidor.
+  // Busca revelada ao puxar — mesma da aba Decks (ver `RevealSearchBar`). O
+  // `useTabBarScroll` também precisa do evento, então os dois são compostos
+  // aqui em vez de disputar o `onScroll`.
+  const reveal = useRevealSearch(search);
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    tabScroll.onScroll(e);
+    reveal.onScroll(e);
+  };
+
+  // A ordenação é do servidor; "Em alta" reordena por downloads no cliente,
+  // porque é uma vitrine fixa e não deve mudar com o filtro da lista.
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setDecks(await listCommunityDecks({ search, sort: 'top' }));
+      setDecks(await listCommunityDecks({ search, sort }));
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, sort]);
 
   // Recarrega ao focar (ex.: voltar de baixar/avaliar).
   useFocusEffect(
@@ -84,10 +113,16 @@ export default function CommunityScreen() {
           d.tags.some(t => t.toLowerCase() === effectiveCategory.toLowerCase()),
         );
 
+  /** Há filtro valendo? Marca o ícone da busca — o estado não fica escondido. */
+  const hasFilter = effectiveCategory !== null || sort !== 'top';
+
   const trending = [...filtered]
     .sort((a, b) => b.downloads_count - a.downloads_count)
     .slice(0, 10);
-  const topRated = filtered.filter(d => d.rating_count > 0);
+  // Ordenando por nota, deck sem nenhuma avaliação não tem por que aparecer
+  // numa lista de "mais bem avaliados"; nas outras ordens, entra tudo.
+  const listed =
+    sort === 'top' ? filtered.filter(d => d.rating_count > 0) : filtered;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
@@ -100,28 +135,42 @@ export default function CommunityScreen() {
         // JUNTO com o conteúdo (não ficam fixos), então nada de "tela cortada
         // em duas" — ao descer, os chips somem naturalmente.
         <ScrollView
-          {...tabScroll}
+          onScroll={handleScroll}
+          scrollEventThrottle={tabScroll.scrollEventThrottle}
           className="flex-1"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: tabBar.contentInset }}
         >
-          {/* Header */}
-          <View className="px-5 pt-6 pb-3">
+          {/* Header — título à esquerda, publicar à direita (padrão das abas) */}
+          <View className="px-5 pt-6 pb-4 flex-row items-center justify-between">
             <Text
               className="text-on-surface font-jakarta-extrabold text-3xl"
               style={{ letterSpacing: -0.5 }}
             >
               Comunidade
             </Text>
+            <TouchableOpacity
+              onPress={() => router.push('/community/publish' as Href)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Publicar um deck na comunidade"
+              className="w-10 h-10 items-center justify-center rounded-button bg-surface-container"
+              style={cardShadow}
+            >
+              <Ionicons name="add" size={22} color={colors.onSurface} />
+            </TouchableOpacity>
           </View>
 
-          {/* Busca */}
+          {/* Busca revelada ao puxar — idêntica à da aba Decks */}
           <View className="px-5">
-            <Input
-              placeholder="Buscar concurso, matéria, tema..."
+            <RevealSearchBar
+              search={reveal}
               value={search}
               onChangeText={setSearch}
+              placeholder="Buscar concurso, matéria, tema..."
+              onOpenFilters={() => setFiltersOpen(true)}
+              hasFilter={hasFilter}
             />
           </View>
 
@@ -195,7 +244,7 @@ export default function CommunityScreen() {
               <Text className="text-outline font-inter-regular text-sm text-center mt-2">
                 {search || effectiveCategory
                   ? 'Tente outra busca ou categoria.'
-                  : 'Seja o primeiro: publique um deck na edição dele.'}
+                  : 'Seja o primeiro: toque em + para publicar um deck seu.'}
               </Text>
             </View>
           ) : (
@@ -259,15 +308,15 @@ export default function CommunityScreen() {
             </View>
           )}
 
-          {/* Mais bem avaliados — lista densa, sem competir por espaço com as
-              capas grandes da vitrine acima. */}
-          {topRated.length > 0 && (
+          {/* Lista densa (ordem escolhida no filtro), sem competir por espaço
+              com as capas grandes da vitrine acima. */}
+          {listed.length > 0 && (
             <View className="mt-6 px-5">
               <Text className="text-on-surface font-jakarta-bold text-lg mb-3">
-                Mais bem avaliados
+                {LIST_TITLE[sort]}
               </Text>
               <View className="gap-3">
-                {topRated.map(item => (
+                {listed.map(item => (
                   <TouchableOpacity
                     key={item.id}
                     activeOpacity={0.85}
@@ -320,6 +369,16 @@ export default function CommunityScreen() {
           )}
         </ScrollView>
       )}
+
+      {/* Ordenação — aberta pelo ícone dentro da busca. As categorias já têm a
+          linha de chips própria, então aqui só entra a ordem. */}
+      <FilterSheet
+        visible={filtersOpen}
+        sorts={COMMUNITY_SORTS}
+        sort={sort}
+        onSortChange={setSort}
+        onClose={() => setFiltersOpen(false)}
+      />
     </SafeAreaView>
   );
 }

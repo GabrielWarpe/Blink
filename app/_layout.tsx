@@ -256,6 +256,10 @@ function RootNavigator() {
         name="community/[id]"
         options={{ animation: 'slide_from_right' }}
       />
+      <Stack.Screen
+        name="community/publish"
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
       <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
     </Stack>
   );

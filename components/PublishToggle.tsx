@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, Switch, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LICENSE_PRESETS, presetFor } from '@/utils/community';
 import type { DeckLicense } from '@/types/db';
+import { Toggle } from '@/components/ui/Toggle';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface PublishToggleProps {
@@ -52,12 +53,10 @@ export function PublishToggle({
               : 'Outros usuários poderão encontrar e baixar este deck.'}
           </Text>
         </View>
-        <Switch
+        <Toggle
           value={value}
           onValueChange={onValueChange}
           disabled={locked}
-          trackColor={{ false: colors.surfaceContainerHighest, true: colors.primary }}
-          thumbColor="#ffffff"
         />
       </View>
 
@@ -80,7 +79,11 @@ export function PublishToggle({
                       : 'bg-surface-container border-outline-variant'
                   }`}
                 >
-                  <Text style={{ fontSize: 18 }}>{p.emoji}</Text>
+                  <Ionicons
+                    name={p.icon}
+                    size={20}
+                    color={active ? colors.onPrimaryContainer : colors.outline}
+                  />
                   <Text
                     className={`font-inter-semibold text-xs mt-1 ${
                       active ? 'text-on-primary-container' : 'text-outline'

@@ -89,6 +89,28 @@ export async function getPublishedFor(
 }
 
 /**
+ * Snapshots já publicados pelo usuário, indexados pelo deck de trabalho de
+ * origem. Uma consulta só — a tela de publicar precisa do estado de TODOS os
+ * decks de uma vez (badge "publicado" + licença atual para pré-preencher).
+ */
+export async function listMyPublished(
+  userId: string,
+): Promise<Map<string, CommunityDeckRow>> {
+  const { data, error } = await supabase
+    .from('community_decks')
+    .select('*')
+    .eq('author_id', userId);
+  if (error) return new Map();
+  const byDeck = new Map<string, CommunityDeckRow>();
+  // Snapshot cujo deck de trabalho foi excluído tem `source_playlist_id` null:
+  // continua público, mas não é republicável a partir de nenhum deck local.
+  for (const row of (data ?? []) as CommunityDeckRow[]) {
+    if (row.source_playlist_id != null) byDeck.set(row.source_playlist_id, row);
+  }
+  return byDeck;
+}
+
+/**
  * Publica (ou republica) o deck de trabalho como snapshot. Republicar mantém
  * o mesmo id publicado — logo, avaliações e downloads são preservados.
  */
@@ -175,6 +197,19 @@ export async function unpublishDeck(sourcePlaylistId: string): Promise<void> {
     .from('community_decks')
     .delete()
     .eq('source_playlist_id', sourcePlaylistId);
+  if (error) throw error;
+}
+
+/**
+ * Remove pelo id do snapshot — é o que a página da publicação tem em mãos, e o
+ * único caminho quando o deck de trabalho já foi excluído (`source_playlist_id`
+ * null). A RLS só deixa o autor apagar.
+ */
+export async function unpublishById(communityDeckId: string): Promise<void> {
+  const { error } = await supabase
+    .from('community_decks')
+    .delete()
+    .eq('id', communityDeckId);
   if (error) throw error;
 }
 
@@ -302,6 +337,23 @@ export async function rateDeck(params: {
     },
     { onConflict: 'community_deck_id,user_id' },
   );
+  if (error) throw error;
+}
+
+/**
+ * Responde (ou reescreve) uma avaliação, como autor do deck. Texto vazio apaga
+ * a resposta. Vai por RPC porque responder é UPDATE na linha de outro usuário:
+ * a função no banco confere a autoria e só toca nas colunas da resposta (ver
+ * `reply_to_rating` no schema.sql).
+ */
+export async function replyToRating(
+  ratingId: string,
+  reply: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('reply_to_rating', {
+    p_rating: ratingId,
+    p_reply: reply,
+  });
   if (error) throw error;
 }
 

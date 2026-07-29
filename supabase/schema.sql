@@ -295,6 +295,45 @@ drop policy if exists "Users delete own rating" on deck_ratings;
 create policy "Users delete own rating" on deck_ratings
   for delete to authenticated using (user_id = auth.uid());
 
+-- Resposta do autor do deck a uma avaliação (uma por avaliação, editável).
+alter table deck_ratings add column if not exists author_reply text;
+alter table deck_ratings
+  add column if not exists author_reply_at timestamp with time zone;
+
+-- Responder é UPDATE numa linha de OUTRO usuário, o que a política acima (só a
+-- própria avaliação) proíbe — e RLS não restringe por coluna, então abrir um
+-- update para o autor do deck deixaria ele reescrever a nota e o comentário
+-- alheios. SECURITY DEFINER resolve: a função é o único caminho, e ela escreve
+-- exclusivamente as colunas da resposta. Mesmo motivo do `register_download`.
+create or replace function public.reply_to_rating(p_rating uuid, p_reply text)
+returns void as $$
+declare
+  v_author uuid;
+  v_clean text := nullif(btrim(coalesce(p_reply, '')), '');
+begin
+  select cd.author_id into v_author
+  from deck_ratings r
+  join community_decks cd on cd.id = r.community_deck_id
+  where r.id = p_rating;
+
+  if v_author is null then
+    raise exception 'RATING_NOT_FOUND';
+  end if;
+  if v_author <> auth.uid() then
+    raise exception 'NOT_DECK_AUTHOR';
+  end if;
+
+  -- Resposta vazia = apagar a resposta (o autor pode se retratar).
+  update deck_ratings set
+    author_reply = v_clean,
+    author_reply_at = case when v_clean is null then null else now() end
+  where id = p_rating;
+end;
+$$ language plpgsql security definer;
+
+revoke all on function public.reply_to_rating(uuid, text) from public;
+grant execute on function public.reply_to_rating(uuid, text) to authenticated;
+
 -- Downloads: cada um vê/insere os próprios (a contagem pública vive no counter).
 drop policy if exists "Users read own downloads" on deck_downloads;
 create policy "Users read own downloads" on deck_downloads

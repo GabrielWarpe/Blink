@@ -15,22 +15,23 @@ import { useGlass } from '@/hooks/useGlass';
 import { androidBlurMethod } from '@/constants/glass';
 import { GlassBackdrop } from '@/components/ui/GlassSurface';
 
-export type DeckSort = 'recent' | 'alpha' | 'count';
+export interface SortOption<T extends string> {
+  key: T;
+  label: string;
+}
 
-export const DECK_SORTS: { key: DeckSort; label: string }[] = [
-  { key: 'recent', label: 'Recentes' },
-  { key: 'alpha', label: 'A–Z' },
-  { key: 'count', label: 'Mais cards' },
-];
-
-interface DeckFilterSheetProps {
+interface FilterSheetProps<T extends string> {
   visible: boolean;
-  sort: DeckSort;
-  onSortChange: (s: DeckSort) => void;
-  /** Todas as tags em uso; vazio esconde a seção inteira. */
-  tags: string[];
-  activeTag: string | null;
-  onTagChange: (t: string | null) => void;
+  /** Ordenações da tela — cada aba define as suas. */
+  sorts: readonly SortOption<T>[];
+  sort: T;
+  onSortChange: (s: T) => void;
+  /** Tags/categorias em uso; vazio esconde a seção inteira. */
+  tags?: string[];
+  activeTag?: string | null;
+  onTagChange?: (t: string | null) => void;
+  /** Rótulo da seção de tags ("Tag" nos decks, "Categoria" na comunidade). */
+  tagLabel?: string;
   onClose: () => void;
 }
 
@@ -64,25 +65,27 @@ function Chip({
 }
 
 /**
- * Filtros da aba Decks em bottom sheet de vidro — ordenação + tag.
+ * Filtros de uma aba em bottom sheet de vidro — ordenação + tag opcional.
  *
- * Antes eram duas fileiras de chips permanentes no cabeçalho, que comiam
- * altura em toda rolagem mesmo sem ninguém filtrar. Aqui só aparecem quando
- * pedidos (ícone de filtro dentro da busca), e o ícone marca quando há filtro
- * ativo — o estado não fica escondido.
+ * Antes eram fileiras de chips permanentes no cabeçalho, que comiam altura em
+ * toda rolagem mesmo sem ninguém filtrar. Aqui só aparecem quando pedidos
+ * (ícone de filtro dentro da busca), e o ícone marca quando há filtro ativo —
+ * o estado não fica escondido.
  *
  * Mesmo esqueleto de vidro do `StudyModePicker`: fundo desfocado + painel com
  * BlurView. Ver `constants/glass.ts`.
  */
-export function DeckFilterSheet({
+export function FilterSheet<T extends string>({
   visible,
+  sorts,
   sort,
   onSortChange,
-  tags,
-  activeTag,
+  tags = [],
+  activeTag = null,
   onTagChange,
+  tagLabel = 'Tag',
   onClose,
-}: DeckFilterSheetProps) {
+}: FilterSheetProps<T>) {
   const colors = useThemeColors();
   const glass = useGlass();
 
@@ -123,7 +126,7 @@ export function DeckFilterSheet({
                 Ordenar por
               </Text>
               <View className="flex-row flex-wrap gap-2">
-                {DECK_SORTS.map(s => (
+                {sorts.map(s => (
                   <Chip
                     key={s.key}
                     label={s.label}
@@ -134,10 +137,10 @@ export function DeckFilterSheet({
               </View>
             </View>
 
-            {tags.length > 0 && (
+            {tags.length > 0 && onTagChange != null && (
               <View className="gap-3">
                 <Text className="text-on-surface-variant font-inter-semibold text-xs uppercase">
-                  Tag
+                  {tagLabel}
                 </Text>
                 <View className="flex-row flex-wrap gap-2">
                   <Chip

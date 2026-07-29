@@ -1,3 +1,5 @@
+import type { ComponentProps } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import type { Deck } from '@/types';
 import type { CommunityDeckRow, DeckLicense } from '@/types/db';
 
@@ -29,7 +31,8 @@ export function isDerived(row: CommunityDeckRow): boolean {
 export interface LicensePreset {
   id: DeckLicense;
   label: string;
-  emoji: string;
+  /** Ícone da opção — mesma família (outline) das demais telas. */
+  icon: ComponentProps<typeof Ionicons>['name'];
   hint: string;
   allowExport: boolean;
   allowRedistribute: boolean;
@@ -39,7 +42,7 @@ export const LICENSE_PRESETS: LicensePreset[] = [
   {
     id: 'protected',
     label: 'Protegido',
-    emoji: '🔒',
+    icon: 'lock-closed-outline',
     hint: 'Outros podem baixar e estudar, mas não exportar nem republicar.',
     allowExport: false,
     allowRedistribute: false,
@@ -47,7 +50,7 @@ export const LICENSE_PRESETS: LicensePreset[] = [
   {
     id: 'shareable',
     label: 'Compartilhável',
-    emoji: '🔗',
+    icon: 'share-outline',
     hint: 'Podem baixar e exportar em arquivo, mas não republicar como próprio.',
     allowExport: true,
     allowRedistribute: false,
@@ -55,7 +58,7 @@ export const LICENSE_PRESETS: LicensePreset[] = [
   {
     id: 'open',
     label: 'Aberto',
-    emoji: '🌍',
+    icon: 'earth-outline',
     hint: 'Podem exportar e republicar adaptações, sempre creditando você.',
     allowExport: true,
     allowRedistribute: true,

@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Toggle } from '@/components/ui/Toggle';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface SettingsRowProps {
@@ -61,16 +62,7 @@ export function SettingsRow({
       {rightSlot != null ? (
         rightSlot
       ) : toggle != null ? (
-        <Switch
-          value={toggle.value}
-          onValueChange={toggle.onValueChange}
-          trackColor={{
-            false: colors.surfaceContainerHighest,
-            true: colors.primaryContainer,
-          }}
-          thumbColor={colors.onPrimaryContainer}
-          ios_backgroundColor={colors.surfaceContainerHighest}
-        />
+        <Toggle value={toggle.value} onValueChange={toggle.onValueChange} />
       ) : (
         <View className="flex-row items-center gap-1.5">
           {value != null && (

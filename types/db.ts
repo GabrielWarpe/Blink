@@ -142,6 +142,9 @@ export interface DeckRatingRow {
   comment: string | null;
   reviewer_name: string | null;
   reviewer_avatar_url: string | null;
+  /** Resposta do autor do deck a esta avaliação (null = sem resposta). */
+  author_reply: string | null;
+  author_reply_at: string | null;
   created_at: string;
   updated_at: string;
 }

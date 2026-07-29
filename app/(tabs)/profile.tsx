@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Switch,
   Alert,
   Image,
   Modal,
@@ -26,6 +25,7 @@ import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useTabBarScroll } from '@/hooks/useTabBarScroll';
 import { GoalSlider } from '@/components/GoalSlider';
 import { Card, cardShadow } from '@/components/ui/Card';
+import { Toggle } from '@/components/ui/Toggle';
 import { useGlassEdge, GlassSheen } from '@/components/ui/GlassSurface';
 import { ACHIEVEMENTS, getUnlocked } from '@/services/achievements';
 import { GOAL_MIN, GOAL_MAX } from '@/constants/study';
@@ -299,15 +299,9 @@ export default function ProfileScreen() {
               Lembrete diário de estudo
             </Text>
           </View>
-          <Switch
+          <Toggle
             value={settings.studyReminder}
             onValueChange={v => void toggleNotifications(v)}
-            trackColor={{
-              false: colors.surfaceContainerHighest,
-              true: colors.primaryContainer,
-            }}
-            thumbColor={colors.onPrimaryContainer}
-            ios_backgroundColor={colors.surfaceContainerHighest}
           />
         </Card>
 

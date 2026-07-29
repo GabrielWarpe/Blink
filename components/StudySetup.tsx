@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { StudyTimerConfig, StudyTimerMode } from '@/types';
 import { TIMER_LIMIT_STEPS } from '@/constants/study';
 import { Button } from '@/components/ui/Button';
+import { Toggle } from '@/components/ui/Toggle';
 import { cardShadow } from '@/components/ui/Card';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -117,11 +118,9 @@ export function StudySetup({
                 Vale só para esta sessão
               </Text>
             </View>
-            <Switch
+            <Toggle
               value={config.enabled}
               onValueChange={v => set('enabled', v)}
-              trackColor={{ false: colors.surfaceContainerHigh, true: colors.primaryContainer }}
-              thumbColor={config.enabled ? colors.primary : colors.outline}
             />
           </View>
 
@@ -221,11 +220,9 @@ export function StudySetup({
                     Oculto, o tempo continua sendo medido e vai para o resultado.
                   </Text>
                 </View>
-                <Switch
+                <Toggle
                   value={config.visible}
                   onValueChange={v => set('visible', v)}
-                  trackColor={{ false: colors.surfaceContainerHigh, true: colors.primaryContainer }}
-                  thumbColor={config.visible ? colors.primary : colors.outline}
                 />
               </View>
             </>
