@@ -75,9 +75,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [freshLogin, setFreshLogin] = useState(false);
   const [recovering, setRecovering] = useState(false);
 
+  /**
+   * Carrega o perfil da conta logada.
+   *
+   * Se ele NÃO vier, a sessão é descartada — e isso é deliberado: o app fica
+   * preso no spinner enquanto `profile` for nulo (`OnboardingContext` não sabe
+   * dizer se o onboarding foi visto, e `_layout` segura a navegação em
+   * `onboardingDone === null`). Antes, uma conta apagada no banco com a sessão
+   * ainda no aparelho travava o app para sempre, sem mensagem nenhuma — sem
+   * tela para tocar, não havia como deslogar.
+   *
+   * A segunda tentativa existe para não derrubar a sessão por uma falha
+   * passageira de rede: só desloga se o perfil continuar ausente.
+   */
   async function fetchProfile(userId: string) {
     const data = await db.profile.get(userId);
-    if (data) setProfile(data);
+    if (data) {
+      setProfile(data);
+      return;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    const retry = await db.profile.get(userId);
+    if (retry) {
+      setProfile(retry);
+      return;
+    }
+
+    if (__DEV__) {
+      console.warn(
+        '[Blink/auth] Sessão válida, mas sem linha em `profiles` para este ' +
+          'usuário (apagado no banco? RLS bloqueando o select?). Deslogando ' +
+          'para não travar o app na tela de carregamento.',
+      );
+    }
+    await supabase.auth.signOut();
   }
 
   // Link de redefinição de senha. O cliente Supabase roda com

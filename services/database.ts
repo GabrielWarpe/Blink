@@ -477,7 +477,18 @@ export const db = {
         .select('*')
         .eq('id', userId)
         .single();
-      if (error) return null;
+      // Devolve `null` em qualquer falha (o chamador decide o que fazer), mas
+      // AVISA em desenvolvimento: engolir isto em silêncio já custou horas —
+      // um perfil que não carregava travava o app num spinner sem pista
+      // nenhuma de causa.
+      if (error) {
+        if (__DEV__) {
+          console.warn(
+            `[Blink/profile] não carregou (${error.code ?? 's/ código'}): ${error.message}`,
+          );
+        }
+        return null;
+      }
       return data;
     },
 

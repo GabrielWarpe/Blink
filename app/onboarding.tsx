@@ -219,11 +219,16 @@ export default function OnboardingScreen() {
   const isLast = shown === SLIDES.length - 1;
 
   const lastIdx = SLIDES.length - 1;
-  const nextIdx = Math.min(index + 1, lastIdx);
+  // Slide pré-impresso na face ESCONDIDA. Precisa ser estado, não derivado de
+  // `index + 1`: com o botão de voltar o destino pode ser `index - 1`, e se o
+  // verso continuasse carregando o próximo, o card viraria mostrando o slide
+  // errado. Quem dispara o movimento define isto ANTES de animar.
+  const [hiddenIdx, setHiddenIdx] = useState(Math.min(1, lastIdx));
   // Face A mostra os passos pares; face B, os ímpares. A que não está com o
-  // passo atual carrega o próximo (fica pré-impressa no "verso").
-  const slideA = index % 2 === 0 ? SLIDES[index] : SLIDES[nextIdx];
-  const slideB = index % 2 === 1 ? SLIDES[index] : SLIDES[nextIdx];
+  // passo atual carrega o destino (fica pré-impressa no "verso") — e o destino
+  // tem sempre a paridade oposta, indo para frente ou para trás.
+  const slideA = index % 2 === 0 ? SLIDES[index] : SLIDES[hiddenIdx];
+  const slideB = index % 2 === 1 ? SLIDES[index] : SLIDES[hiddenIdx];
 
   const finish = () => {
     complete();
@@ -251,18 +256,18 @@ export default function OnboardingScreen() {
   const commitFlip = (target: number) => {
     setIndex(target);
     setPending(null);
+    // Volta a pré-imprimir o PRÓXIMO no verso: é o movimento mais provável.
+    setHiddenIdx(Math.min(target + 1, lastIdx));
   };
 
-  const next = () => {
-    if (isLast) {
-      finish();
-      return;
-    }
+  /** Vira o card até `target` (para frente ou para trás — a rotação é a mesma). */
+  const flipTo = (target: number) => {
     if (pending !== null) return; // ignora toques durante a virada
-    const target = index + 1;
+    setHiddenIdx(target); // o verso precisa mostrar o DESTINO, não o próximo
     if (settings.reduceMotion) {
       progress.value = target;
       setIndex(target);
+      setHiddenIdx(Math.min(target + 1, lastIdx));
       return;
     }
     setPending(target);
@@ -275,10 +280,38 @@ export default function OnboardingScreen() {
     );
   };
 
+  const next = () => {
+    if (isLast) {
+      finish();
+      return;
+    }
+    flipTo(index + 1);
+  };
+
+  const back = () => {
+    if (shown === 0) return;
+    flipTo(index - 1);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
-      {/* Pular — sempre presente (invisível no último) para o layout não pular */}
-      <View className="flex-row justify-end px-5 pt-3">
+      {/* Voltar e Pular: ambos SEMPRE presentes, só invisíveis quando não se
+          aplicam (voltar no 1º slide, pular no último) — some-los de verdade
+          faria o cabeçalho mudar de altura e o card saltar entre os passos. */}
+      <View className="flex-row items-center justify-between px-5 pt-3">
+        <TouchableOpacity
+          onPress={back}
+          activeOpacity={0.7}
+          disabled={shown === 0}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar ao passo anterior"
+          className="px-3 py-2"
+          style={{ opacity: shown === 0 ? 0 : 1 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
+        </TouchableOpacity>
+
         <TouchableOpacity
           onPress={finish}
           activeOpacity={0.7}

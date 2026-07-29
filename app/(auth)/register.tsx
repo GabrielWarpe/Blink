@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { BrandLogo } from '@/components/BrandLogo';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface FieldErrors {
@@ -127,8 +126,6 @@ export default function RegisterScreen() {
               <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
             </TouchableOpacity>
           </View>
-
-          <BrandLogo height={26} style={{ marginBottom: 20 }} />
 
           <Text className="text-on-surface font-jakarta-extrabold text-3xl">
             Criar conta

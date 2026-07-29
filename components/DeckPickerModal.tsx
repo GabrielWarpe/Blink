@@ -6,14 +6,11 @@ import {
   Pressable,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGlass } from '@/hooks/useGlass';
-import { androidBlurMethod } from '@/constants/glass';
-import { GlassBackdrop } from '@/components/ui/GlassSurface';
+import { GlassBackdrop, AnimatedGlassFill, GlassSpecular } from '@/components/ui/GlassSurface';
 import { DeckAvatar } from '@/components/DeckAvatar';
 import type { CardImportTarget } from '@/services/backup';
 
@@ -63,12 +60,7 @@ export function DeckPickerModal({
           style={{ maxHeight: '80%', backgroundColor: glass.tint }}
           onPress={e => e.stopPropagation()}
         >
-          <BlurView
-            intensity={glass.blurIntensity}
-            tint={glass.blurTint}
-            experimentalBlurMethod={androidBlurMethod}
-            style={StyleSheet.absoluteFill}
-          />
+          <AnimatedGlassFill />
           <View className="px-5 py-4 border-b border-outline-variant/30">
             <Text className="text-on-surface font-jakarta-bold text-base">
               Adicionar {cardCount} {cardCount === 1 ? 'cartão' : 'cartões'}
@@ -141,6 +133,9 @@ export function DeckPickerModal({
               Cancelar
             </Text>
           </TouchableOpacity>
+
+          {/* Último filho: a luz varre POR CIMA do conteúdo. */}
+          <GlassSpecular />
         </Pressable>
       </Pressable>
     </Modal>

@@ -6,14 +6,11 @@ import {
   Pressable,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useGlass } from '@/hooks/useGlass';
-import { androidBlurMethod } from '@/constants/glass';
-import { GlassBackdrop } from '@/components/ui/GlassSurface';
+import { GlassBackdrop, AnimatedGlassFill, GlassSpecular } from '@/components/ui/GlassSurface';
 
 export interface SortOption<T extends string> {
   key: T;
@@ -100,12 +97,7 @@ export function FilterSheet<T extends string>({
           style={{ backgroundColor: glass.tint, maxHeight: '75%' }}
           onPress={e => e.stopPropagation()}
         >
-          <BlurView
-            intensity={glass.blurIntensity}
-            tint={glass.blurTint}
-            experimentalBlurMethod={androidBlurMethod}
-            style={StyleSheet.absoluteFill}
-          />
+          <AnimatedGlassFill />
 
           {/* Header */}
           <View className="px-5 py-4 border-b border-outline-variant/30 flex-row items-center">
@@ -162,6 +154,9 @@ export function FilterSheet<T extends string>({
               </View>
             )}
           </ScrollView>
+
+          {/* Último filho: a luz varre POR CIMA do conteúdo. */}
+          <GlassSpecular />
         </Pressable>
       </Pressable>
     </Modal>

@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { BrandLogo } from '@/components/BrandLogo';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 function mapAuthError(message: string): string {
@@ -71,10 +70,8 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo */}
           <View className="items-center mb-10">
-            <BrandLogo height={40} style={{ marginBottom: 12 }} />
-            <Text className="text-outline font-inter-regular text-sm mt-1">
+            <Text className="text-outline font-inter-regular text-sm">
               Entre para continuar estudando
             </Text>
           </View>
@@ -149,24 +146,7 @@ export default function LoginScreen() {
             </Button>
           </View>
 
-          {/* Divider */}
-          <View className="flex-row items-center my-6">
-            <View className="flex-1 h-px bg-outline-variant/40" />
-            <Text className="text-outline font-inter-regular text-xs mx-4">
-              ou
-            </Text>
-            <View className="flex-1 h-px bg-outline-variant/40" />
-          </View>
-
-          <Button
-            variant="outline"
-            size="lg"
-            onPress={() => router.push('/(auth)/register')}
-          >
-            Criar conta
-          </Button>
-
-          <View className="flex-row justify-center mt-6">
+          <View className="flex-row justify-center mt-8">
             <Text className="text-outline font-inter-regular text-sm">
               Novo por aqui?{' '}
             </Text>

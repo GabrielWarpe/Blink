@@ -12,6 +12,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useGlass } from '@/hooks/useGlass';
+import { barGlass, androidBlurMethod } from '@/constants/glass';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useTabBarCollapse } from '@/contexts/TabBarContext';
 import {
@@ -47,49 +49,6 @@ const barShadow = Platform.select({
   default: {},
 });
 
-/**
- * Vidro: tint sobre o desfoque + realce de borda.
- *
- * São valores do componente que NÃO saem de token de tema, e por um motivo:
- * vidro é alfa sobre o que está atrás, não uma cor da paleta. O tint nasce do
- * `surfaceContainer` de cada tema com alfa; a borda é um realce branco (a luz
- * "pegando" a quina do vidro), como em iOS/Instagram.
- *
- * Alfa BAIXO de propósito: acima de ~0,5 o vidro vira cor chapada e o desfoque
- * deixa de ser perceptível — que foi exatamente o problema da primeira versão.
- * Reduzido de novo aqui (mais "liquid glass" = mais transparência real, não só
- * mais desfoque) — a borda subiu um pouco no escuro pra compensar, senão a
- * barra perde contorno contra fundos escuros.
- */
-const GLASS = {
-  dark: {
-    tint: 'rgba(18,18,18,0.32)',
-    border: 'rgba(255,255,255,0.20)',
-    // Pílula da aba ativa. É um REALCE DO PRÓPRIO VIDRO (branco de alfa
-    // baixo), não `primaryContainer`: com o destaque monocromático, aquele
-    // token virou branco quase sólido, e a pílula passou a ser a coisa mais
-    // clara da tela inteira — gritava em vez de marcar. Assim ela lê como
-    // "esta parte do vidro está acesa".
-    indicator: 'rgba(255,255,255,0.14)',
-  },
-  light: {
-    tint: 'rgba(248,248,246,0.38)',
-    border: 'rgba(255,255,255,0.85)',
-    indicator: 'rgba(0,0,0,0.07)',
-  },
-};
-
-/**
- * Brilho no topo do vidro — a luz "pegando" a superfície, como no material
- * "liquid glass" da Apple. Um gradiente MUITO sutil (alfa baixo, esmaece em
- * 55% da altura), renderizado por cima de tudo (`pointerEvents="none"`, então
- * nunca captura toque) para não competir com ícone/rótulo.
- */
-const SHEEN = {
-  dark: ['rgba(255,255,255,0.14)', 'rgba(255,255,255,0)'] as const,
-  light: ['rgba(255,255,255,0.30)', 'rgba(255,255,255,0)'] as const,
-};
-
 /** Mola da troca de aba: leve avanço no fim, sem tremor. */
 const SLIDE_SPRING = { duration: TAB_TRANSITION_MS, dampingRatio: 0.82 };
 
@@ -116,7 +75,10 @@ export function FloatingTabBar({
   // Mesma regra do `useThemeColors`: só 'light' é claro (indefinido cai no
   // escuro). Com `=== 'dark'` o vidro sairia claro sobre a paleta escura.
   const dark = colorScheme !== 'light';
-  const glass = dark ? GLASS.dark : GLASS.light;
+  // Mesmo vidro do resto do app, só mais fino (a barra cobre conteúdo o tempo
+  // todo). Antes estes valores viviam duplicados aqui e divergiram do arquivo
+  // central — ver `barGlass` em `constants/glass.ts`.
+  const glass = barGlass(useGlass());
 
   // Largura real da barra: o indicador precisa saber o tamanho da célula, e ele
   // varia com a largura da tela. Medido uma vez no layout.
@@ -195,9 +157,7 @@ export function FloatingTabBar({
         // No Android o desfoque real depende deste método (a Expo o marca como
         // experimental). Se ele degradar, o tint acima ainda segura a leitura
         // de vidro — a barra nunca fica transparente/quebrada.
-        experimentalBlurMethod={
-          Platform.OS === 'android' ? 'dimezisBlurView' : undefined
-        }
+        experimentalBlurMethod={androidBlurMethod}
         style={[
           StyleSheet.absoluteFill,
           {
@@ -273,7 +233,7 @@ export function FloatingTabBar({
 
         <LinearGradient
           pointerEvents="none"
-          colors={dark ? SHEEN.dark : SHEEN.light}
+          colors={glass.sheen}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 0.55 }}
           style={StyleSheet.absoluteFill}

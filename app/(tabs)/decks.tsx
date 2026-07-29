@@ -34,6 +34,9 @@ import { errorMessage } from '@/utils/errors';
 import { canExport } from '@/utils/community';
 import { DeckCard } from '@/components/DeckCard';
 import { SwipeableDeckRow } from '@/components/SwipeableDeckRow';
+import { EnterAnimation } from '@/components/EnterAnimation';
+import { useReplayOnFocus } from '@/hooks/useReplayOnFocus';
+import { CARD_RADIUS } from '@/constants/radius';
 import {
   StudyModePicker,
   useStudyModePicker,
@@ -66,6 +69,8 @@ export default function DecksScreen() {
   const colors = useThemeColors();
   const tabBar = useTabBarInset();
   const tabScroll = useTabBarScroll();
+  // Reexecuta a animação de entrada dos cards a cada vez que a aba é aberta.
+  const runKey = useReplayOnFocus();
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [sort, setSort] = useState<DeckSort>('recent');
@@ -344,41 +349,47 @@ export default function DecksScreen() {
             </Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <SwipeableDeckRow
-            onDelete={() =>
-              Alert.alert(
-                'Excluir deck',
-                `Deseja excluir "${item.title}"? Esta ação não pode ser desfeita.`,
-                [
-                  { text: 'Cancelar', style: 'cancel' },
-                  {
-                    text: 'Excluir',
-                    style: 'destructive',
-                    onPress: () => void deleteDeck(item.id),
-                  },
-                ],
-              )
-            }
-            onExport={() =>
-              void exportDeck(item).catch((e: unknown) => {
-                Alert.alert(
-                  'Erro',
-                  e instanceof BackupError && e.code === 'EMPTY'
-                    ? 'Adicione cards antes de exportar.'
-                    : 'Não foi possível exportar o deck.',
-                );
-              })
-            }
-            onEdit={() => router.push(`/deck/edit?id=${item.id}`)}
-            canExport={canExport(item)}
+        renderItem={({ item, index }) => (
+          <EnterAnimation
+            index={index}
+            shimmerRadius={CARD_RADIUS}
+            runKey={runKey}
           >
-            <DeckCard
-              deck={item}
-              onPress={() => router.push(`/deck/${item.id}`)}
-              onPlay={() => picker.requestPlay(item)}
-            />
-          </SwipeableDeckRow>
+            <SwipeableDeckRow
+              onDelete={() =>
+                Alert.alert(
+                  'Excluir deck',
+                  `Deseja excluir "${item.title}"? Esta ação não pode ser desfeita.`,
+                  [
+                    { text: 'Cancelar', style: 'cancel' },
+                    {
+                      text: 'Excluir',
+                      style: 'destructive',
+                      onPress: () => void deleteDeck(item.id),
+                    },
+                  ],
+                )
+              }
+              onExport={() =>
+                void exportDeck(item).catch((e: unknown) => {
+                  Alert.alert(
+                    'Erro',
+                    e instanceof BackupError && e.code === 'EMPTY'
+                      ? 'Adicione cards antes de exportar.'
+                      : 'Não foi possível exportar o deck.',
+                  );
+                })
+              }
+              onEdit={() => router.push(`/deck/edit?id=${item.id}`)}
+              canExport={canExport(item)}
+            >
+              <DeckCard
+                deck={item}
+                onPress={() => router.push(`/deck/${item.id}`)}
+                onPlay={() => picker.requestPlay(item)}
+              />
+            </SwipeableDeckRow>
+          </EnterAnimation>
         )}
       />
 

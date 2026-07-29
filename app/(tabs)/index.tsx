@@ -15,6 +15,9 @@ import { StreakBadge } from '@/components/StreakBadge';
 import { ProgressRing } from '@/components/ProgressRing';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { EnterAnimation } from '@/components/EnterAnimation';
+import { CARD_RADIUS } from '@/constants/radius';
+import { useReplayOnFocus } from '@/hooks/useReplayOnFocus';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
@@ -27,6 +30,8 @@ export default function HomeScreen() {
   const colors = useThemeColors();
   const tabBar = useTabBarInset();
   const tabScroll = useTabBarScroll();
+  // Reexecuta a animação de entrada a cada vez que a Home é aberta.
+  const runKey = useReplayOnFocus();
   const { profile } = useAuth();
   const { decks } = useDecks();
   const { streak, todayCount } = useStreak();
@@ -213,29 +218,36 @@ export default function HomeScreen() {
           </View>
 
           {decks.length === 0 ? (
-            <Card className="mx-5 p-8 items-center">
-              <View
-                className="w-16 h-16 rounded-card items-center justify-center mb-4"
-                style={{ backgroundColor: colors.primary + '22' }}
-              >
-                <Ionicons name="albums" size={28} color={colors.primary} />
-              </View>
-              <Text className="text-on-surface font-jakarta-bold text-xl text-center">
-                Crie seu primeiro deck
-              </Text>
-              <Text className="text-on-surface-variant font-inter-regular text-sm text-center mt-2 leading-5">
-                Organize seus estudos com flashcards personalizados ou gerados
-                por IA em segundos
-              </Text>
-              <Button
-                variant="primary"
-                size="md"
-                className="mt-5 w-full"
-                onPress={() => router.push('/deck/create')}
-              >
-                Criar deck
-              </Button>
-            </Card>
+            // A margem sai do Card e vem para o invólucro: assim os limites do
+            // invólucro batem com os do card, e o recorte da faixa de luz
+            // acompanha a borda certa em vez de vazar pelas laterais.
+            <View className="mx-5">
+              <EnterAnimation shimmerRadius={CARD_RADIUS} runKey={runKey}>
+                <Card className="p-8 items-center">
+                  <View
+                    className="w-16 h-16 rounded-card items-center justify-center mb-4"
+                    style={{ backgroundColor: colors.primary + '22' }}
+                  >
+                    <Ionicons name="albums" size={28} color={colors.primary} />
+                  </View>
+                  <Text className="text-on-surface font-jakarta-bold text-xl text-center">
+                    Crie seu primeiro deck
+                  </Text>
+                  <Text className="text-on-surface-variant font-inter-regular text-sm text-center mt-2 leading-5">
+                    Organize seus estudos com flashcards personalizados ou gerados
+                    por IA em segundos
+                  </Text>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    className="mt-5 w-full"
+                    onPress={() => router.push('/deck/create')}
+                  >
+                    Criar deck
+                  </Button>
+                </Card>
+              </EnterAnimation>
+            </View>
           ) : (
             <ScrollView
               horizontal

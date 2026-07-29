@@ -32,7 +32,7 @@ export function FinishPromptModal({ pendingFinish, onRedo, onLeave }: Props) {
     <Modal visible transparent animationType="fade" onRequestClose={() => {}}>
       <View className="flex-1 items-center justify-center px-6">
         <GlassBackdrop />
-        <GlassSurface blur className="w-full p-5">
+        <GlassSurface blur animated className="w-full p-5">
           <View
             className="w-12 h-12 rounded-button items-center justify-center mb-4"
             style={{ backgroundColor: colors.tertiary + '22' }}

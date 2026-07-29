@@ -89,7 +89,7 @@ export function ImportConflictModal({
     >
       <View className="flex-1 items-center justify-center px-6">
         <GlassBackdrop />
-        <GlassSurface blur className="w-full p-5">
+        <GlassSurface blur animated className="w-full p-5">
           {confirmingReplace ? (
             <>
               <View

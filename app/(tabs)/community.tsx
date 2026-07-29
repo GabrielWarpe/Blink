@@ -14,6 +14,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { listCommunityDecks, type CommunitySort } from '@/services/community';
 import type { CommunityDeckRow } from '@/types/db';
 import { DeckAvatar } from '@/components/DeckAvatar';
+import { EnterAnimation } from '@/components/EnterAnimation';
+import { useReplayOnFocus } from '@/hooks/useReplayOnFocus';
+import { CARD_RADIUS } from '@/constants/radius';
 import { StarRating } from '@/components/StarRating';
 import { FilterSheet, type SortOption } from '@/components/FilterSheet';
 import {
@@ -47,6 +50,8 @@ export default function CommunityScreen() {
   const edge = useGlassEdge();
   const tabBar = useTabBarInset();
   const tabScroll = useTabBarScroll();
+  // Reexecuta a animação de entrada dos cards a cada vez que a aba é aberta.
+  const runKey = useReplayOnFocus();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<CommunitySort>('top');
@@ -316,51 +321,57 @@ export default function CommunityScreen() {
                 {LIST_TITLE[sort]}
               </Text>
               <View className="gap-3">
-                {listed.map(item => (
-                  <TouchableOpacity
+                {listed.map((item, i) => (
+                  <EnterAnimation
                     key={item.id}
-                    activeOpacity={0.85}
-                    onPress={() => router.push(`/community/${item.id}` as Href)}
-                    className="bg-surface-container rounded-card p-3 flex-row items-center gap-3"
-                    style={[cardShadow, edge]}
+                    index={i}
+                    shimmerRadius={CARD_RADIUS}
+                    runKey={runKey}
                   >
-                    <GlassSheen />
-                    <DeckAvatar coverUrl={item.cover_url} size={48} radius={12} />
-                    <View className="flex-1">
-                      <Text
-                        className="text-on-surface font-jakarta-bold text-sm"
-                        numberOfLines={1}
-                      >
-                        {item.title}
-                      </Text>
-                      {item.author_name != null && (
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => router.push(`/community/${item.id}` as Href)}
+                      className="bg-surface-container rounded-card p-3 flex-row items-center gap-3"
+                      style={[cardShadow, edge]}
+                    >
+                      <GlassSheen />
+                      <DeckAvatar coverUrl={item.cover_url} size={48} radius={12} />
+                      <View className="flex-1">
                         <Text
-                          className="text-outline font-inter-regular text-xs mt-0.5"
+                          className="text-on-surface font-jakarta-bold text-sm"
                           numberOfLines={1}
                         >
-                          por {item.author_name}
+                          {item.title}
                         </Text>
-                      )}
-                    </View>
-                    <View className="items-end">
-                      <View className="flex-row items-center gap-1">
-                        <Ionicons name="star" size={12} color={colors.tertiary} />
-                        <Text className="text-on-surface font-inter-semibold text-xs">
-                          {item.rating_avg.toFixed(1)}
-                        </Text>
+                        {item.author_name != null && (
+                          <Text
+                            className="text-outline font-inter-regular text-xs mt-0.5"
+                            numberOfLines={1}
+                          >
+                            por {item.author_name}
+                          </Text>
+                        )}
                       </View>
-                      <View className="flex-row items-center gap-1 mt-0.5">
-                        <Ionicons
-                          name="download-outline"
-                          size={11}
-                          color={colors.outline}
-                        />
-                        <Text className="text-outline font-inter-medium text-xs">
-                          {item.downloads_count}
-                        </Text>
+                      <View className="items-end">
+                        <View className="flex-row items-center gap-1">
+                          <Ionicons name="star" size={12} color={colors.tertiary} />
+                          <Text className="text-on-surface font-inter-semibold text-xs">
+                            {item.rating_avg.toFixed(1)}
+                          </Text>
+                        </View>
+                        <View className="flex-row items-center gap-1 mt-0.5">
+                          <Ionicons
+                            name="download-outline"
+                            size={11}
+                            color={colors.outline}
+                          />
+                          <Text className="text-outline font-inter-medium text-xs">
+                            {item.downloads_count}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
-                  </TouchableOpacity>
+                    </TouchableOpacity>
+                  </EnterAnimation>
                 ))}
               </View>
             </View>
