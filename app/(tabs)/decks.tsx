@@ -45,6 +45,7 @@ import { cardShadow } from '@/components/ui/Card';
 import { FilterSheet, type SortOption } from '@/components/FilterSheet';
 import {
   RevealSearchBar,
+  SearchToggleButton,
   useRevealSearch,
 } from '@/components/RevealSearchBar';
 import {
@@ -77,7 +78,7 @@ export default function DecksScreen() {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const reveal = useRevealSearch(search);
+  const reveal = useRevealSearch(search, () => setSearch(''));
 
   // O `useTabBarScroll` também precisa deste evento (encolhe a barra de abas),
   // então os dois são compostos aqui em vez de disputar o `onScroll`.
@@ -286,21 +287,29 @@ export default function DecksScreen() {
               </Text>
 
               <View className="flex-row items-center gap-3">
-                <TouchableOpacity
-                  onPress={confirmBackup}
-                  disabled={busy}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Exportar ou importar baralhos"
-                  className="w-10 h-10 items-center justify-center rounded-button bg-surface-container"
-                  style={{ opacity: busy ? 0.5 : 1, ...cardShadow }}
-                >
-                  <Ionicons
-                    name="swap-vertical"
-                    size={20}
-                    color={colors.onSurface}
-                  />
-                </TouchableOpacity>
+                {/* Único caminho para a busca no Android — o puxão só existe
+                    no iOS (ver `useRevealSearch`). */}
+                <SearchToggleButton search={reveal} active={search.length > 0} />
+
+                {/* Opacidade na View de fora: o TouchableOpacity substitui a
+                    do style pela Animated.Value dele (ver onboarding.tsx). */}
+                <View style={{ opacity: busy ? 0.5 : 1 }}>
+                  <TouchableOpacity
+                    onPress={confirmBackup}
+                    disabled={busy}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Exportar ou importar baralhos"
+                    className="w-10 h-10 items-center justify-center rounded-button bg-surface-container"
+                    style={cardShadow}
+                  >
+                    <Ionicons
+                      name="swap-vertical"
+                      size={20}
+                      color={colors.onSurface}
+                    />
+                  </TouchableOpacity>
+                </View>
 
                 <TouchableOpacity
                   onPress={() => router.push('/deck/create')}

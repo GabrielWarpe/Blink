@@ -3,9 +3,10 @@ import { Platform } from 'react-native';
 /**
  * Receita de "liquid glass" do app, num só lugar.
  *
- * Nasceu dentro do `FloatingTabBar` e foi extraída para cá quando o tratamento
- * passou a valer para cards, modais e overlays — duas cópias da receita
- * divergem na primeira vez que alguém ajusta uma delas.
+ * Nasceu na barra de abas e foi extraída para cá quando o tratamento passou a
+ * valer para cards, modais e overlays — duas cópias da receita divergem na
+ * primeira vez que alguém ajusta uma delas. A barra deixou de usar vidro (ver
+ * `components/TabBar.tsx`); estes tokens seguem servindo os modais e sheets.
  *
  * Estes valores NÃO saem de token de tema, e por um motivo: vidro é alfa sobre
  * o que está atrás, não uma cor da paleta.
@@ -32,12 +33,6 @@ export interface GlassTokens {
   /** Valor do prop `tint` do BlurView. */
   blurTint: 'dark' | 'light';
   /**
-   * Realce do item ativo DENTRO de uma superfície de vidro (a pílula da aba
-   * selecionada). É um realce do próprio vidro, não uma cor da paleta: com
-   * `primaryContainer` ele virava a coisa mais clara da tela e gritava.
-   */
-  indicator: string;
-  /**
    * Reflexo especular — a "luz correndo" pela superfície. Faixa diagonal
    * estreita que varre o vidro ao ele se materializar. É o traço que separa o
    * Liquid Glass do glassmorphism comum; ver `GlassSurface`.
@@ -53,7 +48,6 @@ export const GLASS_DARK: GlassTokens = {
   backdropIntensity: 30,
   backdropScrim: 'rgba(0,0,0,0.45)',
   blurTint: 'dark',
-  indicator: 'rgba(255,255,255,0.14)',
   specular: [
     'rgba(255,255,255,0)',
     'rgba(255,255,255,0.38)',
@@ -69,32 +63,12 @@ export const GLASS_LIGHT: GlassTokens = {
   backdropIntensity: 35,
   backdropScrim: 'rgba(0,0,0,0.25)',
   blurTint: 'light',
-  indicator: 'rgba(0,0,0,0.07)',
   specular: [
     'rgba(255,255,255,0)',
     'rgba(255,255,255,0.85)',
     'rgba(255,255,255,0)',
   ],
 };
-
-/**
- * A barra flutuante usa o MESMO vidro, só que mais fino: ela cobre conteúdo o
- * tempo todo, então tint alto viraria uma tarja opaca. Antes estes valores
- * viviam duplicados dentro de `FloatingTabBar` e DIVERGIRAM do arquivo central
- * (tint 0.32 lá contra 0.55 aqui) — duas fontes de verdade para a mesma
- * receita. Agora a barra deriva daqui.
- */
-export function barGlass(g: GlassTokens): GlassTokens {
-  const isDark = g.blurTint === 'dark';
-  return {
-    ...g,
-    tint: isDark ? 'rgba(18,18,18,0.32)' : 'rgba(248,248,246,0.38)',
-    border: isDark ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.85)',
-    sheen: isDark
-      ? ['rgba(255,255,255,0.14)', 'rgba(255,255,255,0)']
-      : ['rgba(255,255,255,0.30)', 'rgba(255,255,255,0)'],
-  };
-}
 
 /** Duração das transições de vidro (materializar, reagir ao toque). */
 export const GLASS_TRANSITION_MS = 260;
@@ -125,3 +99,102 @@ export const glassShadow = Platform.select({
  */
 export const androidBlurMethod =
   Platform.OS === 'android' ? ('dimezisBlurView' as const) : undefined;
+
+/**
+ * Android 12 (API 31). Abaixo daqui o expo-blur desfoca por `RenderScriptBlur`;
+ * a partir daqui, por `RenderEffectBlur`, acelerado por hardware
+ * (`ExpoBlurView.kt: configureBlurView`). São renderizadores diferentes, com
+ * custo e resultado diferentes — e é a fronteira que explica o mesmo app sair
+ * com vidro num Android e sem vidro em outro.
+ */
+const ANDROID_RENDER_EFFECT_API = 31;
+
+/**
+ * Divisor do raio de desfoque no Android — o knob `blurReductionFactor`.
+ *
+ * O padrão do expo-blur é **4** (`ExpoBlurView.kt`: `setBlurRadius(radius /
+ * blurReduction)`), o que entrega um QUARTO do desfoque: os 60 do painel
+ * escuro viram raio 15, e o fundo do modal vira 7,5. Nessa faixa o efeito
+ * aparece em alguns aparelhos e some em outros — foi o que se viu testando em
+ * dois Androids diferentes.
+ *
+ * O valor é decidido em RUNTIME por `Platform.Version` (o nível de API), não
+ * fixado no código: não há um número que sirva aos dois renderizadores.
+ *
+ * - **API 31+ (RenderEffect, GPU):** 2 — devolve metade do caminho (painel
+ *   escuro em raio 30). Não vai a 1 porque ali o desfoque passa a engolir o
+ *   conteúdo de trás em vez de sugeri-lo. **É este o número a mexer se ficar
+ *   forte ou fraco demais.**
+ * - **Abaixo de 31 (RenderScript, legado):** mantém 4. Subir o raio custa mais
+ *   justamente no caminho mais lento, e nos aparelhos menos capazes de pagar —
+ *   ali um vidro discreto é melhor troca que uma rolagem travada.
+ */
+export const androidBlurReduction =
+  Platform.OS === 'android'
+    ? Number(Platform.Version) >= ANDROID_RENDER_EFFECT_API
+      ? 2
+      : 4
+    : undefined;
+
+/**
+ * Este aparelho vai desfocar pelo caminho legado (RenderScript, Android 11 e
+ * anteriores)? Ver `ANDROID_RENDER_EFFECT_API`.
+ */
+export const WEAK_BLUR =
+  Platform.OS === 'android' &&
+  Number(Platform.Version) < ANDROID_RENDER_EFFECT_API;
+
+/** Troca só o alfa de uma cor `rgba(...)`, preservando o matiz. */
+function reAlpha(rgba: string, alpha: number): string {
+  return rgba.replace(
+    /rgba?\(([^,]+),([^,]+),([^,)]+)(?:,[^)]+)?\)/,
+    (_, r, g, b) => `rgba(${r.trim()},${g.trim()},${b.trim()},${alpha})`,
+  );
+}
+
+/**
+ * Ajusta os tokens para o caminho de desfoque fraco.
+ *
+ * O `tint` de 55% existe porque o desfoque faz os outros 45%: o que se vê
+ * atrás do painel deveria estar BORRADO. Onde o desfoque mal acontece, o que
+ * atravessa é conteúdo nítido e legível — e aí o painel não lê como vidro
+ * discreto, lê como painel quebrado. Foi disso que veio o "lavado".
+ *
+ * A compensação é simples: o painel assume ser uma SUPERFÍCIE, quase opaca,
+ * com a borda um pouco mais firme para se destacar sem contar com o desfoque.
+ * E, como quase nada atravessa, o raio cai junto — o borrão caro do
+ * RenderScript deixa de ser pago por um efeito que já não se vê.
+ *
+ * O que NÃO muda: brilho de topo, reflexo especular e a animação de entrada.
+ * São transform/opacidade, custam quase nada e funcionam em qualquer Android —
+ * é o que mantém o painel vivo mesmo sem o vidro.
+ */
+export function compensateWeakBlur(g: GlassTokens): GlassTokens {
+  if (!WEAK_BLUR) return g;
+  return {
+    ...g,
+    tint: reAlpha(g.tint, 0.94),
+    border: reAlpha(g.border, g.blurTint === 'dark' ? 0.16 : 0.9),
+    backdropScrim: reAlpha(
+      g.backdropScrim,
+      g.blurTint === 'dark' ? 0.6 : 0.35,
+    ),
+    blurIntensity: 24,
+    backdropIntensity: 12,
+  };
+}
+
+// Só em desenvolvimento: ao abrir o app num Android, o console do Metro passa a
+// dizer QUAL aparelho é e qual caminho de desfoque ele pegou. Existe porque a
+// versão do Android nem sempre está à mão — e sem ela, "o vidro não aparece
+// nesse celular" não tem como ser diagnosticado à distância.
+if (__DEV__ && Platform.OS === 'android') {
+  const api = Number(Platform.Version);
+  console.log(
+    `[Blink/vidro] Android API ${api} · ${
+      api >= ANDROID_RENDER_EFFECT_API
+        ? `RenderEffect (GPU) · vidro real · reduction ${androidBlurReduction}`
+        : 'RenderScript (legado) · superfície opaca (compensateWeakBlur)'
+    }`,
+  );
+}

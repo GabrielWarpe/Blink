@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,11 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { FlashCard } from './FlashCard';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useCardSize } from '@/hooks/useCardSize';
 import type { Flashcard } from '@/types';
-
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width - 48;
-const SWIPE_THRESHOLD = width * 0.3;
 
 interface SwipeCardProps {
   card: Flashcard;
@@ -54,6 +51,10 @@ export function SwipeCard({
 }: SwipeCardProps) {
   const { settings } = useSettings();
   const colors = useThemeColors();
+  // Medidas vivas: os limiares de arraste são relativos à TELA (não à carta),
+  // e a tela muda de tamanho em pleno uso no Android. Ver `useCardSize`.
+  const { width: CARD_WIDTH, screenWidth } = useCardSize();
+  const SWIPE_THRESHOLD = screenWidth * 0.3;
   const [isFlipped, setIsFlipped] = useState(false);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -107,7 +108,7 @@ export function SwipeCard({
     runOnJS(setLocked)(true);
     runOnJS(fireAnswerHaptic)(correct);
     translateX.value = withTiming(
-      (correct ? 1 : -1) * width * 1.6,
+      (correct ? 1 : -1) * screenWidth * 1.6,
       { duration: exitDuration },
       finished => {
         'worklet';
@@ -142,7 +143,7 @@ export function SwipeCard({
   const cardStyle = useAnimatedStyle(() => {
     const rotate = interpolate(
       translateX.value,
-      [-width / 2, 0, width / 2],
+      [-screenWidth / 2, 0, screenWidth / 2],
       [-14, 0, 14],
       Extrapolation.CLAMP,
     );

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   TextInput,
@@ -14,6 +14,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { cardShadow } from '@/components/ui/Card';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
 /** Altura da barra de busca quando revelada. */
@@ -29,26 +30,37 @@ const SCROLL_TO_HIDE = 60;
  * revela e rolar para dentro esconde de novo — mas NUNCA enquanto houver texto
  * digitado, senão o filtro sumiria da vista ainda valendo.
  *
+ * **O puxão sozinho não basta.** Ele depende de `contentOffset.y` NEGATIVO, que
+ * só existe com o `bounces` do iOS; o Android grampeia o offset em 0 e desenha
+ * o brilho de overscroll no lugar. Lá a condição do puxão nunca é verdadeira e
+ * a busca ficaria inalcançável — por isso o `SearchToggleButton` do cabeçalho é
+ * o caminho garantido nas duas plataformas, e o puxão vira atalho no iOS.
+ *
  * O `onScroll` devolvido é um handler comum: componha com o da barra de abas
  * em vez de disputar a prop.
  *
- *     const search = useRevealSearch(query);
+ *     const search = useRevealSearch(query, () => setQuery(''));
  *     <ScrollView onScroll={e => { tabScroll.onScroll(e); search.onScroll(e); }}>
  *       <RevealSearchBar search={search} value={query} … />
+ *
+ * @param onClear Limpa o texto ao fechar pelo botão — fechar com filtro valendo
+ *   esconderia a razão de a lista estar curta.
  */
-export function useRevealSearch(query: string) {
+export function useRevealSearch(query: string, onClear?: () => void) {
   const height = useSharedValue(0);
   const openRef = useRef(false);
+  const [open, setOpen] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
-  const toggle = (open: boolean) => {
-    if (openRef.current === open) return;
-    openRef.current = open;
-    height.value = withTiming(open ? SEARCH_HEIGHT : 0, {
+  const toggle = (next: boolean) => {
+    if (openRef.current === next) return;
+    openRef.current = next;
+    setOpen(next);
+    height.value = withTiming(next ? SEARCH_HEIGHT : 0, {
       duration: 220,
       easing: Easing.out(Easing.cubic),
     });
-    if (!open) inputRef.current?.blur();
+    if (!next) inputRef.current?.blur();
   };
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -57,12 +69,59 @@ export function useRevealSearch(query: string) {
     else if (y > SCROLL_TO_HIDE && query.length === 0) toggle(false);
   };
 
+  /**
+   * Abre/fecha pelo botão do cabeçalho. Abrir foca o campo direto — quem toca
+   * na lupa quer digitar, não olhar um campo vazio.
+   */
+  const toggleOpen = () => {
+    if (openRef.current) {
+      onClear?.();
+      toggle(false);
+    } else {
+      toggle(true);
+      inputRef.current?.focus();
+    }
+  };
+
   const style = useAnimatedStyle(() => ({
     height: height.value,
     opacity: interpolate(height.value, [0, SEARCH_HEIGHT], [0, 1]),
   }));
 
-  return { style, inputRef, onScroll };
+  return { style, inputRef, onScroll, open, toggleOpen };
+}
+
+interface SearchToggleButtonProps {
+  search: ReturnType<typeof useRevealSearch>;
+  /** Há filtro/busca valendo? Marca o botão para o estado não ficar escondido. */
+  active?: boolean;
+}
+
+/**
+ * Botão de lupa do cabeçalho — mesmo formato dos outros botões de ação das
+ * abas (40×40, `bg-surface-container`, `cardShadow`).
+ */
+export function SearchToggleButton({ search, active }: SearchToggleButtonProps) {
+  const colors = useThemeColors();
+  const isOpen = search.open;
+
+  return (
+    <TouchableOpacity
+      onPress={search.toggleOpen}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={isOpen ? 'Fechar busca' : 'Buscar'}
+      accessibilityState={{ expanded: isOpen }}
+      className="w-10 h-10 items-center justify-center rounded-button bg-surface-container"
+      style={cardShadow}
+    >
+      <Ionicons
+        name={isOpen ? 'close' : 'search'}
+        size={20}
+        color={active && !isOpen ? colors.primary : colors.onSurface}
+      />
+    </TouchableOpacity>
+  );
 }
 
 interface RevealSearchBarProps {

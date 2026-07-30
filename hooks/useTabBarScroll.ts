@@ -18,7 +18,8 @@ const TOP_ZONE = 24;
 const SPRING = { duration: TAB_TRANSITION_MS, dampingRatio: 0.9 };
 
 /**
- * Liga a rolagem de uma tela de aba ao encolhimento da barra.
+ * Liga a rolagem de uma tela de aba à saída da barra (desce ao rolar para
+ * baixo, volta ao rolar para cima).
  *
  * O handler é JS comum, não `useAnimatedScrollHandler`, de propósito: a decisão
  * é aritmética trivial (uma subtração e uma comparação por evento) e não ganha
@@ -44,7 +45,7 @@ export function useTabBarScroll() {
   // e a animação nunca assentaria.
   const target = useRef(0);
 
-  // Ao voltar para a aba a barra reaparece: manter encolhido numa tela que o
+  // Ao voltar para a aba a barra reaparece: mantê-la fora numa tela que o
   // usuário acabou de abrir esconde navegação sem motivo.
   useFocusEffect(
     useCallback(() => {

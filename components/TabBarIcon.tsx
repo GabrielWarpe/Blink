@@ -11,7 +11,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useTabBarCollapse } from '@/contexts/TabBarContext';
 import {
   TAB_ICON_SIZE,
   TAB_LABEL_SIZE,
@@ -41,7 +40,7 @@ const ACTIVE_SCALE = 1.06;
 
 /**
  * Conteúdo de uma aba: ícone + rótulo, com transição fluida entre inativo e
- * ativo, e o rótulo recolhendo quando a barra encolhe na rolagem.
+ * ativo.
  *
  * Ícone e rótulo são renderizados DUAS vezes (contorno/Medium na cor inativa e
  * preenchido/SemiBold na cor ativa), sobrepostos, e a transição é um cross-fade
@@ -49,10 +48,9 @@ const ACTIVE_SCALE = 1.06;
  * fonte e a mudança de cor — tudo em opacidade, que é a propriedade mais barata
  * de animar e não depende de animar a cor de uma fonte de ícone (frágil).
  *
- * O ativo usa `onSurface` (claro), não `onPrimaryContainer` (escuro): a pílula
- * do indicador deixou de ser branca sólida e virou um realce translúcido do
- * vidro (ver `GLASS.indicator` em `FloatingTabBar`) — texto escuro por cima
- * dela ficaria ilegível.
+ * O ativo usa `onSurface` (claro), não `onPrimaryContainer` (escuro): não há
+ * mais pílula por trás do item — o realce é o próprio ícone/rótulo contra o
+ * fundo da barra, e cor escura ali ficaria ilegível.
  */
 export function TabBarIcon({
   icon,
@@ -62,7 +60,6 @@ export function TabBarIcon({
 }: TabBarIconProps) {
   const colors = useThemeColors();
   const { settings } = useSettings();
-  const collapsed = useTabBarCollapse();
 
   // 0 = inativo, 1 = ativo. Uma única fonte para escala, cor e cross-fade.
   const progress = useSharedValue(focused ? 1 : 0);
@@ -81,22 +78,17 @@ export function TabBarIcon({
       { scale: interpolate(progress.value, [0, 1], [1, ACTIVE_SCALE]) },
     ],
   }));
-  // As opacidades combinam os DOIS eixos: qual variante está ativa e o quanto a
-  // barra está encolhida (encolhida → nenhum rótulo aparece).
+  // Cross-fade entre as duas variantes sobrepostas — nada mais entra na conta:
+  // o rótulo está sempre visível desde que a barra deixou de encolher.
   const inactiveIconStyle = useAnimatedStyle(() => ({
     opacity: 1 - progress.value,
   }));
   const activeIconStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
   const inactiveLabelStyle = useAnimatedStyle(() => ({
-    opacity: (1 - progress.value) * (1 - collapsed.value),
+    opacity: 1 - progress.value,
   }));
   const activeLabelStyle = useAnimatedStyle(() => ({
-    opacity: progress.value * (1 - collapsed.value),
-  }));
-  // O bloco do rótulo colapsa a altura 0 — é o que faz a barra ficar mais baixa
-  // sem o ícone sair do centro.
-  const labelBoxStyle = useAnimatedStyle(() => ({
-    height: interpolate(collapsed.value, [0, 1], [TAB_LABEL_BLOCK, 0]),
+    opacity: progress.value,
   }));
   // Cor→cor (nunca partindo de 'transparent'): interpolar a partir de um alfa
   // zero passa por cinzas no meio do caminho e suja o anel.
@@ -107,6 +99,20 @@ export function TabBarIcon({
       [colors.outline, colors.onSurface],
     ),
   }));
+
+  /**
+   * Teto do fator de fonte do sistema, SÓ para o rótulo da barra.
+   *
+   * O `lineHeight` aqui é fixo (`TAB_LABEL_LINE`, 12) e a altura da barra é
+   * derivada dele, então o texto não tem para onde crescer: a partir de ~130%
+   * ele começa a ser cortado na vertical. O Android põe o ajuste de fonte (e o
+   * de "tamanho de exibição") a dois toques nas configurações, então isso é
+   * cenário comum, não caso de borda. 1.2 é o ponto em que ainda cabe.
+   *
+   * Vale APENAS aqui — o resto do app continua acompanhando a fonte do sistema
+   * sem limite, porque lá o texto pode empurrar o layout.
+   */
+  const LABEL_MAX_FONT_SCALE = 1.2;
 
   const labelBase = {
     position: 'absolute' as const,
@@ -169,11 +175,12 @@ export function TabBarIcon({
         </View>
       )}
 
-      <Animated.View
-        style={[{ width: '100%', overflow: 'hidden' }, labelBoxStyle]}
-      >
+      {/* Altura fixa: as duas variantes do rótulo são sobrepostas
+          (`position: absolute`), então sem ela o bloco fecharia em zero. */}
+      <View style={{ width: '100%', height: TAB_LABEL_BLOCK }}>
         <Animated.Text
           numberOfLines={1}
+          maxFontSizeMultiplier={LABEL_MAX_FONT_SCALE}
           style={[
             labelBase,
             // Medium (não Regular) no inativo: o peso 400 fica lavado no escuro.
@@ -185,6 +192,7 @@ export function TabBarIcon({
         </Animated.Text>
         <Animated.Text
           numberOfLines={1}
+          maxFontSizeMultiplier={LABEL_MAX_FONT_SCALE}
           style={[
             labelBase,
             {
@@ -196,7 +204,7 @@ export function TabBarIcon({
         >
           {label}
         </Animated.Text>
-      </Animated.View>
+      </View>
     </Animated.View>
   );
 }

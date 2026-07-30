@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { ImageBackground } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -11,10 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import type { Flashcard } from '@/types';
 import { useSettings } from '@/contexts/SettingsContext';
-
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width - 48;
-const CARD_HEIGHT = CARD_WIDTH * 1.25;
+import { useCardSize } from '@/hooks/useCardSize';
 
 // Quando o card tem imagem, essa fração da altura fica reservada para o
 // scrim + texto da pergunta, ancorados embaixo (a faixa em si cresce com o
@@ -31,6 +28,7 @@ interface FlashCardProps {
 
 export function FlashCard({ card, flipped, onPress }: FlashCardProps) {
   const { settings } = useSettings();
+  const { width: CARD_WIDTH, height: CARD_HEIGHT } = useCardSize();
   const progress = useSharedValue(0);
   const hasImage = card.images.length > 0;
 

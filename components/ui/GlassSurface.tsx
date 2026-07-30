@@ -22,6 +22,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import {
   glassShadow,
   androidBlurMethod,
+  androidBlurReduction,
   GLASS_TRANSITION_MS,
   GLASS_SPECULAR_MS,
   GLASS_SPECULAR_WIDTH,
@@ -32,8 +33,8 @@ import { CARD_RADIUS } from '@/constants/radius';
 /** Raio padrão de uma superfície. */
 const DEFAULT_RADIUS = CARD_RADIUS;
 
-// Mesma técnica já provada no `FloatingTabBar`: só um componente animado do
-// Reanimated consegue dirigir a prop `intensity` do BlurView por frame.
+// Só um componente animado do Reanimated consegue dirigir a prop `intensity`
+// do BlurView por frame — daí o wrapper em vez do BlurView cru.
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -153,7 +154,7 @@ export function GlassSurface({
       // O tint vive AQUI, não no BlurView: no Android a sombra por `elevation`
       // só existe se a view tiver fundo (é dele que sai o contorno), e o
       // recorte (`overflow: hidden`) precisa ficar no filho, senão comeria a
-      // própria sombra. Mesma estrutura do FloatingTabBar.
+      // própria sombra.
       style={[
         { borderRadius: radius, backgroundColor: glass.tint },
         glassShadow,
@@ -167,6 +168,7 @@ export function GlassSurface({
           animatedProps={blurProps}
           tint={glass.blurTint}
           experimentalBlurMethod={androidBlurMethod}
+        blurReductionFactor={androidBlurReduction}
           style={[StyleSheet.absoluteFill, { overflow: 'hidden' }, edge]}
         />
       ) : (
@@ -174,6 +176,7 @@ export function GlassSurface({
           intensity={glass.blurIntensity}
           tint={glass.blurTint}
           experimentalBlurMethod={androidBlurMethod}
+        blurReductionFactor={androidBlurReduction}
           style={[StyleSheet.absoluteFill, { overflow: 'hidden' }, edge]}
         />
       )}
@@ -236,6 +239,7 @@ export function AnimatedGlassFill() {
       animatedProps={blurProps}
       tint={glass.blurTint}
       experimentalBlurMethod={androidBlurMethod}
+        blurReductionFactor={androidBlurReduction}
       style={StyleSheet.absoluteFill}
     />
   );
@@ -386,6 +390,7 @@ export function GlassPressable({
         animatedProps={blurProps}
         tint={glass.blurTint}
         experimentalBlurMethod={androidBlurMethod}
+        blurReductionFactor={androidBlurReduction}
         style={[
           StyleSheet.absoluteFill,
           {
@@ -460,6 +465,7 @@ export function GlassBackdrop() {
       intensity={glass.backdropIntensity}
       tint={glass.blurTint}
       experimentalBlurMethod={androidBlurMethod}
+        blurReductionFactor={androidBlurReduction}
       style={[
         StyleSheet.absoluteFill,
         { backgroundColor: glass.backdropScrim },

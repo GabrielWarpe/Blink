@@ -41,12 +41,25 @@ function parseTime(time: string): { hour: number; minute: number } {
   };
 }
 
+/** Canal Android dos lembretes. Ver `androidChannel()`. */
+const CHANNEL_ID = 'reminders';
+
 async function ensureAndroidChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync('reminders', {
+  await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
     name: 'Lembretes de estudo',
     importance: Notifications.AndroidImportance.DEFAULT,
   });
+}
+
+/**
+ * `{ channelId }` para espalhar no gatilho — no Android TODO agendamento
+ * precisa dele, senão cai no canal padrão do sistema e o canal criado acima
+ * fica órfão (nome genérico nas configurações, `importance` ignorada). No iOS
+ * o campo não existe, por isso o objeto sai vazio.
+ */
+function androidChannel(): { channelId?: string } {
+  return Platform.OS === 'android' ? { channelId: CHANNEL_ID } : {};
 }
 
 /**
@@ -62,7 +75,9 @@ export async function fireNotification(
   await ensureAndroidChannel();
   await Notifications.scheduleNotificationAsync({
     content: { title, body },
-    trigger: null, // imediata
+    // Imediata. No Android o gatilho vira só o canal — é a única forma de
+    // apontar o canal numa notificação sem agendamento (`ChannelAwareTrigger`).
+    trigger: Platform.OS === 'android' ? { channelId: CHANNEL_ID } : null,
   });
 }
 
@@ -126,6 +141,7 @@ async function scheduleStudyReminders(
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        ...androidChannel(),
         hour,
         minute,
       },
@@ -150,6 +166,7 @@ async function scheduleStudyReminders(
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
+        ...androidChannel(),
         date: fireDate,
       },
     });
@@ -164,6 +181,7 @@ async function scheduleStudyReminders(
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
+      ...androidChannel(),
       date: dateAt(REMINDER_HORIZON_DAYS + 1, hour, minute),
     },
   });
@@ -190,6 +208,7 @@ export async function syncReminders(cfg: ReminderConfig): Promise<void> {
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        ...androidChannel(),
         hour: 21,
         minute: 0,
       },

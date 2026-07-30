@@ -21,6 +21,7 @@ import { StarRating } from '@/components/StarRating';
 import { FilterSheet, type SortOption } from '@/components/FilterSheet';
 import {
   RevealSearchBar,
+  SearchToggleButton,
   useRevealSearch,
 } from '@/components/RevealSearchBar';
 import { cardShadow } from '@/components/ui/Card';
@@ -62,7 +63,7 @@ export default function CommunityScreen() {
   // Busca revelada ao puxar — mesma da aba Decks (ver `RevealSearchBar`). O
   // `useTabBarScroll` também precisa do evento, então os dois são compostos
   // aqui em vez de disputar o `onScroll`.
-  const reveal = useRevealSearch(search);
+  const reveal = useRevealSearch(search, () => setSearch(''));
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     tabScroll.onScroll(e);
     reveal.onScroll(e);
@@ -155,16 +156,22 @@ export default function CommunityScreen() {
             >
               Comunidade
             </Text>
-            <TouchableOpacity
-              onPress={() => router.push('/community/publish' as Href)}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Publicar um deck na comunidade"
-              className="w-10 h-10 items-center justify-center rounded-button bg-surface-container"
-              style={cardShadow}
-            >
-              <Ionicons name="add" size={22} color={colors.onSurface} />
-            </TouchableOpacity>
+            <View className="flex-row items-center gap-3">
+              {/* Único caminho para a busca no Android — o puxão só existe no
+                  iOS (ver `useRevealSearch`). */}
+              <SearchToggleButton search={reveal} active={search.length > 0} />
+
+              <TouchableOpacity
+                onPress={() => router.push('/community/publish' as Href)}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Publicar um deck na comunidade"
+                className="w-10 h-10 items-center justify-center rounded-button bg-surface-container"
+                style={cardShadow}
+              >
+                <Ionicons name="add" size={22} color={colors.onSurface} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Busca revelada ao puxar — idêntica à da aba Decks */}

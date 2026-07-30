@@ -298,30 +298,46 @@ export default function OnboardingScreen() {
       {/* Voltar e Pular: ambos SEMPRE presentes, só invisíveis quando não se
           aplicam (voltar no 1º slide, pular no último) — some-los de verdade
           faria o cabeçalho mudar de altura e o card saltar entre os passos. */}
+      {/* A opacidade vive nos Views de FORA, nunca no TouchableOpacity.
+          O Touchable descarta qualquer `opacity` que venha no style: ele
+          renderiza `[props.style, { opacity: <Animated.Value própria> }]`
+          (TouchableOpacity.js:325) e só reconcilia esse valor num efeito de
+          update, com driver nativo. São três peças móveis para o que deveria
+          ser um número fixo — e no Android isso falhava de fato: a seta não
+          aparecia no 2º passo e vinha apagada nos seguintes. Aqui o valor é
+          estático numa View comum, então não há nada para dessincronizar. */}
       <View className="flex-row items-center justify-between px-5 pt-3">
-        <TouchableOpacity
-          onPress={back}
-          activeOpacity={0.7}
-          disabled={shown === 0}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Voltar ao passo anterior"
-          className="px-3 py-2"
+        <View
           style={{ opacity: shown === 0 ? 0 : 1 }}
+          pointerEvents={shown === 0 ? 'none' : 'auto'}
         >
-          <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={back}
+            activeOpacity={0.7}
+            disabled={shown === 0}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Voltar ao passo anterior"
+            className="px-3 py-2"
+          >
+            <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          onPress={finish}
-          activeOpacity={0.7}
-          disabled={isLast}
-          hitSlop={12}
-          className="px-3 py-2"
+        <View
           style={{ opacity: isLast ? 0 : 1 }}
+          pointerEvents={isLast ? 'none' : 'auto'}
         >
-          <Text className="text-outline font-inter-medium text-sm">Pular</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={finish}
+            activeOpacity={0.7}
+            disabled={isLast}
+            hitSlop={12}
+            className="px-3 py-2"
+          >
+            <Text className="text-outline font-inter-medium text-sm">Pular</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Card com virada 3D entre os passos */}

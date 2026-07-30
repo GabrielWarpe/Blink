@@ -25,8 +25,8 @@
     "semantic_hash": ""
   },
   "app/(tabs)/_layout.tsx": {
-    "mtime": 1785435718.0456123,
-    "ast_hash": "f72a78ca3a1308edd3dd1633220f9803",
+    "mtime": 1785193931.6393974,
+    "ast_hash": "b17891856fc6772111bfeb36b55e41ce",
     "semantic_hash": ""
   },
   "app/(tabs)/community.tsx": {
@@ -325,8 +325,8 @@
     "semantic_hash": ""
   },
   "constants/layout.ts": {
-    "mtime": 1785435655.9904938,
-    "ast_hash": "6ad5874ae3a9252986e565bf487a47fa",
+    "mtime": 1785433383.5192907,
+    "ast_hash": "92088095661e5458190928e62c9051ad",
     "semantic_hash": ""
   },
   "constants/study.ts": {
@@ -564,9 +564,14 @@
     "ast_hash": "82efb97a359f5c7290bf2513d14686be",
     "semantic_hash": ""
   },
+  "components/FloatingTabBar.tsx": {
+    "mtime": 1785434730.0673993,
+    "ast_hash": "1e8809690eb75a8ca1ecd66f0c94a795",
+    "semantic_hash": ""
+  },
   "components/TabBarIcon.tsx": {
-    "mtime": 1785435709.2152445,
-    "ast_hash": "9b0f7567f5ec99f80b027b9a89d0a08a",
+    "mtime": 1785433419.0291162,
+    "ast_hash": "4fdccbbf2ff9afab3728a8c746bc7024",
     "semantic_hash": ""
   },
   "contexts/TabBarContext.tsx": {
@@ -575,13 +580,13 @@
     "semantic_hash": ""
   },
   "hooks/useTabBarInset.ts": {
-    "mtime": 1785435732.034387,
-    "ast_hash": "3717984d63d00e5243d5c2d094ac3f3b",
+    "mtime": 1785192656.814965,
+    "ast_hash": "902f3fda0b58e4d9619db608ac075917",
     "semantic_hash": ""
   },
   "hooks/useTabBarScroll.ts": {
-    "mtime": 1785435764.9051797,
-    "ast_hash": "9d78edfb14fb4603ec557a78218b9a97",
+    "mtime": 1785194896.4024723,
+    "ast_hash": "f729d5f115911c01d3e33161109abfba",
     "semantic_hash": ""
   },
   ".claude/CLAUDE.md": {
@@ -635,13 +640,13 @@
     "semantic_hash": ""
   },
   "components/ui/GlassSurface.tsx": {
-    "mtime": 1785435764.904772,
-    "ast_hash": "78813d54e9e744b93e35ad9dd6a6325b",
+    "mtime": 1785434730.067574,
+    "ast_hash": "d4b7a6e8e854511799a6060b536e9800",
     "semantic_hash": ""
   },
   "constants/glass.ts": {
-    "mtime": 1785435775.8899684,
-    "ast_hash": "1451142c79f70ff41c76fabcde0a37cf",
+    "mtime": 1785435165.2593627,
+    "ast_hash": "51998890d30b14f3741a4a18a84cf077",
     "semantic_hash": ""
   },
   "constants/radius.ts": {
@@ -692,11 +697,6 @@
   "hooks/useCardSize.ts": {
     "mtime": 1785433194.9119184,
     "ast_hash": "3954f9e77a481be822dc1ec0bcb1d099",
-    "semantic_hash": ""
-  },
-  "components/TabBar.tsx": {
-    "mtime": 1785435718.0453343,
-    "ast_hash": "a5d76f6f7c080971a5d00d51b0fce01a",
     "semantic_hash": ""
   }
 }

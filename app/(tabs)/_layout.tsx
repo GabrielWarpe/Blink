@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { FloatingTabBar } from '@/components/FloatingTabBar';
+import { TabBar } from '@/components/TabBar';
 import { TabBarIcon } from '@/components/TabBarIcon';
 import { TabBarCollapseProvider } from '@/contexts/TabBarContext';
 
@@ -14,7 +14,7 @@ export default function TabsLayout() {
         // Barra própria (pílula de vidro flutuante). Todo o estilo do contêiner
         // e as animações vivem nos componentes; aqui ficam só as rotas, seus
         // ícones e seus rótulos.
-        tabBar={props => <FloatingTabBar {...props} />}
+        tabBar={props => <TabBar {...props} />}
         screenOptions={{ headerShown: false }}
       >
         <Tabs.Screen
