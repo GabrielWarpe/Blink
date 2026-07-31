@@ -29,8 +29,6 @@ interface TabBarIconProps {
 
 /** Escala do conteúdo na aba ativa — leve de propósito, é acento, não salto. */
 const ACTIVE_SCALE = 1.06;
-/** Opacidade da FOTO quando a aba não está ativa. Ver `avatarStyle`. */
-const AVATAR_INACTIVE_OPACITY = 0.5;
 
 /**
  * Conteúdo de uma aba: só o ícone, sem rótulo — o padrão do X, nas duas
@@ -71,36 +69,27 @@ export function TabBarIcon({ icon, focused, avatarUri }: TabBarIconProps) {
     opacity: 1 - progress.value,
   }));
   const activeIconStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
-  /**
-   * A foto não tem variante "preenchida" para trocar, e o anel que marcava o
-   * foco saiu a pedido. Sobra a opacidade: apagada quando inativa, cheia quando
-   * ativa — o mesmo contraste que separa contorno de preenchido nas outras
-   * abas, só que aplicado à imagem.
-   */
-  const avatarStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [AVATAR_INACTIVE_OPACITY, 1]),
-  }));
-
   return (
     <Animated.View
       style={[{ alignItems: 'center', justifyContent: 'center' }, scaleStyle]}
     >
       {avatarUri ? (
-        <Animated.View
-          style={[
-            {
-              width: TAB_ICON_SIZE,
-              height: TAB_ICON_SIZE,
-              borderRadius: TAB_ICON_SIZE / 2,
-              // Recorte circular SEM borda: o raio faz a máscara e o
-              // `overflow` a aplica à imagem. Nenhum anel em volta.
-              overflow: 'hidden',
-            },
-            avatarStyle,
-          ]}
+        // A foto NÃO escurece na aba inativa: opacidade parcial sobre o fundo
+        // claro lava a imagem e ela lê como borrada, não como "não
+        // selecionada". Fica sempre cheia; quem marca o foco desta aba é a
+        // escala do `scaleStyle`, como nas demais.
+        <View
+          style={{
+            width: TAB_ICON_SIZE,
+            height: TAB_ICON_SIZE,
+            borderRadius: TAB_ICON_SIZE / 2,
+            // Recorte circular SEM borda: o raio faz a máscara e o `overflow`
+            // a aplica à imagem. Nenhum anel em volta.
+            overflow: 'hidden',
+          }}
         >
           <Image source={{ uri: avatarUri }} style={StyleSheet.absoluteFill} />
-        </Animated.View>
+        </View>
       ) : (
         <View style={{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE }}>
           <Animated.View style={[StyleSheet.absoluteFill, inactiveIconStyle]}>

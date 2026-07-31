@@ -1,7 +1,7 @@
 # Graph Report - Blink  (2026-07-31)
 
 ## Corpus Check
-- 138 files · ~102,487 words
+- 138 files · ~102,524 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -57,7 +57,7 @@
 - expo-router
 - graphify reference: commit hook and native CLAUDE.md integration
 - expo-sharing
-- @react-native-async-storage/async-storage
+- date-fns
 - expo-status-bar
 - @expo/vector-icons
 - nativewind
@@ -169,7 +169,7 @@ Nodes (8): AnswerCheck, AnswerVerdict, checkAnswer(), keywords(), levenshtein(),
 
 ### Community 12 - "dependencies"
 Cohesion: 0.18
-Nodes (11): date-fns, expo-blur, expo-font, @expo-google-fonts/inter, dependencies, date-fns, expo-blur, expo-font (+3 more)
+Nodes (11): expo-blur, expo-font, @expo-google-fonts/inter, dependencies, expo-blur, expo-font, @expo-google-fonts/inter, @react-native-async-storage/async-storage (+3 more)
 
 ### Community 13 - "generate-cards/index.ts"
 Cohesion: 0.18

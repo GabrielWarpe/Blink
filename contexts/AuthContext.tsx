@@ -17,7 +17,7 @@ export const RESET_PASSWORD_PATH = '/reset-password';
 /**
  * URL de retorno do e-mail de recuperação. É CALCULADA, não escrita à mão: no
  * Expo Go vira `exp://192.168.x.x/--/reset-password`, e no app instalado vira
- * `recall://reset-password` (o `scheme` do app.json). Um valor fixo só
+ * `blink://reset-password` (o `scheme` do app.json). Um valor fixo só
  * funcionaria num dos dois.
  */
 function resetRedirectUrl(): string {

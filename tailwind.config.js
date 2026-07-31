@@ -39,14 +39,6 @@ module.exports = {
         success: 'rgb(var(--color-success) / <alpha-value>)',
         warning: 'rgb(var(--color-warning) / <alpha-value>)',
         info: 'rgb(var(--color-info) / <alpha-value>)',
-        // Cores fixas da marca Blink — hex estático (NÃO variam por tema).
-        // Sobra da identidade "Meia-noite": nenhuma tela as usa hoje (grep de
-        // `brand-midnight`/`brand-teal` em app/ e components/ não retorna
-        // nada). Mantidas só porque os ARQUIVOS de logo/ícone ainda são
-        // pintados nelas — ver `components/BrandLogo.tsx`, que precisa da
-        // mesma cor do PNG para o selo não flutuar sobre o fundo.
-        'brand-midnight': '#0F1D33',
-        'brand-teal': '#15C2B0',
       },
       // Tamanhos via variáveis CSS (escaláveis em runtime pela config "Tamanho da fonte").
       fontSize: {
