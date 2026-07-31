@@ -2731,7 +2731,7 @@
       "label": "TabBarIcon()",
       "file_type": "code",
       "source_file": "components/TabBarIcon.tsx",
-      "source_location": "L49",
+      "source_location": "L47",
       "_origin": "ast",
       "id": "components_tabbaricon_tabbaricon",
       "community": 3,
@@ -4593,8 +4593,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "package_dependencies_react_native_async_storage_async_storage",
-      "community": 12,
-      "community_name": "dependencies",
+      "community": 42,
+      "community_name": "@react-native-async-storage/async-storage",
       "norm_label": "@react-native-async-storage/async-storage"
     },
     {
@@ -4604,8 +4604,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "react_native_async_storage_async_storage",
-      "community": 12,
-      "community_name": "dependencies",
+      "community": 42,
+      "community_name": "@react-native-async-storage/async-storage",
       "norm_label": "@react-native-async-storage/async-storage"
     },
     {
@@ -4659,8 +4659,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "package_dependencies_date_fns",
-      "community": 42,
-      "community_name": "date-fns",
+      "community": 12,
+      "community_name": "dependencies",
       "norm_label": "date-fns"
     },
     {
@@ -4670,8 +4670,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "date_fns",
-      "community": 42,
-      "community_name": "date-fns",
+      "community": 12,
+      "community_name": "dependencies",
       "norm_label": "date-fns"
     },
     {
@@ -24768,7 +24768,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/TabBarIcon.tsx",
-      "source_location": "L49",
+      "source_location": "L47",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_tabbaricon",
@@ -24863,7 +24863,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/TabBarIcon.tsx",
-      "source_location": "L51",
+      "source_location": "L49",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_tabbaricon_tabbaricon",
@@ -24875,7 +24875,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/TabBarIcon.tsx",
-      "source_location": "L50",
+      "source_location": "L48",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_tabbaricon_tabbaricon",

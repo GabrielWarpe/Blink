@@ -560,8 +560,8 @@
     "semantic_hash": ""
   },
   "components/TabBarIcon.tsx": {
-    "mtime": 1785451667.5482252,
-    "ast_hash": "834cb9f89d402943291d81e2b73776e9",
+    "mtime": 1785479621.6311646,
+    "ast_hash": "f60c04f6e6ea7131f39b777e5fb5ed52",
     "semantic_hash": ""
   },
   "contexts/TabBarContext.tsx": {

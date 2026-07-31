@@ -5,12 +5,12 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 818 nodes · 2182 edges · 71 communities (32 shown, 39 thin omitted)
+- 818 nodes · 2179 edges · 71 communities (32 shown, 39 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.7)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `6968bac3`
+- Built from commit: `7ebfad1c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -32,9 +32,9 @@
 - Blink Adaptive Icon Foreground
 - expo
 - What You Must Do When Invoked
-- deck/[id].tsx
-- Blink App Icon (1024px)
 - progress.tsx
+- Blink App Icon (1024px)
+- index.tsx
 - GlassSurface.tsx
 - grade-answer/index.ts
 - metro.config.js
@@ -85,9 +85,9 @@
 - ActivityHeatmap.tsx
 
 ## God Nodes (most connected - your core abstractions)
-1. `useThemeColors()` - 126 edges
+1. `useThemeColors()` - 125 edges
 2. `useAuth()` - 50 edges
-3. `useSettings()` - 36 edges
+3. `useSettings()` - 35 edges
 4. `expo-router` - 32 edges
 5. `db` - 24 edges
 6. `useGlass()` - 22 edges
@@ -120,28 +120,28 @@
 ## Communities (71 total, 39 thin omitted)
 
 ### Community 0 - "useThemeColors"
-Cohesion: 0.07
-Nodes (68): ForgotPasswordScreen(), LoginScreen(), mapAuthError(), FieldErrors, RegisterScreen(), AddCardsScreen(), Mode, CardEditorScreen() (+60 more)
+Cohesion: 0.06
+Nodes (75): ForgotPasswordScreen(), LoginScreen(), mapAuthError(), FieldErrors, RegisterScreen(), PublishDeckScreen(), AddCardsScreen(), Mode (+67 more)
 
 ### Community 1 - "types/index.ts"
 Cohesion: 0.06
-Nodes (71): QuizScreen(), StudySessionScreen(), shuffle(), WriteScreen(), AiGeneratorFormProps, DeckCardProps, FinishPromptModal(), FlashCard() (+63 more)
+Nodes (70): QuizScreen(), StudySessionScreen(), shuffle(), WriteScreen(), AiGeneratorFormProps, DeckCardProps, FinishPromptModal(), FlashCard() (+62 more)
 
 ### Community 2 - "achievements.ts"
 Cohesion: 0.09
-Nodes (38): AchievementsScreen(), stripEmoji(), LevelsScreen(), Emblem(), EmblemProps, GameIcon(), GameIconProps, GAME_ICON_PATHS (+30 more)
+Nodes (39): AchievementsScreen(), stripEmoji(), LevelsScreen(), Emblem(), EmblemProps, GameIcon(), GameIconProps, GAME_ICON_PATHS (+31 more)
 
 ### Community 3 - "TabBar.tsx"
 Cohesion: 0.19
 Nodes (10): TabsLayout(), TabBar(), TabSlotProps, IoniconName, TabBarIcon(), TabBarIconProps, TabIconName, TabBarCollapseContext (+2 more)
 
 ### Community 4 - "decks.tsx"
-Cohesion: 0.10
-Nodes (35): DECK_SORTS, DeckSort, DecksScreen(), ConflictResolution, ImportConflictModal(), Props, APP, applyCardImport() (+27 more)
+Cohesion: 0.09
+Nodes (41): DECK_SORTS, DeckSort, DecksScreen(), Props, ConflictResolution, ImportConflictModal(), Props, useStudyModePicker() (+33 more)
 
 ### Community 5 - "database.ts"
 Cohesion: 0.09
-Nodes (46): AuthorReply(), CommunityDeckScreen(), Metric(), MiniAvatar(), PublishDeckScreen(), PublishToggleProps, AuthContextType, NewDeckInput (+38 more)
+Nodes (41): AuthorReply(), CommunityDeckScreen(), Metric(), MiniAvatar(), PublishToggleProps, NewDeckInput, sanitizeInterval(), CommunitySort (+33 more)
 
 ### Community 6 - "settings.tsx"
 Cohesion: 0.20
@@ -183,21 +183,21 @@ Nodes (9): Android Adaptive Icon Foreground Layer, Blink Product Identity, Blink
 Cohesion: 0.07
 Nodes (26): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+18 more)
 
-### Community 17 - "deck/[id].tsx"
-Cohesion: 0.27
-Nodes (10): accuracyColor(), DeckDetailScreen(), Tab, exportCards(), exportDeck(), slugify(), StudySession, sessionAccuracy() (+2 more)
+### Community 17 - "progress.tsx"
+Cohesion: 0.19
+Nodes (15): accuracyColor(), DeckDetailScreen(), Tab, ProgressScreen(), DeckAvatar(), DeckAvatarProps, DeckMiniCard(), DeckMiniCardProps (+7 more)
 
 ### Community 18 - "Blink App Icon (1024px)"
 Cohesion: 0.62
 Nodes (7): Blink Brand Palette (Deep Navy + Teal Accent + Off-White), Flashcard Stack Motif, Card Flip Arrow Glyph, Blink App Icon (1024px), Spaced Repetition Product Identity, Squircle Launcher Geometry (1024 Master Asset), Winking Face Mark (Blink)
 
-### Community 19 - "progress.tsx"
-Cohesion: 0.15
-Nodes (21): HomeScreen(), ProfileScreen(), ProgressScreen(), StatCard(), GoalSlider(), GoalSliderProps, StreakBadge(), StreakBadgeProps (+13 more)
+### Community 19 - "index.tsx"
+Cohesion: 0.18
+Nodes (12): HomeScreen(), ProfileScreen(), GoalSlider(), GoalSliderProps, StreakBadge(), StreakBadgeProps, Card(), useStreak() (+4 more)
 
 ### Community 20 - "GlassSurface.tsx"
-Cohesion: 0.10
-Nodes (29): DeckOption, DeckPickerModal(), Props, EnterAnimation(), EnterAnimationProps, FilterSheet(), FilterSheetProps, Props (+21 more)
+Cohesion: 0.11
+Nodes (29): StatCard(), DeckOption, DeckPickerModal(), EnterAnimation(), EnterAnimationProps, FilterSheet(), FilterSheetProps, Props (+21 more)
 
 ### Community 22 - "metro.config.js"
 Cohesion: 0.50
@@ -217,11 +217,11 @@ Nodes (3): For /graphify add, For --watch, graphify reference: add a URL and wat
 
 ### Community 36 - "app/_layout.tsx"
 Cohesion: 0.06
-Nodes (39): plugins, FONT_BASE, FONT_SCALE, LEADING_BASE, NotificationController(), RootNavigator(), THEME_MAP, ThemeController() (+31 more)
+Nodes (38): plugins, FONT_BASE, FONT_SCALE, LEADING_BASE, NotificationController(), RootNavigator(), THEME_MAP, ThemeController() (+30 more)
 
 ### Community 37 - "community.tsx"
-Cohesion: 0.12
-Nodes (19): COMMUNITY_SORTS, CommunityScreen(), LIST_TITLE, DeckAvatar(), DeckAvatarProps, DeckCard(), DeckMiniCard(), DeckMiniCardProps (+11 more)
+Cohesion: 0.14
+Nodes (16): COMMUNITY_SORTS, CommunityScreen(), LIST_TITLE, DeckCard(), SortOption, LoadError(), LoadErrorProps, RevealSearchBar() (+8 more)
 
 ### Community 40 - "graphify reference: commit hook and native CLAUDE.md integration"
 Cohesion: 0.50
@@ -240,7 +240,7 @@ Nodes (4): ActivityHeatmap(), ActivityHeatmapProps, alphaHex(), levelFor()
   assets/brand/blink_adaptive_foreground.png · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **231 isolated node(s):** `name`, `slug`, `version`, `orientation`, `userInterfaceStyle` (+226 more)
+- **232 isolated node(s):** `name`, `slug`, `version`, `orientation`, `userInterfaceStyle` (+227 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **39 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -249,15 +249,15 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `Blink Product Identity` and `Spaced Repetition Card Review Loop`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `useThemeColors()` connect `useThemeColors` to `types/index.ts`, `achievements.ts`, `TabBar.tsx`, `app/_layout.tsx`, `database.ts`, `settings.tsx`, `community.tsx`, `decks.tsx`, `ActivityHeatmap.tsx`, `deck/[id].tsx`, `progress.tsx`, `GlassSurface.tsx`?**
-  _High betweenness centrality (0.110) - this node is a cross-community bridge._
-- **Why does `expo-router` connect `progress.tsx` to `useThemeColors`, `types/index.ts`, `achievements.ts`, `TabBar.tsx`, `app/_layout.tsx`, `database.ts`, `settings.tsx`, `community.tsx`, `decks.tsx`, `deck/[id].tsx`, `GlassSurface.tsx`?**
-  _High betweenness centrality (0.055) - this node is a cross-community bridge._
-- **Why does `plugins` connect `app/_layout.tsx` to `progress.tsx`, `expo`?**
+- **Why does `useThemeColors()` connect `useThemeColors` to `types/index.ts`, `achievements.ts`, `TabBar.tsx`, `app/_layout.tsx`, `database.ts`, `settings.tsx`, `community.tsx`, `decks.tsx`, `ActivityHeatmap.tsx`, `progress.tsx`, `index.tsx`, `GlassSurface.tsx`?**
+  _High betweenness centrality (0.109) - this node is a cross-community bridge._
+- **Why does `expo-router` connect `index.tsx` to `useThemeColors`, `types/index.ts`, `achievements.ts`, `TabBar.tsx`, `app/_layout.tsx`, `database.ts`, `settings.tsx`, `community.tsx`, `decks.tsx`, `progress.tsx`, `GlassSurface.tsx`?**
+  _High betweenness centrality (0.056) - this node is a cross-community bridge._
+- **Why does `plugins` connect `app/_layout.tsx` to `useThemeColors`, `index.tsx`, `expo`?**
   _High betweenness centrality (0.045) - this node is a cross-community bridge._
 - **What connects `name`, `slug`, `version` to the rest of the system?**
-  _231 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _232 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `useThemeColors` be split into smaller, more focused modules?**
-  _Cohesion score 0.06732456140350877 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0638536221060493 - nodes in this community are weakly interconnected._
 - **Should `types/index.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.05972288580984233 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06056166056166056 - nodes in this community are weakly interconnected._

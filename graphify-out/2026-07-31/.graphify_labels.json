@@ -41,7 +41,7 @@
   "39": "expo-router",
   "40": "graphify reference: commit hook and native CLAUDE.md integration",
   "41": "expo-sharing",
-  "42": "date-fns",
+  "42": "@react-native-async-storage/async-storage",
   "43": "expo-status-bar",
   "44": "@expo/vector-icons",
   "45": "nativewind",
