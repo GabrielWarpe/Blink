@@ -11,55 +11,59 @@ export default function TabsLayout() {
     // ambas descendentes dele, e é por ele que a rolagem chega até a barra.
     <TabBarCollapseProvider>
       <Tabs
-        // Barra própria (pílula de vidro flutuante). Todo o estilo do contêiner
-        // e as animações vivem nos componentes; aqui ficam só as rotas, seus
-        // ícones e seus rótulos.
+        // Barra própria (largura cheia, opaca, colada no fundo). Todo o estilo
+        // do contêiner e as animações vivem nos componentes; aqui ficam só as
+        // rotas e seus ícones.
+        //
+        // `tabBarAccessibilityLabel` em TODAS: a barra não tem mais rótulo
+        // visível, então este texto é a única forma de um leitor de tela saber
+        // o que é cada aba. Sem ele, VoiceOver/TalkBack anunciariam só "botão".
         tabBar={props => <TabBar {...props} />}
         screenOptions={{ headerShown: false }}
       >
         <Tabs.Screen
           name="index"
           options={{
+            tabBarAccessibilityLabel: 'Início',
             tabBarIcon: ({ focused }) => (
-              <TabBarIcon icon="home" label="Início" focused={focused} />
+              <TabBarIcon icon="home" focused={focused} />
             ),
           }}
         />
         <Tabs.Screen
           name="decks"
           options={{
+            tabBarAccessibilityLabel: 'Decks',
             tabBarIcon: ({ focused }) => (
-              <TabBarIcon icon="albums" label="Decks" focused={focused} />
+              <TabBarIcon icon="albums" focused={focused} />
             ),
           }}
         />
         <Tabs.Screen
           name="community"
           options={{
+            tabBarAccessibilityLabel: 'Comunidade',
             tabBarIcon: ({ focused }) => (
-              <TabBarIcon icon="earth" label="Comunidade" focused={focused} />
+              <TabBarIcon icon="earth" focused={focused} />
             ),
           }}
         />
         <Tabs.Screen
           name="progress"
           options={{
+            tabBarAccessibilityLabel: 'Progresso',
             tabBarIcon: ({ focused }) => (
-              <TabBarIcon
-                icon="stats-chart"
-                label="Progresso"
-                focused={focused}
-              />
+              <TabBarIcon icon="stats-chart" focused={focused} />
             ),
           }}
         />
         <Tabs.Screen
           name="profile"
           options={{
+            tabBarAccessibilityLabel: 'Perfil',
             tabBarIcon: ({ focused }) => (
               <TabBarIcon
                 icon="person"
-                label="Perfil"
                 focused={focused}
                 avatarUri={profile?.avatar_url}
               />

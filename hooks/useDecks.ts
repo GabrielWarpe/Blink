@@ -20,10 +20,20 @@ export function useDecks() {
   const { user } = useAuth();
   const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
+  /**
+   * Falha da última carga, ou `null`.
+   *
+   * Existe porque, sem ela, uma consulta que EXPLODE e uma conta que de fato
+   * não tem deck produzem a mesma tela: lista vazia. Quem olha não distingue
+   * "sem decks" de "sem internet" ou "RLS barrou" — e a exceção nem aparecia,
+   * porque o `useFocusEffect` chama `void load()` e a rejeição se perde.
+   */
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) {
       setDecks([]);
+      setError(null);
       setLoading(false);
       return;
     }
@@ -31,6 +41,11 @@ export function useDecks() {
     try {
       const data = await db.decks.getAll(user.id);
       setDecks(data);
+      setError(null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Erro desconhecido';
+      if (__DEV__) console.warn(`[Blink/decks] não carregou: ${msg}`);
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -74,5 +89,5 @@ export function useDecks() {
     [load],
   );
 
-  return { decks, loading, createDeck, deleteDeck, reload: load };
+  return { decks, loading, error, createDeck, deleteDeck, reload: load };
 }

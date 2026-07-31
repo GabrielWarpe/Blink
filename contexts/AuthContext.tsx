@@ -95,10 +95,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Conta recém-criada: a trigger que insere em `profiles` pode não ter
+    // rodado ainda. Uma segunda tentativa resolve o caso comum.
     await new Promise(resolve => setTimeout(resolve, 1200));
     const retry = await db.profile.get(userId);
     if (retry) {
       setProfile(retry);
+      return;
+    }
+
+    // Só desloga com a ausência CONFIRMADA pelo servidor. `get` devolve `null`
+    // também quando a consulta falha, e deslogar alguém por causa de uma queda
+    // de rede seria pior que deixá-lo sem perfil por um instante.
+    const exists = await db.profile.exists(userId);
+    if (exists !== false) {
+      if (__DEV__) {
+        console.warn(
+          '[Blink/auth] Perfil não carregou, mas a ausência NÃO foi ' +
+            'confirmada (provável falha de rede). Mantendo a sessão.',
+        );
+      }
       return;
     }
 
@@ -146,8 +162,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      if (session) void fetchProfile(session.user.id);
-      else setProfile(null);
+      // NUNCA chamar o Supabase DENTRO deste callback. Ele roda segurando o
+      // lock interno de auth do cliente, e toda chamada `supabase.*` — de uma
+      // consulta comum (que precisa do access token) a um `signOut` — espera
+      // esse mesmo lock. O resultado é um impasse: o callback não termina
+      // porque espera a consulta, e a consulta não anda porque espera o
+      // callback. O app fica carregando para sempre, sem erro nenhum.
+      //
+      // `setTimeout(…, 0)` empurra o trabalho para o próximo tick: o callback
+      // retorna, o lock é liberado, e aí sim `fetchProfile` roda.
+      if (session) {
+        const uid = session.user.id;
+        setTimeout(() => void fetchProfile(uid), 0);
+      } else setProfile(null);
       // SIGNED_IN = login/registro de verdade → habilita o onboarding.
       // INITIAL_SESSION/TOKEN_REFRESHED (reabertura) NÃO disparam.
       if (event === 'SIGNED_IN') setFreshLogin(true);

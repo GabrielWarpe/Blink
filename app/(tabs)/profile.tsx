@@ -41,7 +41,6 @@ export default function ProfileScreen() {
   const tabScroll = useTabBarScroll();
 
   const name = profile?.name ?? 'Estudante';
-  const initial = (name.trim()[0] ?? 'R').toUpperCase();
   const memberSince = profile?.created_at
     ? new Date(profile.created_at).getFullYear()
     : null;
@@ -111,6 +110,41 @@ export default function ProfileScreen() {
     }
   };
 
+  /** Volta ao bonequinho: `avatar_url` é anulável, então basta limpar. */
+  const removeAvatar = async () => {
+    if (!user || savingAvatar) return;
+    setSavingAvatar(true);
+    try {
+      await db.profile.update(user.id, { avatar_url: null });
+      await refreshProfile();
+    } catch {
+      Alert.alert('Erro', 'Não foi possível remover a foto.');
+    } finally {
+      setSavingAvatar(false);
+    }
+  };
+
+  /**
+   * Toque no avatar. Com foto, abre o menu (trocar / remover); sem foto, vai
+   * direto à galeria — um menu de uma opção só seria um toque a mais por nada.
+   */
+  const handleAvatarPress = () => {
+    if (savingAvatar) return;
+    if (!profile?.avatar_url) {
+      void pickAvatar();
+      return;
+    }
+    Alert.alert('Foto de perfil', undefined, [
+      { text: 'Escolher outra foto', onPress: () => void pickAvatar() },
+      {
+        text: 'Remover foto',
+        style: 'destructive',
+        onPress: () => void removeAvatar(),
+      },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  };
+
   // Cards dominados + conquistas; recarrega ao focar a aba.
   const [mastered, setMastered] = useState(0);
   const [achievementsCount, setAchievementsCount] = useState(0);
@@ -174,31 +208,33 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Avatar com anel + nome */}
+        {/* Avatar + nome */}
         <View className="items-center">
           <TouchableOpacity
-            onPress={pickAvatar}
+            onPress={handleAvatarPress}
             activeOpacity={0.85}
             disabled={savingAvatar}
+            accessibilityRole="button"
+            accessibilityLabel={
+              profile?.avatar_url
+                ? 'Trocar ou remover a foto de perfil'
+                : 'Escolher uma foto de perfil'
+            }
             className="relative"
           >
-            <View
-              className="rounded-full p-1"
-              style={{ borderWidth: 3, borderColor: colors.primary }}
-            >
-              {profile?.avatar_url ? (
-                <Image
-                  source={{ uri: profile.avatar_url }}
-                  className="w-24 h-24 rounded-full"
-                />
-              ) : (
-                <View className="w-24 h-24 rounded-full bg-primary-container items-center justify-center">
-                  <Text className="text-on-primary-container font-jakarta-extrabold text-4xl">
-                    {initial}
-                  </Text>
-                </View>
-              )}
-            </View>
+            {/* Sem anel em volta e sem inicial: com foto, ela aparece sozinha;
+                sem foto, o bonequinho — o mesmo glifo da barra de abas, para o
+                usuário sem avatar ver a MESMA coisa nos dois lugares. */}
+            {profile?.avatar_url ? (
+              <Image
+                source={{ uri: profile.avatar_url }}
+                className="w-24 h-24 rounded-full"
+              />
+            ) : (
+              <View className="w-24 h-24 rounded-full bg-surface-container items-center justify-center">
+                <Ionicons name="person" size={48} color={colors.outline} />
+              </View>
+            )}
             {/* Badge de câmera */}
             <View
               className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary-container items-center justify-center"

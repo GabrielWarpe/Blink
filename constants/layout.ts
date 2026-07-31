@@ -11,32 +11,30 @@
  */
 
 /**
- * Ícone + folga + linha do rótulo + `TAB_BAR_PAD_V * 2` somam a altura útil da
- * barra, hoje 52 (22 + 2 + 12 + 16) — ver `TAB_BAR_HEIGHT`. Mexer em qualquer
- * um destes quatro muda essa altura, e com ela o recuo de todas as telas.
+ * Tamanho do ícone — o ÚNICO conteúdo de uma aba, já que não há rótulo.
+ *
+ * 26, não os 22 de quando havia texto embaixo: sem o rótulo dividindo a
+ * atenção, o ícone é quem carrega o significado da aba e precisa do peso. É o
+ * mesmo movimento que o X faz.
  */
-export const TAB_ICON_SIZE = 22;
-export const TAB_ICON_LABEL_GAP = 2;
-/** Rótulo pequeno por pedido direto — é apoio ao ícone, não protagonista. */
-export const TAB_LABEL_SIZE = 9;
-export const TAB_LABEL_LINE = 12;
-
-/** Bloco do rótulo (folga + linha). Altura fixa: o rótulo está sempre visível. */
-export const TAB_LABEL_BLOCK = TAB_ICON_LABEL_GAP + TAB_LABEL_LINE;
+export const TAB_ICON_SIZE = 26;
 
 /**
- * Respiro vertical da barra, acima e abaixo do conteúdo.
+ * Respiro vertical da barra, acima e abaixo do ícone.
  *
- * 8 põe a altura útil em 52, dentro da faixa das barras nativas (49 no iOS, 56
- * no Material). O inset seguro do aparelho entra POR FORA disto, como
- * `paddingBottom` — é o que faz a barra encostar no fundo sem o conteúdo dela
- * cair em cima do indicador de home ou dos botões de navegação do Android.
+ * 13 mantém a altura útil em 52 — exatamente a de antes, quando eram 22 de
+ * ícone mais o bloco do rótulo. Isso é deliberado: a altura é a origem do
+ * recuo que TODAS as telas reservam no fim da rolagem (`useTabBarInset`), e
+ * mantê-la faz a saída dos rótulos não mexer no layout de nenhuma delas.
+ *
+ * O inset seguro do aparelho entra POR FORA disto, como `paddingBottom` — é o
+ * que faz a barra encostar no fundo sem o ícone cair em cima do indicador de
+ * home ou dos botões de navegação do Android.
  */
-export const TAB_BAR_PAD_V = 8;
+export const TAB_BAR_PAD_V = 13;
 
 /** Altura ÚTIL da barra, sem o inset seguro. Derivada, nunca chutada. */
-export const TAB_BAR_HEIGHT =
-  TAB_ICON_SIZE + TAB_LABEL_BLOCK + TAB_BAR_PAD_V * 2;
+export const TAB_BAR_HEIGHT = TAB_ICON_SIZE + TAB_BAR_PAD_V * 2;
 
 /** Respiro entre o fim do conteúdo rolável e o topo da barra. */
 export const TAB_CONTENT_GAP = 24;

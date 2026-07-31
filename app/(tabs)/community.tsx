@@ -15,6 +15,7 @@ import { listCommunityDecks, type CommunitySort } from '@/services/community';
 import type { CommunityDeckRow } from '@/types/db';
 import { DeckAvatar } from '@/components/DeckAvatar';
 import { EnterAnimation } from '@/components/EnterAnimation';
+import { LoadError } from '@/components/LoadError';
 import { useReplayOnFocus } from '@/hooks/useReplayOnFocus';
 import { CARD_RADIUS } from '@/constants/radius';
 import { StarRating } from '@/components/StarRating';
@@ -59,6 +60,8 @@ export default function CommunityScreen() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [decks, setDecks] = useState<CommunityDeckRow[]>([]);
   const [loading, setLoading] = useState(true);
+  /** Falha da última carga, ou `null`. Ver o `catch` de `load`. */
+  const [error, setError] = useState<string | null>(null);
 
   // Busca revelada ao puxar — mesma da aba Decks (ver `RevealSearchBar`). O
   // `useTabBarScroll` também precisa do evento, então os dois são compostos
@@ -75,6 +78,13 @@ export default function CommunityScreen() {
     setLoading(true);
     try {
       setDecks(await listCommunityDecks({ search, sort }));
+      setError(null);
+    } catch (e) {
+      // Sem isto, consulta que explode e vitrine de fato vazia dão a MESMA
+      // tela — e a exceção sumia, porque quem chama usa `void load()`.
+      const msg = e instanceof Error ? e.message : 'Erro desconhecido';
+      if (__DEV__) console.warn(`[Blink/comunidade] não carregou: ${msg}`);
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -242,7 +252,9 @@ export default function CommunityScreen() {
             </ScrollView>
           )}
 
-          {filtered.length === 0 ? (
+          {error ? (
+            <LoadError message={error} onRetry={() => void load()} />
+          ) : filtered.length === 0 ? (
             <View className="items-center justify-center px-8 pt-24">
               <View
                 className="w-16 h-16 rounded-card items-center justify-center mb-4"

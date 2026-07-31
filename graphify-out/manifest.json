@@ -25,18 +25,18 @@
     "semantic_hash": ""
   },
   "app/(tabs)/_layout.tsx": {
-    "mtime": 1785435718.0456123,
-    "ast_hash": "f72a78ca3a1308edd3dd1633220f9803",
+    "mtime": 1785451711.0506651,
+    "ast_hash": "6f856c2256902b803e31de40d23a3515",
     "semantic_hash": ""
   },
   "app/(tabs)/community.tsx": {
-    "mtime": 1785431574.733743,
-    "ast_hash": "905a4a9063368465e614ac45cd98b3be",
+    "mtime": 1785452637.2772617,
+    "ast_hash": "381760e9874fd352900867c7c880a80f",
     "semantic_hash": ""
   },
   "app/(tabs)/decks.tsx": {
-    "mtime": 1785434479.3552003,
-    "ast_hash": "7e66639559b220f69ae9de62836e0384",
+    "mtime": 1785452637.2775064,
+    "ast_hash": "910055bd013a40c9f743a6cf0ea25a56",
     "semantic_hash": ""
   },
   "app/(tabs)/index.tsx": {
@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "app/(tabs)/profile.tsx": {
-    "mtime": 1785343010.5062873,
-    "ast_hash": "3d8f83ee66c6ebdb6fb24e271d58c336",
+    "mtime": 1785452054.4555855,
+    "ast_hash": "6a4a51294ed33dd9f2074667430fc4a7",
     "semantic_hash": ""
   },
   "app/(tabs)/progress.tsx": {
@@ -325,8 +325,8 @@
     "semantic_hash": ""
   },
   "constants/layout.ts": {
-    "mtime": 1785435655.9904938,
-    "ast_hash": "6ad5874ae3a9252986e565bf487a47fa",
+    "mtime": 1785451684.410959,
+    "ast_hash": "ed9e0e11eacf934575c4fe17e0c1c222",
     "semantic_hash": ""
   },
   "constants/study.ts": {
@@ -340,8 +340,8 @@
     "semantic_hash": ""
   },
   "contexts/AuthContext.tsx": {
-    "mtime": 1785350390.2131212,
-    "ast_hash": "b0ef13d2c341d5057639c0ffbe67c013",
+    "mtime": 1785452887.1796513,
+    "ast_hash": "59e32d33bbe09c01c44afe21296a4213",
     "semantic_hash": ""
   },
   "contexts/OnboardingContext.tsx": {
@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   "hooks/useDecks.ts": {
-    "mtime": 1783578097.6575608,
-    "ast_hash": "49f1f032416c88b92bd03331f1ebf79d",
+    "mtime": 1785458255.3426108,
+    "ast_hash": "6c275231ffed79fb8987e473415b9bfa",
     "semantic_hash": ""
   },
   "hooks/useStreak.ts": {
@@ -440,8 +440,8 @@
     "semantic_hash": ""
   },
   "services/database.ts": {
-    "mtime": 1785350390.2278447,
-    "ast_hash": "6691424df25ae7189fc890eb1340a45c",
+    "mtime": 1785452875.575679,
+    "ast_hash": "317075f55d65a0cb43c73b805047281f",
     "semantic_hash": ""
   },
   "services/images.ts": {
@@ -565,8 +565,8 @@
     "semantic_hash": ""
   },
   "components/TabBarIcon.tsx": {
-    "mtime": 1785435709.2152445,
-    "ast_hash": "9b0f7567f5ec99f80b027b9a89d0a08a",
+    "mtime": 1785451667.5482252,
+    "ast_hash": "834cb9f89d402943291d81e2b73776e9",
     "semantic_hash": ""
   },
   "contexts/TabBarContext.tsx": {
@@ -697,6 +697,11 @@
   "components/TabBar.tsx": {
     "mtime": 1785435718.0453343,
     "ast_hash": "a5d76f6f7c080971a5d00d51b0fce01a",
+    "semantic_hash": ""
+  },
+  "components/LoadError.tsx": {
+    "mtime": 1785452627.7621934,
+    "ast_hash": "829be7da5a5d2b91567fbcc0b5116856",
     "semantic_hash": ""
   }
 }

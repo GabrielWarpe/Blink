@@ -6,18 +6,11 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   interpolate,
-  interpolateColor,
   Easing,
 } from 'react-native-reanimated';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSettings } from '@/contexts/SettingsContext';
-import {
-  TAB_ICON_SIZE,
-  TAB_LABEL_SIZE,
-  TAB_LABEL_LINE,
-  TAB_LABEL_BLOCK,
-  TAB_TRANSITION_MS,
-} from '@/constants/layout';
+import { TAB_ICON_SIZE, TAB_TRANSITION_MS } from '@/constants/layout';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -29,7 +22,6 @@ export type TabIconName = Extract<
 
 interface TabBarIconProps {
   icon: TabIconName;
-  label: string;
   focused: boolean;
   /** Se presente, mostra a foto do usuário no lugar do ícone. */
   avatarUri?: string | null;
@@ -37,31 +29,28 @@ interface TabBarIconProps {
 
 /** Escala do conteúdo na aba ativa — leve de propósito, é acento, não salto. */
 const ACTIVE_SCALE = 1.06;
+/** Opacidade da FOTO quando a aba não está ativa. Ver `avatarStyle`. */
+const AVATAR_INACTIVE_OPACITY = 0.5;
 
 /**
- * Conteúdo de uma aba: ícone + rótulo, com transição fluida entre inativo e
- * ativo.
+ * Conteúdo de uma aba: só o ícone, sem rótulo — o padrão do X, nas duas
+ * plataformas. Sem o texto embaixo, a barra fica com metade dos elementos e o
+ * ícone pode crescer (ver `TAB_ICON_SIZE`), que é o que dá a leitura limpa.
  *
- * Ícone e rótulo são renderizados DUAS vezes (contorno/Medium na cor inativa e
- * preenchido/SemiBold na cor ativa), sobrepostos, e a transição é um cross-fade
- * de opacidade. Isso resolve de uma vez a troca do glifo, a troca do peso da
- * fonte e a mudança de cor — tudo em opacidade, que é a propriedade mais barata
- * de animar e não depende de animar a cor de uma fonte de ícone (frágil).
+ * O ícone é renderizado DUAS vezes (contorno na cor inativa e preenchido na
+ * ativa), sobreposto, e a transição é um cross-fade de opacidade. Isso resolve
+ * de uma vez a troca do glifo e a mudança de cor — tudo em opacidade, que é a
+ * propriedade mais barata de animar e não depende de animar a cor de uma fonte
+ * de ícone (frágil).
  *
- * O ativo usa `onSurface` (claro), não `onPrimaryContainer` (escuro): não há
- * mais pílula por trás do item — o realce é o próprio ícone/rótulo contra o
- * fundo da barra, e cor escura ali ficaria ilegível.
+ * Na aba Perfil, a foto do usuário substitui o glifo. Sem foto, cai no
+ * bonequinho como qualquer outra aba — sem inicial nem placeholder próprio.
  */
-export function TabBarIcon({
-  icon,
-  label,
-  focused,
-  avatarUri,
-}: TabBarIconProps) {
+export function TabBarIcon({ icon, focused, avatarUri }: TabBarIconProps) {
   const colors = useThemeColors();
   const { settings } = useSettings();
 
-  // 0 = inativo, 1 = ativo. Uma única fonte para escala, cor e cross-fade.
+  // 0 = inativo, 1 = ativo. Uma única fonte para escala e cross-fade.
   const progress = useSharedValue(focused ? 1 : 0);
   useEffect(() => {
     const target = focused ? 1 : 0;
@@ -78,66 +67,23 @@ export function TabBarIcon({
       { scale: interpolate(progress.value, [0, 1], [1, ACTIVE_SCALE]) },
     ],
   }));
-  // Cross-fade entre as duas variantes sobrepostas — nada mais entra na conta:
-  // o rótulo está sempre visível desde que a barra deixou de encolher.
   const inactiveIconStyle = useAnimatedStyle(() => ({
     opacity: 1 - progress.value,
   }));
   const activeIconStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
-  const inactiveLabelStyle = useAnimatedStyle(() => ({
-    opacity: 1 - progress.value,
-  }));
-  const activeLabelStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
-  }));
-  // Cor→cor (nunca partindo de 'transparent'): interpolar a partir de um alfa
-  // zero passa por cinzas no meio do caminho e suja o anel.
-  const avatarRingStyle = useAnimatedStyle(() => ({
-    borderColor: interpolateColor(
-      progress.value,
-      [0, 1],
-      [colors.outline, colors.onSurface],
-    ),
-  }));
-
   /**
-   * Teto do fator de fonte do sistema, SÓ para o rótulo da barra.
-   *
-   * O `lineHeight` aqui é fixo (`TAB_LABEL_LINE`, 12) e a altura da barra é
-   * derivada dele, então o texto não tem para onde crescer: a partir de ~130%
-   * ele começa a ser cortado na vertical. O Android põe o ajuste de fonte (e o
-   * de "tamanho de exibição") a dois toques nas configurações, então isso é
-   * cenário comum, não caso de borda. 1.2 é o ponto em que ainda cabe.
-   *
-   * Vale APENAS aqui — o resto do app continua acompanhando a fonte do sistema
-   * sem limite, porque lá o texto pode empurrar o layout.
+   * A foto não tem variante "preenchida" para trocar, e o anel que marcava o
+   * foco saiu a pedido. Sobra a opacidade: apagada quando inativa, cheia quando
+   * ativa — o mesmo contraste que separa contorno de preenchido nas outras
+   * abas, só que aplicado à imagem.
    */
-  const LABEL_MAX_FONT_SCALE = 1.2;
-
-  const labelBase = {
-    position: 'absolute' as const,
-    bottom: 0,
-    width: '100%' as const,
-    fontSize: TAB_LABEL_SIZE,
-    lineHeight: TAB_LABEL_LINE,
-    // Sem espaçamento extra: em "Comunidade" os 0.2 antigos somavam ~2px, e
-    // são exatamente os px que faltam para o texto caber dentro da curva da
-    // pílula ativa (ver TAB_ITEM_RADIUS).
-    letterSpacing: 0,
-    textAlign: 'center' as const,
-  };
+  const avatarStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [AVATAR_INACTIVE_OPACITY, 1]),
+  }));
 
   return (
     <Animated.View
-      style={[
-        {
-          width: '100%',
-          paddingHorizontal: 2,
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-        scaleStyle,
-      ]}
+      style={[{ alignItems: 'center', justifyContent: 'center' }, scaleStyle]}
     >
       {avatarUri ? (
         <Animated.View
@@ -146,12 +92,11 @@ export function TabBarIcon({
               width: TAB_ICON_SIZE,
               height: TAB_ICON_SIZE,
               borderRadius: TAB_ICON_SIZE / 2,
-              // Anel sempre presente: só a COR anima (inativa → ativa), senão a
-              // espessura saltaria de 0 para 2 num único frame.
-              borderWidth: 2,
+              // Recorte circular SEM borda: o raio faz a máscara e o
+              // `overflow` a aplica à imagem. Nenhum anel em volta.
               overflow: 'hidden',
             },
-            avatarRingStyle,
+            avatarStyle,
           ]}
         >
           <Image source={{ uri: avatarUri }} style={StyleSheet.absoluteFill} />
@@ -174,37 +119,6 @@ export function TabBarIcon({
           </Animated.View>
         </View>
       )}
-
-      {/* Altura fixa: as duas variantes do rótulo são sobrepostas
-          (`position: absolute`), então sem ela o bloco fecharia em zero. */}
-      <View style={{ width: '100%', height: TAB_LABEL_BLOCK }}>
-        <Animated.Text
-          numberOfLines={1}
-          maxFontSizeMultiplier={LABEL_MAX_FONT_SCALE}
-          style={[
-            labelBase,
-            // Medium (não Regular) no inativo: o peso 400 fica lavado no escuro.
-            { color: colors.outline, fontFamily: 'Inter_500Medium' },
-            inactiveLabelStyle,
-          ]}
-        >
-          {label}
-        </Animated.Text>
-        <Animated.Text
-          numberOfLines={1}
-          maxFontSizeMultiplier={LABEL_MAX_FONT_SCALE}
-          style={[
-            labelBase,
-            {
-              color: colors.onSurface,
-              fontFamily: 'Inter_600SemiBold',
-            },
-            activeLabelStyle,
-          ]}
-        >
-          {label}
-        </Animated.Text>
-      </View>
     </Animated.View>
   );
 }

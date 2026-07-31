@@ -501,6 +501,27 @@ export const db = {
     },
 
     /**
+     * A linha de `profiles` deste usuário existe de fato?
+     *
+     * `true`/`false` = resposta do servidor. **`null` = não deu para saber**
+     * (sem rede, RLS, servidor fora).
+     *
+     * Existe porque `get` devolve `null` tanto para "não existe" quanto para
+     * "a consulta falhou", e quem decide DESLOGAR alguém não pode confundir os
+     * dois — desconectar por causa de uma oscilação de rede seria pior que o
+     * problema que a checagem resolve. `head: true` não traz linha nenhuma,
+     * só a contagem.
+     */
+    async exists(userId: string): Promise<boolean | null> {
+      const { error, count } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('id', userId);
+      if (error) return null;
+      return (count ?? 0) > 0;
+    },
+
+    /**
      * Recalcula a sequência (streak) a partir das datas reais das sessões.
      * Determinístico e auto-corretivo — não confia em um contador acumulado.
      */

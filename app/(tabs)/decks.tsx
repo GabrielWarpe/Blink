@@ -35,6 +35,7 @@ import { canExport } from '@/utils/community';
 import { DeckCard } from '@/components/DeckCard';
 import { SwipeableDeckRow } from '@/components/SwipeableDeckRow';
 import { EnterAnimation } from '@/components/EnterAnimation';
+import { LoadError } from '@/components/LoadError';
 import { useReplayOnFocus } from '@/hooks/useReplayOnFocus';
 import { CARD_RADIUS } from '@/constants/radius';
 import {
@@ -66,7 +67,7 @@ export default function DecksScreen() {
   const router = useRouter();
   const picker = useStudyModePicker();
   const { user } = useAuth();
-  const { decks, reload, deleteDeck } = useDecks();
+  const { decks, error, reload, deleteDeck } = useDecks();
   const colors = useThemeColors();
   const tabBar = useTabBarInset();
   const tabScroll = useTabBarScroll();
@@ -335,6 +336,9 @@ export default function DecksScreen() {
           </View>
         }
         ListEmptyComponent={
+          error ? (
+            <LoadError message={error} onRetry={() => void reload()} />
+          ) : (
           <View className="items-center mt-16 px-6">
             <View
               className="w-16 h-16 rounded-card items-center justify-center mb-4"
@@ -357,6 +361,7 @@ export default function DecksScreen() {
                 : 'Toque em + para criar seu primeiro deck'}
             </Text>
           </View>
+          )
         }
         renderItem={({ item, index }) => (
           <EnterAnimation
