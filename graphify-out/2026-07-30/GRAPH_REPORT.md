@@ -1,7 +1,7 @@
 # Graph Report - Blink  (2026-07-30)
 
 ## Corpus Check
-- 138 files · ~103,406 words
+- 138 files · ~103,736 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
