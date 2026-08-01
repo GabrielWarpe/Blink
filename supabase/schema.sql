@@ -500,3 +500,87 @@ drop policy if exists "Users delete own card images" on storage.objects;
 create policy "Users delete own card images" on storage.objects
   for delete to authenticated
   using (bucket_id = 'card-images' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ── Storage: documentos enviados para geração por IA ─────────────────────────
+-- Bucket PRIVADO, ao contrário do `card-images`: aqui vive o material de estudo
+-- que o usuário enviou (apostila, capítulo de livro, prova) e as figuras cruas
+-- extraídas dele. Só o dono lê. As figuras que viram card são COPIADAS para o
+-- `card-images` — nada deste bucket é servido publicamente.
+--
+-- Layout: {user_id}/{job_id}/source.pdf
+--         {user_id}/{job_id}/bundle.json     (texto + posições + catálogo)
+--         {user_id}/{job_id}/img/0003.png    (figuras extraídas)
+insert into storage.buckets (id, name, public)
+values ('imports', 'imports', false)
+on conflict (id) do update set public = false;
+
+drop policy if exists "Users read own imports" on storage.objects;
+create policy "Users read own imports" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'imports' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "Users upload own imports" on storage.objects;
+create policy "Users upload own imports" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'imports' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "Users delete own imports" on storage.objects;
+create policy "Users delete own imports" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'imports' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ── Geração por IA a partir de documento: fila de trabalhos ─────────────────
+-- Extrair + analisar figuras + gerar cards leva dezenas de segundos, tempo
+-- demais para uma requisição que o app fica segurando. O trabalho vira uma
+-- linha aqui: a Edge Function processa em segundo plano e atualiza `status`,
+-- e o app acompanha o progresso lendo esta tabela.
+create table if not exists import_jobs (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references profiles(id) on delete cascade not null,
+  status text not null default 'queued' check (
+    status in ('queued', 'extracting', 'generating', 'assembling', 'done', 'error')
+  ),
+  -- Origem
+  source_name text not null,
+  source_path text not null,
+  -- Parâmetros da geração (espelham o formulário do app)
+  mode text not null default 'flashcards' check (mode in ('flashcards', 'quiz')),
+  card_count integer not null default 10 check (card_count between 1 and 30),
+  language text not null default 'pt-BR',
+  -- Saída: cards prontos (já com URLs das imagens) + números da extração,
+  -- para a UI explicar o que aconteceu ("12 cards, 4 com figura").
+  result jsonb,
+  stats jsonb,
+  -- Falha: código estável para a UI + mensagem para o usuário.
+  error_code text,
+  error_message text,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+create index if not exists idx_import_jobs_user on import_jobs(user_id, created_at desc);
+
+alter table import_jobs enable row level security;
+
+drop policy if exists "Users manage own import jobs" on import_jobs;
+create policy "Users manage own import jobs" on import_jobs
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+-- `updated_at` é o que o app usa para detectar avanço; manter na mão em cada
+-- transição de status daria um esquecimento garantido.
+create or replace function public.touch_import_job()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists trg_touch_import_job on import_jobs;
+create trigger trg_touch_import_job
+  before update on import_jobs
+  for each row execute procedure public.touch_import_job();
+
+notify pgrst, 'reload schema';

@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "components/AiGeneratorForm.tsx": {
-    "mtime": 1785619631.930421,
-    "ast_hash": "ebd708b73e4aeac790ae85be38352bab",
+    "mtime": 1784269341.6777792,
+    "ast_hash": "c6bfeefc986f16543709ae0afbf83f39",
     "semantic_hash": ""
   },
   "components/CardImagePicker.tsx": {
@@ -445,8 +445,8 @@
     "semantic_hash": ""
   },
   "services/images.ts": {
-    "mtime": 1785619559.848289,
-    "ast_hash": "e3461e2fce924bad386322941144a01e",
+    "mtime": 1783558702.2674873,
+    "ast_hash": "920e8a4ea4bdefb5dbd5d4723c691eea",
     "semantic_hash": ""
   },
   "services/notifications.ts": {
@@ -705,13 +705,13 @@
     "semantic_hash": ""
   },
   "extractor/extract.py": {
-    "mtime": 1785619451.5169716,
-    "ast_hash": "fcb2ddd0b46b60703c7d45440e15de8f",
+    "mtime": 1785617298.4013171,
+    "ast_hash": "60154c02d46c79af0907b5732b5d5f76",
     "semantic_hash": ""
   },
   "extractor/main.py": {
-    "mtime": 1785619462.3314986,
-    "ast_hash": "89c2aa8b9974440ca88b6e495b80ca41",
+    "mtime": 1785617335.8970335,
+    "ast_hash": "993a5e84e5d9d1d4b988b634aabf67ab",
     "semantic_hash": ""
   },
   "extractor/storage.py": {
@@ -727,16 +727,6 @@
   "extractor/requirements.txt": {
     "mtime": 1785617341.6112578,
     "ast_hash": "f993a0d536189b0b25ee59edd47203ee",
-    "semantic_hash": ""
-  },
-  "lib/api/importDocument.ts": {
-    "mtime": 1785619581.9092805,
-    "ast_hash": "5585985e5a7702e72a67ef8d9489718a",
-    "semantic_hash": ""
-  },
-  "supabase/functions/generate-cards-doc/index.ts": {
-    "mtime": 1785619540.581978,
-    "ast_hash": "fc8272c368f03517a3bbec95b677ab3e",
     "semantic_hash": ""
   }
 }

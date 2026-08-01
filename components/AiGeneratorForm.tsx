@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
@@ -11,6 +17,11 @@ import {
   type GenerateContentType,
   type GenerateMode,
 } from '@/lib/api/generateCards';
+import {
+  importDocument,
+  IMPORT_STATUS_LABEL,
+  type ImportStatus,
+} from '@/lib/api/importDocument';
 import { makeFlashcard } from '@/services/ai';
 import { pickCardImages } from '@/services/images';
 import { Input } from '@/components/ui/Input';
@@ -54,6 +65,9 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
   const [genMode, setGenMode] = useState<GenerateMode>('flashcards');
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [generating, setGenerating] = useState(false);
+  // Só o caminho de PDF tem progresso: ele leva dezenas de segundos e o
+  // usuário precisa ver que não travou.
+  const [progress, setProgress] = useState<ImportStatus | null>(null);
 
   // ── Anexos ─────────────────────────────────────────────────────────────────
 
@@ -123,6 +137,28 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
     setGenerating(true);
     try {
       const n = Math.min(Math.max(parseInt(count, 10) || 10, 1), 30);
+
+      // PDF vai pelo pipeline de documento: extrai as figuras do arquivo e a
+      // IA decide quais ajudam a memorizar. Os demais anexos seguem no caminho
+      // antigo, que responde na hora.
+      if (attachment?.contentType === 'pdf') {
+        const doc = await importDocument(
+          { base64: attachment.base64, name: attachment.name, mode: genMode, count: n },
+          setProgress,
+        );
+        if (!doc.ok) {
+          Alert.alert('Não foi possível gerar', doc.message);
+          return;
+        }
+        onGenerated(
+          doc.cards.map(c =>
+            makeFlashcard(c.front, c.back, c.images, c.quizOptions),
+          ),
+        );
+        onTopic?.(attachment.name.replace(/\.[^.]+$/, ''));
+        return;
+      }
+
       const result = await generateCards({
         contentType: attachment?.contentType ?? 'text',
         content: attachment ? attachment.base64 : topic.trim(),
@@ -150,6 +186,7 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
       if (suggestion) onTopic?.(suggestion);
     } finally {
       setGenerating(false);
+      setProgress(null);
     }
   };
 
@@ -205,7 +242,23 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
             </TouchableOpacity>
           </View>
           <Text className="text-outline font-inter-regular text-xs">
-            O material será gerado a partir deste anexo.
+            {attachment.contentType === 'pdf'
+              ? 'As figuras do PDF entram nos cards quando ajudarem a memorizar.'
+              : 'O material será gerado a partir deste anexo.'}
+          </Text>
+        </View>
+      )}
+
+      {/* Progresso do PDF: sem isto o botão fica "Gerando..." por um minuto
+          sem dizer o que está acontecendo. */}
+      {progress != null && (
+        <View
+          className="flex-row items-center gap-2.5 bg-surface-container rounded-card px-3 py-2.5"
+          style={cardShadow}
+        >
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text className="flex-1 text-on-surface-variant font-inter-medium text-sm">
+            {IMPORT_STATUS_LABEL[progress]}
           </Text>
         </View>
       )}

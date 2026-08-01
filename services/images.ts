@@ -102,7 +102,7 @@ export function imageToDataUri(img: CardImage): string {
 }
 
 /** Decodifica base64 sem depender de `atob` (indisponível em alguns runtimes). */
-function base64ToBytes(b64: string): Uint8Array {
+export function base64ToBytes(b64: string): Uint8Array {
   const alphabet =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
   const clean = b64.replace(/[^A-Za-z0-9+/]/g, '');
