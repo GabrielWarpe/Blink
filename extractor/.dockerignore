@@ -1,0 +1,12 @@
+# Bytecode compilado: é da versão de Python da SUA máquina (3.14), e a imagem
+# roda 3.12 — copiar isso para dentro do container leva lixo incompatível.
+__pycache__/
+*.pyc
+*.pyo
+
+# Não pertencem à imagem
+.venv/
+venv/
+README.md
+fly.toml
+.dockerignore

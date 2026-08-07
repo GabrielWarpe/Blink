@@ -153,7 +153,7 @@ export default function LoginScreen() {
             <Link href="/(auth)/register" asChild>
               <TouchableOpacity>
                 <Text className="text-primary font-inter-semibold text-sm">
-                  Comece grátis
+                  Cadastre-se
                 </Text>
               </TouchableOpacity>
             </Link>

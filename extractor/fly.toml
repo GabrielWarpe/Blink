@@ -1,0 +1,32 @@
+# Deploy do serviço de extração no Fly.io. Ver README.md.
+#
+# O nome precisa ser único no Fly inteiro — se `fly launch` reclamar que já
+# existe, troque aqui e no comando.
+app = "blink-extractor"
+
+# São Paulo. A extração baixa o PDF do Storage do Supabase e sobe as figuras de
+# volta, então o que importa é a distância até o SUPABASE, não até o usuário.
+primary_region = "gru"
+
+[build]
+  # Vazio de propósito: o Fly usa o Dockerfile deste diretório sozinho.
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+
+  # ESCALA A ZERO — é isto que faz o custo ser praticamente nada.
+  # Sem nenhum pedido, nenhuma máquina fica de pé. O primeiro pedido depois da
+  # ociosidade paga alguns segundos de partida a frio; importar PDF é esporádico,
+  # então é uma troca boa.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  # 1 GiB é o mínimo confortável: PyMuPDF e Pillow trabalhando num PDF grande
+  # com muitas figuras consomem memória de verdade. Com menos, o processo morre
+  # no meio da extração.
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1
