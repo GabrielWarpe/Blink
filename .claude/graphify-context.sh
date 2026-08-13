@@ -29,15 +29,27 @@ done
 GODS="$("$GRAPHIFY" god-nodes --top 12 2>/dev/null)" || exit 0
 [ -n "$GODS" ] || exit 0
 
-# Frescor: o relatório grava o commit de origem; se divergir do HEAD, o grafo
-# está velho e o assistente precisa saber ANTES de confiar nele.
-FRESH=""
+# Frescor. NÃO comparar o commit do grafo com o HEAD: commitar o próprio grafo
+# move o HEAD, e um commit não conhece o próprio hash antes de existir, então o
+# grafo aponta para o commit anterior por construção — a comparação de hashes dá
+# "desatualizado" para sempre, mesmo com o grafo perfeito.
+#
+# A pergunta real é: mudou CÓDIGO desde que o grafo foi construído? Ignoramos
+# graphify-out/ em ambos os lados (commits e working tree).
+FRESH="Grafo em dia."
 BUILT="$(sed -n 's/^- Built from commit: `\(.*\)`$/\1/p' graphify-out/GRAPH_REPORT.md 2>/dev/null | head -1)"
-HEAD_SHA="$(git rev-parse --short=8 HEAD 2>/dev/null)"
-if [ -n "$BUILT" ] && [ -n "$HEAD_SHA" ] && [ "$BUILT" != "$HEAD_SHA" ]; then
-  FRESH="GRAFO DESATUALIZADO (construído em $BUILT, HEAD é $HEAD_SHA) — rode \`graphify update .\` antes de confiar nele."
-else
-  FRESH="Grafo em dia com o HEAD."
+
+STALE=""
+if [ -n "$BUILT" ] && git cat-file -e "$BUILT^{commit}" 2>/dev/null; then
+  # Arquivos de código tocados entre o commit do grafo e o HEAD.
+  STALE="$(git diff --name-only "$BUILT" HEAD -- . ':!graphify-out' 2>/dev/null | head -5)"
+fi
+# Mudanças ainda não commitadas também deixam o grafo velho.
+DIRTY="$(git status --porcelain -- . ':!graphify-out' 2>/dev/null | head -5)"
+
+if [ -n "$STALE" ] || [ -n "$DIRTY" ]; then
+  N=$(printf '%s\n%s' "$STALE" "$DIRTY" | grep -c . )
+  FRESH="GRAFO DESATUALIZADO ($N arquivo(s) de código mudaram desde a construção) — rode \`graphify update .\` antes de confiar nele."
 fi
 
 # Só o que é DINÂMICO entra aqui. O protocolo de uso (query/explain/path com
