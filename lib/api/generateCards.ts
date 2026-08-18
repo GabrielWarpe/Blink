@@ -56,20 +56,9 @@ interface GenerateParams {
 const FALLBACK_MESSAGE =
   'Não foi possível gerar os cards agora. Tente novamente.';
 
-const DOCX_MIME =
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-
-/** Deduz o content_type de um arquivo pelo mimetype/extensão (null = não suportado). */
-export function detectFileContentType(
-  mimeType: string | null | undefined,
-  name: string,
-): Exclude<GenerateContentType, 'text'> | null {
-  const lower = name.toLowerCase();
-  if (mimeType === 'application/pdf' || lower.endsWith('.pdf')) return 'pdf';
-  if (mimeType?.startsWith('image/')) return 'image';
-  if (mimeType === DOCX_MIME || lower.endsWith('.docx')) return 'docx';
-  return null;
-}
+// A detecção de formato do anexo vive em `lib/api/importDocument.ts`
+// (`detectSourceFormat`): é lá que está a lista de formatos suportados, e ter
+// duas listas para manter em sincronia era pedir para uma delas ficar velha.
 
 export async function generateCards({
   contentType,

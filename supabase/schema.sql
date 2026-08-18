@@ -584,3 +584,25 @@ create trigger trg_touch_import_job
   for each row execute procedure public.touch_import_job();
 
 notify pgrst, 'reload schema';
+
+-- ── Importação: extração como etapa própria (Fase 1) ────────────────────────
+-- Extrair o arquivo e gerar os cards eram uma coisa só. Separar as duas permite
+-- conferir o que saiu do documento — texto e figuras — antes de gastar um token
+-- de IA com ele, e é o que sustenta a tela de revisão da importação.
+--
+-- `source_mime` é o que faz o roteador do extrator escolher o formato certo;
+-- sem ele todo arquivo entrava como PDF.
+alter table import_jobs add column if not exists source_mime  text;
+alter table import_jobs add column if not exists extract_only boolean not null default false;
+-- Saída da extração, uniforme para qualquer formato de entrada:
+--   { texto, imagens: [{ image_id, path, url, largura, altura }], avisos, fonte }
+-- Separado de `result` de propósito: aquele é o card pronto, este é a matéria-prima.
+alter table import_jobs add column if not exists extraction   jsonb;
+
+-- `extracted` é terminal para job com `extract_only`.
+alter table import_jobs drop constraint if exists import_jobs_status_check;
+alter table import_jobs add constraint import_jobs_status_check check (
+  status in ('queued','extracting','extracted','generating','assembling','done','error')
+);
+
+notify pgrst, 'reload schema';

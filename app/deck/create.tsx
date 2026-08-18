@@ -16,7 +16,7 @@ import { makeFlashcard } from '@/services/ai';
 import { AiGeneratorForm } from '@/components/AiGeneratorForm';
 import {
   uploadCardImages,
-  imageToDataUri,
+  uploadDeckCover,
   type CardImage,
 } from '@/services/images';
 import { errorMessage } from '@/utils/errors';
@@ -147,8 +147,8 @@ export default function CreateDeckScreen() {
         });
       }
 
-      // Capa (se houver) vira data URI base64 salvo direto no deck — sem Storage.
-      const coverUrl = cover ? imageToDataUri(cover) : null;
+      // Capa (se houver) sobe para o Storage; no deck fica só a URL.
+      const coverUrl = cover ? await uploadDeckCover(user.id, cover) : null;
 
       const created = await createDeck({
         title: title.trim(),
@@ -302,6 +302,21 @@ export default function CreateDeckScreen() {
                 });
               }}
             />
+          )}
+
+          {/* Conferir a extração antes de gerar: mostra o texto e as figuras que
+              saem do arquivo, sem gastar geração com material que não rende. */}
+          {mode === 'ai' && (
+            <TouchableOpacity
+              onPress={() => router.push('/deck/import')}
+              activeOpacity={0.7}
+              className="flex-row items-center justify-center gap-1.5 py-2"
+            >
+              <Ionicons name="eye-outline" size={15} color={colors.outline} />
+              <Text className="text-outline font-inter-medium text-sm">
+                Ver o que sai de um arquivo
+              </Text>
+            </TouchableOpacity>
           )}
 
           {/* Manual Mode */}

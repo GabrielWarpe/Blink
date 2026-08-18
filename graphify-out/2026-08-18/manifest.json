@@ -1,0 +1,1577 @@
+{
+  "app.json": {
+    "mtime": 1785478543.7721992,
+    "ast_hash": "d6bec54cf7f13a9476d0c87dfc871110",
+    "semantic_hash": ""
+  },
+  "app/(auth)/_layout.tsx": {
+    "mtime": 1785292139.8651378,
+    "ast_hash": "551539e8afcdd4defe6d5a4ec28ace7a",
+    "semantic_hash": ""
+  },
+  "app/(auth)/forgot-password.tsx": {
+    "mtime": 1785292184.0645893,
+    "ast_hash": "36871e8adaff72b773a5cd7d5d1157e0",
+    "semantic_hash": ""
+  },
+  "app/(auth)/login.tsx": {
+    "mtime": 1786124090.1769235,
+    "ast_hash": "353e9658877e397439c7b5c9790e7219",
+    "semantic_hash": ""
+  },
+  "app/(auth)/register.tsx": {
+    "mtime": 1785348393.7602382,
+    "ast_hash": "526f207e9842aeef4c001682a1b4d434",
+    "semantic_hash": ""
+  },
+  "app/(tabs)/_layout.tsx": {
+    "mtime": 1785451711.0506651,
+    "ast_hash": "6f856c2256902b803e31de40d23a3515",
+    "semantic_hash": ""
+  },
+  "app/(tabs)/community.tsx": {
+    "mtime": 1786713786.7034388,
+    "ast_hash": "381760e9874fd352900867c7c880a80f",
+    "semantic_hash": ""
+  },
+  "app/(tabs)/decks.tsx": {
+    "mtime": 1786713786.7038772,
+    "ast_hash": "910055bd013a40c9f743a6cf0ea25a56",
+    "semantic_hash": ""
+  },
+  "app/(tabs)/index.tsx": {
+    "mtime": 1786713786.7044356,
+    "ast_hash": "9b72331957cefa613749c6340bdc6c5a",
+    "semantic_hash": ""
+  },
+  "app/(tabs)/profile.tsx": {
+    "mtime": 1785452054.4555855,
+    "ast_hash": "6a4a51294ed33dd9f2074667430fc4a7",
+    "semantic_hash": ""
+  },
+  "app/(tabs)/progress.tsx": {
+    "mtime": 1785249651.4111998,
+    "ast_hash": "37a779c88ba2be4d64b4179bcd7d7db8",
+    "semantic_hash": ""
+  },
+  "app/_layout.tsx": {
+    "mtime": 1787056918.8947663,
+    "ast_hash": "6787a1c482f8db54e3751b53409f76d0",
+    "semantic_hash": ""
+  },
+  "app/achievements.tsx": {
+    "mtime": 1785249651.4113562,
+    "ast_hash": "b999df4b8f810ed47c7561118288387c",
+    "semantic_hash": ""
+  },
+  "app/community/[id].tsx": {
+    "mtime": 1785343010.5065787,
+    "ast_hash": "09c23776afa570f355ce540d292a6354",
+    "semantic_hash": ""
+  },
+  "app/deck/[id].tsx": {
+    "mtime": 1784233059.7078211,
+    "ast_hash": "9f77641e6729b9c9e73d12393e7781b4",
+    "semantic_hash": ""
+  },
+  "app/deck/add-cards.tsx": {
+    "mtime": 1783580312.3254201,
+    "ast_hash": "60fff30eca77c7a29826729b1b38b8c1",
+    "semantic_hash": ""
+  },
+  "app/deck/card.tsx": {
+    "mtime": 1783578097.6554728,
+    "ast_hash": "a48b41102da2008938b08e3371e038ce",
+    "semantic_hash": ""
+  },
+  "app/deck/create.tsx": {
+    "mtime": 1787056928.2570927,
+    "ast_hash": "8e97f0b85f8ddc4c5fe93408e9a1fc83",
+    "semantic_hash": ""
+  },
+  "app/deck/edit.tsx": {
+    "mtime": 1785171477.524607,
+    "ast_hash": "8033f65a33db3cb6f7ee4064d9d307ee",
+    "semantic_hash": ""
+  },
+  "app/levels.tsx": {
+    "mtime": 1783638288.7984967,
+    "ast_hash": "e98c95878757d4e1764dae3a17d3a820",
+    "semantic_hash": ""
+  },
+  "app/onboarding.tsx": {
+    "mtime": 1785434458.326249,
+    "ast_hash": "a992eca20cf0d791729f9e1450b7fe89",
+    "semantic_hash": ""
+  },
+  "app/quiz/[deckId].tsx": {
+    "mtime": 1784741386.630376,
+    "ast_hash": "2af25c20163ba3f7502501361c43ff81",
+    "semantic_hash": ""
+  },
+  "app/reset-password.tsx": {
+    "mtime": 1784048826.0798156,
+    "ast_hash": "8f3a1568117c10a969e4986449c5d893",
+    "semantic_hash": ""
+  },
+  "app/settings.tsx": {
+    "mtime": 1785292167.6667318,
+    "ast_hash": "035dabc780e38000a56bfbf7ab765b32",
+    "semantic_hash": ""
+  },
+  "app/study/[deckId].tsx": {
+    "mtime": 1784741416.8804023,
+    "ast_hash": "5a7028010f47e39e17a157a07346ac57",
+    "semantic_hash": ""
+  },
+  "app/write/[deckId].tsx": {
+    "mtime": 1784748149.9680984,
+    "ast_hash": "bb5bab47ff3e15cdf9634e64a9bf8822",
+    "semantic_hash": ""
+  },
+  "babel.config.js": {
+    "mtime": 1782769349.9075217,
+    "ast_hash": "9442019e770922cbc67b632edf88a6dc",
+    "semantic_hash": ""
+  },
+  "components/ActivityHeatmap.tsx": {
+    "mtime": 1783126802.3924613,
+    "ast_hash": "276d181d90c1fd9cd1a607644028b549",
+    "semantic_hash": ""
+  },
+  "components/AiGeneratorForm.tsx": {
+    "mtime": 1787056839.1082635,
+    "ast_hash": "f33c36ce40558aea89acded58025506e",
+    "semantic_hash": ""
+  },
+  "components/CardImagePicker.tsx": {
+    "mtime": 1783397390.839444,
+    "ast_hash": "8233b833ba09656817eb56b800655f11",
+    "semantic_hash": ""
+  },
+  "components/CardImages.tsx": {
+    "mtime": 1783548460.1888127,
+    "ast_hash": "e0a748aea4b4b42bb4b09914da112bf1",
+    "semantic_hash": ""
+  },
+  "components/DeckAvatar.tsx": {
+    "mtime": 1784403354.0260417,
+    "ast_hash": "e784573db632ed28deb2c76fbd961e47",
+    "semantic_hash": ""
+  },
+  "components/DeckCard.tsx": {
+    "mtime": 1785292184.0634282,
+    "ast_hash": "e154fc867efccfd4d847782e7268b78d",
+    "semantic_hash": ""
+  },
+  "components/DeckCoverPicker.tsx": {
+    "mtime": 1785248985.536695,
+    "ast_hash": "0e01100fd3dffee569f0a201fc4ca598",
+    "semantic_hash": ""
+  },
+  "components/DeckMiniCard.tsx": {
+    "mtime": 1784313955.847684,
+    "ast_hash": "8f3fb62099bb979ae0f7a792d8075bc7",
+    "semantic_hash": ""
+  },
+  "components/DeckPickerModal.tsx": {
+    "mtime": 1785344974.0649621,
+    "ast_hash": "8c6842761e00da996ef47da8b8670307",
+    "semantic_hash": ""
+  },
+  "components/Emblem.tsx": {
+    "mtime": 1783626235.3440232,
+    "ast_hash": "2d22ea1e27e111aa10dcca255348743d",
+    "semantic_hash": ""
+  },
+  "components/FinishPromptModal.tsx": {
+    "mtime": 1785344559.217383,
+    "ast_hash": "094a9015459edb397b4b5ab15e60a0f9",
+    "semantic_hash": ""
+  },
+  "components/FlashCard.tsx": {
+    "mtime": 1785433209.2063134,
+    "ast_hash": "8abad9a5f20911151ef43bc2077d0700",
+    "semantic_hash": ""
+  },
+  "components/GoalSlider.tsx": {
+    "mtime": 1783113633.2414613,
+    "ast_hash": "988c177779d3a69b2e35ecae2bdcdc9f",
+    "semantic_hash": ""
+  },
+  "components/ImportConflictModal.tsx": {
+    "mtime": 1785344559.2176833,
+    "ast_hash": "fda63d1898e8363e9778caea70083e60",
+    "semantic_hash": ""
+  },
+  "components/ProgressRing.tsx": {
+    "mtime": 1785291459.6761997,
+    "ast_hash": "d8d21d00f08de4a9c1eebcd9330fa053",
+    "semantic_hash": ""
+  },
+  "components/PublishToggle.tsx": {
+    "mtime": 1785343010.50698,
+    "ast_hash": "e346b9fae158a4a0a76c4d51a50cf283",
+    "semantic_hash": ""
+  },
+  "components/QuizOptionsInput.tsx": {
+    "mtime": 1783578097.6567585,
+    "ast_hash": "dbea34876402c7e2249401da0f6c8324",
+    "semantic_hash": "dbea34876402c7e2249401da0f6c8324"
+  },
+  "components/QuizQuestion.tsx": {
+    "mtime": 1784656422.87125,
+    "ast_hash": "645df12edef79509af6a77382d5d743b",
+    "semantic_hash": ""
+  },
+  "components/SessionResult.tsx": {
+    "mtime": 1784657320.1533496,
+    "ast_hash": "78eb65f746312d6d822b0296100e7972",
+    "semantic_hash": ""
+  },
+  "components/SessionTimer.tsx": {
+    "mtime": 1783965712.152845,
+    "ast_hash": "dbe5f5dae4600b0fee0c31409b19b8d4",
+    "semantic_hash": ""
+  },
+  "components/StarRating.tsx": {
+    "mtime": 1784230688.543053,
+    "ast_hash": "11e0f9d5ebb42eaa0400343d255a6d13",
+    "semantic_hash": "11e0f9d5ebb42eaa0400343d255a6d13"
+  },
+  "components/StreakBadge.tsx": {
+    "mtime": 1784314648.4007442,
+    "ast_hash": "4ec3efcfb1c3a2fc88e48baea572d10f",
+    "semantic_hash": ""
+  },
+  "components/StudyModePicker.tsx": {
+    "mtime": 1785344974.0648203,
+    "ast_hash": "3a50b0ad122125867ded4f73ddf951a6",
+    "semantic_hash": ""
+  },
+  "components/StudySetup.tsx": {
+    "mtime": 1785343010.50724,
+    "ast_hash": "22f8e2c845026966e298713875bd26fb",
+    "semantic_hash": ""
+  },
+  "components/SwipeCard.tsx": {
+    "mtime": 1785433239.254132,
+    "ast_hash": "c3e3670431b311eeb8d4646411f07c9c",
+    "semantic_hash": ""
+  },
+  "components/SwipeableDeckRow.tsx": {
+    "mtime": 1784233059.7087374,
+    "ast_hash": "9f7050a9946abff88eb09762e8a799c2",
+    "semantic_hash": ""
+  },
+  "components/TagInput.tsx": {
+    "mtime": 1785171477.5248435,
+    "ast_hash": "9c5d5d0ded506c573cc0a8ec96e47fdf",
+    "semantic_hash": ""
+  },
+  "components/TimeUpNotice.tsx": {
+    "mtime": 1783965806.2421126,
+    "ast_hash": "f99b6d032317b223578bcece4cf3e51a",
+    "semantic_hash": ""
+  },
+  "components/icons/game/GameIcon.tsx": {
+    "mtime": 1783626219.5390136,
+    "ast_hash": "26ab3473a757d804a6af7ac44a4504e4",
+    "semantic_hash": ""
+  },
+  "components/icons/game/paths.ts": {
+    "mtime": 1783637861.7281835,
+    "ast_hash": "1d62376c38a53b4b2807e84b4898a098",
+    "semantic_hash": ""
+  },
+  "components/settings/SettingsRow.tsx": {
+    "mtime": 1785343010.5073378,
+    "ast_hash": "fdc1a386311afde0b2e1cbf5d3099474",
+    "semantic_hash": ""
+  },
+  "components/settings/SettingsSection.tsx": {
+    "mtime": 1785249596.5226324,
+    "ast_hash": "55156496fc67c9551f72c28a3c11ef2e",
+    "semantic_hash": ""
+  },
+  "components/settings/TimePickerRow.tsx": {
+    "mtime": 1785432847.4323702,
+    "ast_hash": "15a76f3286b536081a243db1c9b89ef7",
+    "semantic_hash": ""
+  },
+  "components/ui/Badge.tsx": {
+    "mtime": 1782663140.898704,
+    "ast_hash": "eba0f7f0d3acc725ab2c94432dc8ef0f",
+    "semantic_hash": ""
+  },
+  "components/ui/Button.tsx": {
+    "mtime": 1785291459.6771734,
+    "ast_hash": "be812dd56b659fb9ca1c3c8c725ae858",
+    "semantic_hash": ""
+  },
+  "components/ui/Card.tsx": {
+    "mtime": 1785291459.6776652,
+    "ast_hash": "c5286c66ec112f9e0ffccb9650d528b8",
+    "semantic_hash": ""
+  },
+  "components/ui/Input.tsx": {
+    "mtime": 1785291459.6778567,
+    "ast_hash": "f899677048f2f505d588c4fafe909b1b",
+    "semantic_hash": ""
+  },
+  "constants/accents.ts": {
+    "mtime": 1785293054.983862,
+    "ast_hash": "a2e7d734dc08bd348f5cdeb2504062c6",
+    "semantic_hash": ""
+  },
+  "constants/layout.ts": {
+    "mtime": 1785451684.410959,
+    "ast_hash": "ed9e0e11eacf934575c4fe17e0c1c222",
+    "semantic_hash": ""
+  },
+  "constants/study.ts": {
+    "mtime": 1784209666.3213491,
+    "ast_hash": "4e8efbbbdd9773275e4a8fd3d10eba35",
+    "semantic_hash": ""
+  },
+  "constants/theme.ts": {
+    "mtime": 1785479335.8621695,
+    "ast_hash": "b63fcfa8526bfc921c5618b23f1fe43d",
+    "semantic_hash": ""
+  },
+  "contexts/AuthContext.tsx": {
+    "mtime": 1785478552.9989088,
+    "ast_hash": "2ae8c8a496b50e6bf845c0d9b53fbcc7",
+    "semantic_hash": ""
+  },
+  "contexts/OnboardingContext.tsx": {
+    "mtime": 1783550512.5525014,
+    "ast_hash": "a018446ad05119c9042e2c929498c354",
+    "semantic_hash": "a018446ad05119c9042e2c929498c354"
+  },
+  "contexts/SettingsContext.tsx": {
+    "mtime": 1785291459.6790307,
+    "ast_hash": "d4e79a22c665747c2b1c1357e0a92771",
+    "semantic_hash": ""
+  },
+  "hooks/useActiveTimer.ts": {
+    "mtime": 1783962294.3906121,
+    "ast_hash": "56156d7f0ea120622eb38c2272baf746",
+    "semantic_hash": ""
+  },
+  "hooks/useDecks.ts": {
+    "mtime": 1785458255.3426108,
+    "ast_hash": "6c275231ffed79fb8987e473415b9bfa",
+    "semantic_hash": ""
+  },
+  "hooks/useStreak.ts": {
+    "mtime": 1782776485.843294,
+    "ast_hash": "edf3b9b7164e96d44cf276aab7c4be09",
+    "semantic_hash": ""
+  },
+  "hooks/useStudySession.ts": {
+    "mtime": 1784747403.4771514,
+    "ast_hash": "a8b4fc4db1853e2a15d0c83a48e63e63",
+    "semantic_hash": ""
+  },
+  "hooks/useStudyTimer.ts": {
+    "mtime": 1783965702.2616916,
+    "ast_hash": "1f8ba48c7a9b11bf2557049d2d7739e2",
+    "semantic_hash": ""
+  },
+  "hooks/useThemeColors.ts": {
+    "mtime": 1785291459.6799407,
+    "ast_hash": "3094dde309fe6d2d6fec3c1ef44b4f4f",
+    "semantic_hash": ""
+  },
+  "hooks/useTimedSession.ts": {
+    "mtime": 1784740297.3749096,
+    "ast_hash": "0375d42c17fd9a128c8e5e749746dabd",
+    "semantic_hash": ""
+  },
+  "lib/api/generateCards.ts": {
+    "mtime": 1787056935.8210409,
+    "ast_hash": "4960a524b4c6ccd21863029bf449c892",
+    "semantic_hash": ""
+  },
+  "lib/api/gradeAnswer.ts": {
+    "mtime": 1784747353.171817,
+    "ast_hash": "2ddae3b4469e15eeec0ce4f2996081bc",
+    "semantic_hash": ""
+  },
+  "metro.config.js": {
+    "mtime": 1782663010.3351424,
+    "ast_hash": "dcb5d6305afce631e9df229a6693f679",
+    "semantic_hash": ""
+  },
+  "nativewind-env.d.ts": {
+    "mtime": 1782663026.7217174,
+    "ast_hash": "b02bcf4fde15f746f6e5248537d0b156",
+    "semantic_hash": ""
+  },
+  "package.json": {
+    "mtime": 1785291459.6819031,
+    "ast_hash": "112eb86f062e89ea171e12f4fe525e51",
+    "semantic_hash": ""
+  },
+  "services/achievementIcons.ts": {
+    "mtime": 1784154879.681212,
+    "ast_hash": "5eecd027fef4d28922fa9f873cea1dda",
+    "semantic_hash": ""
+  },
+  "services/achievements.ts": {
+    "mtime": 1784248426.4807482,
+    "ast_hash": "806ee72962043f8cc6e7a236601dd288",
+    "semantic_hash": ""
+  },
+  "services/ai.ts": {
+    "mtime": 1784209666.3147833,
+    "ast_hash": "07966d46f8b339bf4d8abe5e8454adf1",
+    "semantic_hash": ""
+  },
+  "services/backup.ts": {
+    "mtime": 1784233059.7092006,
+    "ast_hash": "6b5ddcda4632981f175f9626f736699c",
+    "semantic_hash": ""
+  },
+  "services/community.ts": {
+    "mtime": 1785343010.5127456,
+    "ast_hash": "0de9db2a65a1f51b20cffdd4b5ba2fdd",
+    "semantic_hash": ""
+  },
+  "services/database.ts": {
+    "mtime": 1785452875.575679,
+    "ast_hash": "317075f55d65a0cb43c73b805047281f",
+    "semantic_hash": ""
+  },
+  "services/images.ts": {
+    "mtime": 1785620202.946836,
+    "ast_hash": "365692586a4a5241d4298e4ed0d802ce",
+    "semantic_hash": ""
+  },
+  "services/notifications.ts": {
+    "mtime": 1785431500.6894138,
+    "ast_hash": "3fc0d0b73a14c92f886deb13197d2d2a",
+    "semantic_hash": ""
+  },
+  "services/supabase.ts": {
+    "mtime": 1784154879.681726,
+    "ast_hash": "0288d30b810c8d7191ba3670e1d2adeb",
+    "semantic_hash": ""
+  },
+  "supabase/.temp/linked-project.json": {
+    "mtime": 1783578192.4838326,
+    "ast_hash": "e32eb6476956a72c99681dd56dce1534",
+    "semantic_hash": "e32eb6476956a72c99681dd56dce1534"
+  },
+  "supabase/functions/generate-cards/index.ts": {
+    "mtime": 1783578097.6587014,
+    "ast_hash": "76af249a17705e18d3d837e21ef42a65",
+    "semantic_hash": "76af249a17705e18d3d837e21ef42a65"
+  },
+  "supabase/functions/grade-answer/index.ts": {
+    "mtime": 1784747339.3923461,
+    "ast_hash": "6f897a738486b0ba5c58885054b2de62",
+    "semantic_hash": ""
+  },
+  "supabase/schema.sql": {
+    "mtime": 1787056720.5897589,
+    "ast_hash": "ba2b01d96c19aee321fb2a478b3542a2",
+    "semantic_hash": ""
+  },
+  "tailwind.config.js": {
+    "mtime": 1785478552.9987586,
+    "ast_hash": "d6794d7f05effcf598001f146e19c3b2",
+    "semantic_hash": ""
+  },
+  "tsconfig.json": {
+    "mtime": 1784209741.5039523,
+    "ast_hash": "88aa363c97dad26ceafdeda5f6449202",
+    "semantic_hash": ""
+  },
+  "types/db.ts": {
+    "mtime": 1785343010.5131135,
+    "ast_hash": "8faff38a5fcf81786459f3abe6b1e273",
+    "semantic_hash": ""
+  },
+  "types/index.ts": {
+    "mtime": 1784312654.8979733,
+    "ast_hash": "0d0f22c1209bb6c6ca031dae003da960",
+    "semantic_hash": ""
+  },
+  "utils/answer.ts": {
+    "mtime": 1784748128.7975342,
+    "ast_hash": "3a919b8058a74174da8653eee734e53e",
+    "semantic_hash": ""
+  },
+  "utils/community.ts": {
+    "mtime": 1785343010.5132585,
+    "ast_hash": "5f737ab6e6fa2cd1ace0461c3ca490b5",
+    "semantic_hash": ""
+  },
+  "utils/errors.ts": {
+    "mtime": 1783399105.411601,
+    "ast_hash": "e5d1b550ae3a7f717672c021e70fde3a",
+    "semantic_hash": ""
+  },
+  "utils/practice.ts": {
+    "mtime": 1784312663.6789742,
+    "ast_hash": "fbec69927a1ab2f35d5bdfdce4e4da14",
+    "semantic_hash": "fbec69927a1ab2f35d5bdfdce4e4da14"
+  },
+  "utils/stats.ts": {
+    "mtime": 1784157386.5398195,
+    "ast_hash": "c62f32145572f5629109da181f370e7d",
+    "semantic_hash": ""
+  },
+  "utils/streak.ts": {
+    "mtime": 1782776413.4125562,
+    "ast_hash": "59c5ebaba3e4298626982df6f10418d9",
+    "semantic_hash": ""
+  },
+  "utils/xp.ts": {
+    "mtime": 1786125133.4833727,
+    "ast_hash": "a7f2a3166820ac7ad94006b770cc86fa",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1787057597.0509675,
+    "ast_hash": "478ea731f0441b17ceed6eb975a5a5f9",
+    "semantic_hash": ""
+  },
+  "assets/brand/blink_adaptive_foreground.png": {
+    "mtime": 1785478531.2114482,
+    "ast_hash": "71b61fb9fd976f5aeadc238d6794c361",
+    "semantic_hash": ""
+  },
+  "assets/brand/blink_app_icon_1024.png": {
+    "mtime": 1785478531.1937447,
+    "ast_hash": "f8ae26d5b73db1c5e4902604997cb19e",
+    "semantic_hash": ""
+  },
+  ".claude/settings.json": {
+    "mtime": 1785171477.5201156,
+    "ast_hash": "1d927310b5772a46a0090ecd58334ed7",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1786122334.3430786,
+    "ast_hash": "0327e50f5eb2d671908f8e57cf021abb",
+    "semantic_hash": ""
+  },
+  "components/TabBarIcon.tsx": {
+    "mtime": 1785479621.6311646,
+    "ast_hash": "f60c04f6e6ea7131f39b777e5fb5ed52",
+    "semantic_hash": ""
+  },
+  "contexts/TabBarContext.tsx": {
+    "mtime": 1785193744.7293265,
+    "ast_hash": "69c7d87a8c919458f1216c6592d67fe9",
+    "semantic_hash": ""
+  },
+  "hooks/useTabBarInset.ts": {
+    "mtime": 1785435732.034387,
+    "ast_hash": "3717984d63d00e5243d5c2d094ac3f3b",
+    "semantic_hash": ""
+  },
+  "hooks/useTabBarScroll.ts": {
+    "mtime": 1785435764.9051797,
+    "ast_hash": "9d78edfb14fb4603ec557a78218b9a97",
+    "semantic_hash": ""
+  },
+  ".claude/CLAUDE.md": {
+    "mtime": 1785171477.5198946,
+    "ast_hash": "9b31786b637be3c13978bec4c2330752",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/SKILL.md": {
+    "mtime": 1785171477.5207286,
+    "ast_hash": "62aa0f6529a7784d9542c575a87d7077",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/add-watch.md": {
+    "mtime": 1785171477.5210216,
+    "ast_hash": "d59d027fe449f06aa03905a01184e779",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/exports.md": {
+    "mtime": 1785171477.5212188,
+    "ast_hash": "9da2a2152e60a22f07f05fed5158f287",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/extraction-spec.md": {
+    "mtime": 1785171477.5214424,
+    "ast_hash": "42fef56a01698118f7fd722acdadea34",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/github-and-merge.md": {
+    "mtime": 1785171477.5216067,
+    "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/hooks.md": {
+    "mtime": 1785171477.5218167,
+    "ast_hash": "3f545db6ce646650bb9de588f5512a27",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/query.md": {
+    "mtime": 1785171477.5220833,
+    "ast_hash": "3c46f8ad006874260614ed8657d02307",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/transcribe.md": {
+    "mtime": 1785171477.5223331,
+    "ast_hash": "67b6a5fa6c0974e18f60db9f8932fbd8",
+    "semantic_hash": ""
+  },
+  ".claude/skills/graphify/references/update.md": {
+    "mtime": 1785171477.5226762,
+    "ast_hash": "9378bd03d56baaf78bd738ab3848f142",
+    "semantic_hash": ""
+  },
+  "components/ui/GlassSurface.tsx": {
+    "mtime": 1785435764.904772,
+    "ast_hash": "78813d54e9e744b93e35ad9dd6a6325b",
+    "semantic_hash": ""
+  },
+  "constants/glass.ts": {
+    "mtime": 1785435775.8899684,
+    "ast_hash": "1451142c79f70ff41c76fabcde0a37cf",
+    "semantic_hash": ""
+  },
+  "constants/radius.ts": {
+    "mtime": 1785248954.5017076,
+    "ast_hash": "21f1979bbcc6742d0db60f61f1f36fa1",
+    "semantic_hash": ""
+  },
+  "hooks/useGlass.ts": {
+    "mtime": 1785435144.565867,
+    "ast_hash": "e7b32552128290d633b3a1cdf04e87b9",
+    "semantic_hash": ""
+  },
+  "app/community/publish.tsx": {
+    "mtime": 1785343010.5066803,
+    "ast_hash": "e9c6e8d5623a7f897a1e4cdc9e6d32d3",
+    "semantic_hash": ""
+  },
+  "components/FilterSheet.tsx": {
+    "mtime": 1785344974.0651155,
+    "ast_hash": "7bc754485ac1a3ac46578bc0baf1a755",
+    "semantic_hash": ""
+  },
+  "components/RevealSearchBar.tsx": {
+    "mtime": 1785431540.396945,
+    "ast_hash": "7110ec42c9e81636db4a75cbe20db16c",
+    "semantic_hash": ""
+  },
+  "components/ui/Toggle.tsx": {
+    "mtime": 1785343010.5074058,
+    "ast_hash": "86531786487a17db40283b0531acca38",
+    "semantic_hash": ""
+  },
+  "components/ReviewComposer.tsx": {
+    "mtime": 1785343010.5071318,
+    "ast_hash": "4f381d01fa1764e9e06e36e43566e088",
+    "semantic_hash": ""
+  },
+  "components/EnterAnimation.tsx": {
+    "mtime": 1785347069.8441613,
+    "ast_hash": "eb5597db4f0f9d884ce1fbf360eb6c08",
+    "semantic_hash": ""
+  },
+  "hooks/useReplayOnFocus.ts": {
+    "mtime": 1785346534.7317088,
+    "ast_hash": "5fbf655fb4208c29658dcab4e55b0ea4",
+    "semantic_hash": ""
+  },
+  "hooks/useCardSize.ts": {
+    "mtime": 1785433194.9119184,
+    "ast_hash": "3954f9e77a481be822dc1ec0bcb1d099",
+    "semantic_hash": ""
+  },
+  "components/TabBar.tsx": {
+    "mtime": 1785435718.0453343,
+    "ast_hash": "a5d76f6f7c080971a5d00d51b0fce01a",
+    "semantic_hash": ""
+  },
+  "components/LoadError.tsx": {
+    "mtime": 1785452627.7621934,
+    "ast_hash": "829be7da5a5d2b91567fbcc0b5116856",
+    "semantic_hash": ""
+  },
+  "assets/brand/blink_favicon.png": {
+    "mtime": 1785478531.2149098,
+    "ast_hash": "021506a9a7acb76a352e78a5a6a700f1",
+    "semantic_hash": ""
+  },
+  "extractor/main.py": {
+    "mtime": 1787057086.4137826,
+    "ast_hash": "213c2d376d925faa3b227778937ee21a",
+    "semantic_hash": ""
+  },
+  "extractor/storage.py": {
+    "mtime": 1785620202.9385178,
+    "ast_hash": "177263c4cd0ad1eedbb32fc1aa80373e",
+    "semantic_hash": ""
+  },
+  "extractor/README.md": {
+    "mtime": 1787060376.6892734,
+    "ast_hash": "cb7566c59fb9d97c6a0171ccb4f28c6d",
+    "semantic_hash": ""
+  },
+  "extractor/requirements.txt": {
+    "mtime": 1785620202.938387,
+    "ast_hash": "f993a0d536189b0b25ee59edd47203ee",
+    "semantic_hash": ""
+  },
+  "lib/api/importDocument.ts": {
+    "mtime": 1787078035.9937775,
+    "ast_hash": "8a9afdc8cb21559501086358ed66a6b8",
+    "semantic_hash": ""
+  },
+  "supabase/functions/generate-cards-doc/index.ts": {
+    "mtime": 1787056703.023701,
+    "ast_hash": "97c670d6128baa16fcac69e3c8031ce6",
+    "semantic_hash": ""
+  },
+  ".claude/graphify-context.sh": {
+    "mtime": 1786125122.1353085,
+    "ast_hash": "250e3591b70a6ea1b64bfd26052791bb",
+    "semantic_hash": ""
+  },
+  "app/deck/import.tsx": {
+    "mtime": 1787056913.6280363,
+    "ast_hash": "26b5a775b5b1d73bdf588d31bab28aea",
+    "semantic_hash": ""
+  },
+  "extractor/extractors/__init__.py": {
+    "mtime": 1787056252.171675,
+    "ast_hash": "dc1b3cf79c072a3de56d1dae74e16212",
+    "semantic_hash": ""
+  },
+  "extractor/extractors/base.py": {
+    "mtime": 1787060266.2725668,
+    "ast_hash": "3a3900cb77ad9bf0d69523c517be2a3d",
+    "semantic_hash": ""
+  },
+  "extractor/extractors/docx.py": {
+    "mtime": 1787056222.6186776,
+    "ast_hash": "bbfc94a8f1ddc4f6b077e1648c2e8264",
+    "semantic_hash": ""
+  },
+  "extractor/extractors/image_file.py": {
+    "mtime": 1787056235.2577598,
+    "ast_hash": "95d105dc9de39f5eadb3258ba76d74b6",
+    "semantic_hash": ""
+  },
+  "extractor/extractors/imaging.py": {
+    "mtime": 1787060249.0905168,
+    "ast_hash": "5d5cf299f63ed85bc443c6c723093ec4",
+    "semantic_hash": ""
+  },
+  "extractor/extractors/ooxml.py": {
+    "mtime": 1787056192.9544919,
+    "ast_hash": "f715786fa83657af7e68c4b2ce8d7a54",
+    "semantic_hash": ""
+  },
+  "extractor/extractors/pdf.py": {
+    "mtime": 1787060257.4335067,
+    "ast_hash": "6872f2b38c9c56a13a71128539b1f024",
+    "semantic_hash": ""
+  },
+  "extractor/extractors/pptx.py": {
+    "mtime": 1787056180.0412877,
+    "ast_hash": "e5cd640fb524cbc13b8b6af8e8dc11c5",
+    "semantic_hash": ""
+  },
+  "extractor/scripts/try_local.py": {
+    "mtime": 1787056307.3647346,
+    "ast_hash": "b0c79328ee7d94a279fd768be96299a2",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/bundle.json": {
+    "mtime": 1787063445.6904402,
+    "ast_hash": "3158770e996493fcadc278591d01c78f",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0001_p1.jpg": {
+    "mtime": 1787063445.6925526,
+    "ast_hash": "0053846ae94e778fbb62c2fd84d33be6",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0002_p1.jpg": {
+    "mtime": 1787063445.6928449,
+    "ast_hash": "39efabe383cf799ddfaa19c6d6689868",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0004_p2.jpg": {
+    "mtime": 1787063445.6930356,
+    "ast_hash": "8c12432e3c6719508518a067bc4e35a0",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0006_p2.jpg": {
+    "mtime": 1787063445.6931493,
+    "ast_hash": "17d9c91b1814d34df1b6970ede943085",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0007_p2.jpg": {
+    "mtime": 1787063445.693218,
+    "ast_hash": "cf407aedf07b5ed6b55663128ad468e0",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0013_p8.jpg": {
+    "mtime": 1787063445.6941447,
+    "ast_hash": "8b9c0b371e6a29b7b2b1344297e98665",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0014_p8.jpg": {
+    "mtime": 1787063445.6941874,
+    "ast_hash": "4eea8da81092b02d73422354bea99507",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0015_p8.jpg": {
+    "mtime": 1787063445.6942458,
+    "ast_hash": "15fd68d98535867ca70a77fcb8331923",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0019_p8.jpg": {
+    "mtime": 1787063445.6949544,
+    "ast_hash": "2dbbb22f3ff769a96509ad05060bacd1",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0020_p8.jpg": {
+    "mtime": 1787063445.6950533,
+    "ast_hash": "a41225ee42b210b1b87a3d434eb1ee8b",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0021_p8.jpg": {
+    "mtime": 1787063445.6952558,
+    "ast_hash": "1f94f65579494a5c395ed4e7eec1f3e0",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0022_p8.jpg": {
+    "mtime": 1787063445.6953015,
+    "ast_hash": "f77db280d0cce56f602333b2e49d09d2",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0023_p8.jpg": {
+    "mtime": 1787063445.6953843,
+    "ast_hash": "fd2b181f6465c1b5abd8dd9bb06de2ac",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0024_p8.jpg": {
+    "mtime": 1787063445.6954296,
+    "ast_hash": "1af710a91432104556b211e5597db3bb",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0025_p8.jpg": {
+    "mtime": 1787063445.6955118,
+    "ast_hash": "bebb6c4934c561185888a2edfb46abfd",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0026_p9.jpg": {
+    "mtime": 1787063445.6955953,
+    "ast_hash": "1773a7a4ae9a9eb1001b05440650b8ad",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0030_p12.jpg": {
+    "mtime": 1787063445.695823,
+    "ast_hash": "106f35bdd4ff5d1c70c8b3f4142b07e8",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0031_p12.jpg": {
+    "mtime": 1787063445.6958709,
+    "ast_hash": "bcf9f64acda291aa626e349d1af99ac0",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0037_p16.jpg": {
+    "mtime": 1787063445.6964858,
+    "ast_hash": "57bc32b6fde7627819750c1ff5c5964b",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0038_p16.jpg": {
+    "mtime": 1787063445.6965597,
+    "ast_hash": "97a2c1b09ad47d3d469cc84987de1f8d",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0039_p16.jpg": {
+    "mtime": 1787063445.6966777,
+    "ast_hash": "4c7f2b7defec24ed09ffe01aecf0981b",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0040_p16.jpg": {
+    "mtime": 1787063445.6967437,
+    "ast_hash": "66593518eb1f6d03b60c697a84397c21",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0041_p16.jpg": {
+    "mtime": 1787063445.6968365,
+    "ast_hash": "70b91cf488a5b71972cec53e06f54997",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0042_p16.jpg": {
+    "mtime": 1787063445.6969082,
+    "ast_hash": "97ee900bd95a477ccfc92b3ce4a803e9",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0043_p16.jpg": {
+    "mtime": 1787063445.6969907,
+    "ast_hash": "d813f13414a241d199a87242d6d5e48a",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0044_p16.jpg": {
+    "mtime": 1787063445.697126,
+    "ast_hash": "59b7c53f425d0703d11702d39f9d2094",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0045_p16.jpg": {
+    "mtime": 1787063445.697211,
+    "ast_hash": "8ea3cebe6e60f51983c49cb60c5ba7ac",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0047_p17.jpg": {
+    "mtime": 1787063445.6973255,
+    "ast_hash": "876fda496713c26ab39ff36f3bea071d",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0048_p17.jpg": {
+    "mtime": 1787063445.6973848,
+    "ast_hash": "758daab9f8428188b162a6e6e5b5a5b3",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0049_p17.jpg": {
+    "mtime": 1787063445.6974473,
+    "ast_hash": "998789bec24260eb42db77492eb3d9d6",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0050_p17.jpg": {
+    "mtime": 1787063445.6975012,
+    "ast_hash": "0f1bd8283fc76617c247c30ca4d05992",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0051_p17.jpg": {
+    "mtime": 1787063445.6975548,
+    "ast_hash": "9dc53ad46e41f0582a9f72dc1d28ff05",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0052_p17.jpg": {
+    "mtime": 1787063445.6976206,
+    "ast_hash": "2b4a06b6ffb3fb514638eb363819a3f4",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0053_p17.jpg": {
+    "mtime": 1787063445.6976733,
+    "ast_hash": "def880b01384ced59681375ebf9ac893",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0054_p17.jpg": {
+    "mtime": 1787063445.697739,
+    "ast_hash": "7aef05841b8000bd2037e6c3f5b9ec1b",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0055_p17.jpg": {
+    "mtime": 1787063445.697813,
+    "ast_hash": "713fa69a19f8c6c4c4201021ab50087b",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0056_p17.jpg": {
+    "mtime": 1787063445.6978986,
+    "ast_hash": "7e36047714bf1f7ab011cdd83195b969",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0058_p18.jpg": {
+    "mtime": 1787063445.6980708,
+    "ast_hash": "517aacbc500ce9b1aae275370807a12e",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0059_p18.jpg": {
+    "mtime": 1787063445.6981459,
+    "ast_hash": "8d3afe0b3b9f299e62c1c5864b3f05fe",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0062_p19.jpg": {
+    "mtime": 1787063445.6983268,
+    "ast_hash": "2a3ec1f2c432535398dc180965f67178",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0063_p19.jpg": {
+    "mtime": 1787063445.6983707,
+    "ast_hash": "1242a854510fc6d0b93453e0927b1dba",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0065_p19.jpg": {
+    "mtime": 1787063445.6984608,
+    "ast_hash": "21bd5737ebf716b17d454b3de0bdaf7e",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0066_p19.jpg": {
+    "mtime": 1787063445.6985052,
+    "ast_hash": "45727d8f7ddbf43d7b1292669429e0f2",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0067_p19.jpg": {
+    "mtime": 1787063445.6985495,
+    "ast_hash": "1259c835fbdc99388b9ccbadff49a085",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0068_p19.jpg": {
+    "mtime": 1787063445.6985972,
+    "ast_hash": "821ee5f0f4e4ac5311c4eaa5faff7b11",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0069_p19.jpg": {
+    "mtime": 1787063445.6986437,
+    "ast_hash": "7390311f994a88bd2223e714e27fae70",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0070_p19.jpg": {
+    "mtime": 1787063445.6986918,
+    "ast_hash": "da519412b2f4c23c03c2937cf54c3791",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0071_p19.jpg": {
+    "mtime": 1787063445.6987822,
+    "ast_hash": "144b9aa91055a3abb1453be437d50ceb",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0072_p19.jpg": {
+    "mtime": 1787063445.6988423,
+    "ast_hash": "4bbe67ecf8ee0ed7a8526fc4b303a5d4",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0073_p19.jpg": {
+    "mtime": 1787063445.698899,
+    "ast_hash": "beb3bcacfc868ff0c8509159402a17f8",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0074_p19.jpg": {
+    "mtime": 1787063445.6989615,
+    "ast_hash": "fc776be1fee55f5b94d4b7e7fbd8bbc3",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0075_p19.jpg": {
+    "mtime": 1787063445.699027,
+    "ast_hash": "4e6fe7457c10b56e9d946e737dbd6e0d",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0076_p19.jpg": {
+    "mtime": 1787063445.6991007,
+    "ast_hash": "fec8108fa691c226c8ab9cbaf0da3a3a",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0077_p19.jpg": {
+    "mtime": 1787063445.6991785,
+    "ast_hash": "b40f6e42b53039c2a1be45c5ccf297d8",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0078_p19.jpg": {
+    "mtime": 1787063445.6992548,
+    "ast_hash": "7946c0dc224be36eab8d83f72080c281",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0079_p19.jpg": {
+    "mtime": 1787063445.6993399,
+    "ast_hash": "0072ffdfd5e3f139f9bdf75dc64651a2",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0080_p19.jpg": {
+    "mtime": 1787063445.699417,
+    "ast_hash": "05f761d0ff690119b172fc937fb2412d",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0081_p19.jpg": {
+    "mtime": 1787063445.6994867,
+    "ast_hash": "6195f5c35093bca9ae6b50e34ac80a9a",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0082_p19.jpg": {
+    "mtime": 1787063445.6996758,
+    "ast_hash": "fbce8193413727f5b2e2466143278321",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0083_p19.jpg": {
+    "mtime": 1787063445.6997497,
+    "ast_hash": "97344997251c001d5678fbf5f7da299e",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0084_p19.jpg": {
+    "mtime": 1787063445.699895,
+    "ast_hash": "019de8dca9d328e09cd3a50d85b186b1",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0085_p19.jpg": {
+    "mtime": 1787063445.699998,
+    "ast_hash": "f135b3ccabd7434f1ac9c0c625153c14",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0086_p19.jpg": {
+    "mtime": 1787063445.700088,
+    "ast_hash": "b4f629910c2489c5d9606a3e449bcfca",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0087_p19.jpg": {
+    "mtime": 1787063445.7001867,
+    "ast_hash": "115af33c5fa79bb4b3388c73f5bb057f",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0088_p19.jpg": {
+    "mtime": 1787063445.700244,
+    "ast_hash": "a80cc841d427f101c2f8c4ba25d71cb7",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0090_p20.jpg": {
+    "mtime": 1787063445.700368,
+    "ast_hash": "578fca448f16a5c0407babde3ae8f54b",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0091_p20.jpg": {
+    "mtime": 1787063445.7004418,
+    "ast_hash": "5329b9ce9d544b2f495514b37e5340fb",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0092_p20.jpg": {
+    "mtime": 1787063445.7005017,
+    "ast_hash": "5c0173995b45d38c03653277aa6b4250",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0093_p20.jpg": {
+    "mtime": 1787063445.7006004,
+    "ast_hash": "ec093548cfb9ea9321367351ca2b963e",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0095_p21.jpg": {
+    "mtime": 1787063445.7007787,
+    "ast_hash": "3b9a42f8470e9bba492a60a4c240d2d9",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0099_p24.jpg": {
+    "mtime": 1787063445.7012346,
+    "ast_hash": "6b115ae7c30ed6d2d3ab5506e5893e58",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0102_p26.jpg": {
+    "mtime": 1787063445.70147,
+    "ast_hash": "7c43f561edf3589478703719275765cc",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0103_p26.jpg": {
+    "mtime": 1787063445.7015543,
+    "ast_hash": "703010120774fffad5306b0ae618d634",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0104_p26.jpg": {
+    "mtime": 1787063445.7016232,
+    "ast_hash": "899a58c31ab2d6ef47bb9e3ec5a489df",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0105_p26.jpg": {
+    "mtime": 1787063445.7016954,
+    "ast_hash": "a0fa31ed204f38179bbb111d420fcc5d",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0106_p26.jpg": {
+    "mtime": 1787063445.701764,
+    "ast_hash": "7054a69cfc185d60b0f9633a46684ed9",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0107_p26.jpg": {
+    "mtime": 1787063445.7018318,
+    "ast_hash": "ea96847376c17410049ca4102bd2400d",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0108_p26.jpg": {
+    "mtime": 1787063445.7018762,
+    "ast_hash": "f4bd83e75d4515adce33291d445d805a",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0109_p26.jpg": {
+    "mtime": 1787063445.701939,
+    "ast_hash": "ed69b54a447074d492ff15ec1c31062b",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0112_p28.jpg": {
+    "mtime": 1787063445.7021873,
+    "ast_hash": "311b7e0d7c2a66212d967484739af71d",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0113_p28.jpg": {
+    "mtime": 1787063445.702252,
+    "ast_hash": "fa6e337f199b1f2c9e4291457b3c9c1f",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0114_p28.jpg": {
+    "mtime": 1787063445.7023027,
+    "ast_hash": "307eabe0afda632a9534f0f46982cf79",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0115_p28.jpg": {
+    "mtime": 1787063445.7023687,
+    "ast_hash": "d833ebbdd8626937757dcd7aaadefeea",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0116_p28.jpg": {
+    "mtime": 1787063445.702437,
+    "ast_hash": "37dec75097c8dfab475af5df4188439e",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0119_p30.jpg": {
+    "mtime": 1787063445.7026525,
+    "ast_hash": "a737c45884d95bc021785847ceab1ed0",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0120_p30.jpg": {
+    "mtime": 1787063445.7027047,
+    "ast_hash": "ae56ff8132f39a664368deabb3161c56",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0121_p30.jpg": {
+    "mtime": 1787063445.702753,
+    "ast_hash": "e266c72b7cbd1e243a630c48af3d5ccf",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0122_p30.jpg": {
+    "mtime": 1787063445.702809,
+    "ast_hash": "a27000ca61f472fe36dcb949a0dc6229",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0123_p30.jpg": {
+    "mtime": 1787063445.702887,
+    "ast_hash": "8ea38f927f0b51e00e80df7f28b04508",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0124_p30.jpg": {
+    "mtime": 1787063445.7029662,
+    "ast_hash": "dffb479824238fc8469a458037793179",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0125_p30.jpg": {
+    "mtime": 1787063445.7030275,
+    "ast_hash": "5c144e34b47eb7de16095a43716b6c72",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0126_p30.jpg": {
+    "mtime": 1787063445.7031002,
+    "ast_hash": "bd13f16201b75f88ab9a8e40013a0892",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0127_p30.jpg": {
+    "mtime": 1787063445.7031553,
+    "ast_hash": "a56a249ec89ab7375eba8083b5e2c5dd",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0128_p30.jpg": {
+    "mtime": 1787063445.7032244,
+    "ast_hash": "cdd10afe2f9dae73c0a24e958a489c03",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0129_p30.jpg": {
+    "mtime": 1787063445.7032933,
+    "ast_hash": "6388a5aaeef98830cd0be3e71ad1efde",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0131_p31.jpg": {
+    "mtime": 1787063445.7033994,
+    "ast_hash": "801b01146a7ba22e6d0e54ed4890eae2",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0132_p31.jpg": {
+    "mtime": 1787063445.703462,
+    "ast_hash": "a34652734ec9113426049c37ca4fe20f",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0133_p31.jpg": {
+    "mtime": 1787063445.703531,
+    "ast_hash": "4d21bfff46e8e23d530d13799a92bed6",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0134_p31.jpg": {
+    "mtime": 1787063445.703611,
+    "ast_hash": "4899ff22a357b2067a8fd7d2d4e6b633",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0136_p32.jpg": {
+    "mtime": 1787063445.7037463,
+    "ast_hash": "9aa10ead8f93002790816f21e15281b4",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0138_p33.jpg": {
+    "mtime": 1787063445.7038374,
+    "ast_hash": "af1831d259b3a5db431598796880c37b",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0139_p33.jpg": {
+    "mtime": 1787063445.7039165,
+    "ast_hash": "a6fa5a22fc28fa6978adc4b100735def",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0140_p33.jpg": {
+    "mtime": 1787063445.7040002,
+    "ast_hash": "417d51ed0765331b52c9d9fbdda50854",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0141_p33.jpg": {
+    "mtime": 1787063445.7040505,
+    "ast_hash": "918c84b16ae13eaca40d2e7977fd2fea",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0142_p33.jpg": {
+    "mtime": 1787063445.7041285,
+    "ast_hash": "d05f8bacc1086db60a38d34c51ea3e94",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0143_p33.jpg": {
+    "mtime": 1787063445.7041972,
+    "ast_hash": "033619e506835c049171ba12498113bc",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0148_p41.jpg": {
+    "mtime": 1787063445.7044704,
+    "ast_hash": "427231c850882d98b55e237b446bc7e9",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0150_p44.jpg": {
+    "mtime": 1787063445.704649,
+    "ast_hash": "16fee82e9bb27e7bfeedb39f0b9aca00",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0151_p44.jpg": {
+    "mtime": 1787063445.7047224,
+    "ast_hash": "69359aab93b9e54011901f73882f9d4a",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0152_p44.jpg": {
+    "mtime": 1787063445.704774,
+    "ast_hash": "33cb7bd4681bf7c9502f27bdee247682",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/img/0153_p48.jpg": {
+    "mtime": 1787063445.7048786,
+    "ast_hash": "619366ba024ef4dcf40f10b227da51e6",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0003_p1_repetida-em-v-rias-p-ginas-logo-cabe-alho-.jpg": {
+    "mtime": 1787063445.692974,
+    "ast_hash": "3b8474f9c125d639395ddc123d6b30dd",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0005_p2_repetida-em-v-rias-p-ginas-logo-cabe-alho-.jpg": {
+    "mtime": 1787063445.6930902,
+    "ast_hash": "fdb95310e9e0c349f34d632e3e71869c",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0008_p3_pequena-demais.jpg": {
+    "mtime": 1787063445.6933029,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0009_p4_pequena-demais.jpg": {
+    "mtime": 1787063445.6933584,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0010_p5_pequena-demais.jpg": {
+    "mtime": 1787063445.6938713,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0011_p6_pequena-demais.jpg": {
+    "mtime": 1787063445.693947,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0012_p7_pequena-demais.jpg": {
+    "mtime": 1787063445.6940906,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0016_p8_repetida-em-v-rias-p-ginas-logo-cabe-alho-.jpg": {
+    "mtime": 1787063445.6944852,
+    "ast_hash": "fdb95310e9e0c349f34d632e3e71869c",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0017_p8_repetida-em-v-rias-p-ginas-logo-cabe-alho-.jpg": {
+    "mtime": 1787063445.6945412,
+    "ast_hash": "3b8474f9c125d639395ddc123d6b30dd",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0018_p8_pequena-demais.jpg": {
+    "mtime": 1787063445.6946023,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0027_p9_pequena-demais.jpg": {
+    "mtime": 1787063445.6956732,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0028_p10_pequena-demais.jpg": {
+    "mtime": 1787063445.695724,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0029_p11_pequena-demais.jpg": {
+    "mtime": 1787063445.6957753,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0032_p13_pequena-demais.jpg": {
+    "mtime": 1787063445.6960704,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0033_p14_repetida-em-v-rias-p-ginas-logo-cabe-alho-.jpg": {
+    "mtime": 1787063445.6961467,
+    "ast_hash": "fdb95310e9e0c349f34d632e3e71869c",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0034_p14_repetida-em-v-rias-p-ginas-logo-cabe-alho-.jpg": {
+    "mtime": 1787063445.6962113,
+    "ast_hash": "3b8474f9c125d639395ddc123d6b30dd",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0035_p14_pequena-demais.jpg": {
+    "mtime": 1787063445.696274,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0036_p15_pequena-demais.jpg": {
+    "mtime": 1787063445.696333,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0046_p16_pequena-demais.jpg": {
+    "mtime": 1787063445.6972713,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0057_p17_pequena-demais.jpg": {
+    "mtime": 1787063445.697975,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0060_p18_pequena-demais.jpg": {
+    "mtime": 1787063445.698223,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0061_p19_pequena-demais.jpg": {
+    "mtime": 1787063445.6982806,
+    "ast_hash": "9cc0ee9a7f257874e6d3cd663cd0acde",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0064_p19_pequena-demais.jpg": {
+    "mtime": 1787063445.6984158,
+    "ast_hash": "5dbeeb85bdd90987d0794887fdc265aa",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0089_p19_pequena-demais.jpg": {
+    "mtime": 1787063445.7003012,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0094_p20_pequena-demais.jpg": {
+    "mtime": 1787063445.7007227,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0096_p21_pequena-demais.jpg": {
+    "mtime": 1787063445.7009122,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0097_p22_pequena-demais.jpg": {
+    "mtime": 1787063445.7010384,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0098_p23_pequena-demais.jpg": {
+    "mtime": 1787063445.7011037,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0100_p24_pequena-demais.jpg": {
+    "mtime": 1787063445.7012994,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0101_p25_pequena-demais.jpg": {
+    "mtime": 1787063445.701407,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0110_p26_pequena-demais.jpg": {
+    "mtime": 1787063445.7020745,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0111_p27_pequena-demais.jpg": {
+    "mtime": 1787063445.7021358,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0117_p28_pequena-demais.jpg": {
+    "mtime": 1787063445.7025385,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0118_p29_pequena-demais.jpg": {
+    "mtime": 1787063445.7025928,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0130_p30_pequena-demais.jpg": {
+    "mtime": 1787063445.703345,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0135_p31_pequena-demais.jpg": {
+    "mtime": 1787063445.703692,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0137_p32_pequena-demais.jpg": {
+    "mtime": 1787063445.70379,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0144_p33_pequena-demais.jpg": {
+    "mtime": 1787063445.7042644,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0145_p36_repetida-em-v-rias-p-ginas-logo-cabe-alho-.jpg": {
+    "mtime": 1787063445.7043161,
+    "ast_hash": "fdb95310e9e0c349f34d632e3e71869c",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0146_p36_repetida-em-v-rias-p-ginas-logo-cabe-alho-.jpg": {
+    "mtime": 1787063445.7043655,
+    "ast_hash": "3b8474f9c125d639395ddc123d6b30dd",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0147_p36_pequena-demais.jpg": {
+    "mtime": 1787063445.7044153,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0149_p43_pequena-demais.jpg": {
+    "mtime": 1787063445.7045915,
+    "ast_hash": "576d4d6eaadc094c7fc9f654f465c430",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0154_p49_repetida-em-v-rias-p-ginas-logo-cabe-alho-.jpg": {
+    "mtime": 1787063445.7049358,
+    "ast_hash": "fdb95310e9e0c349f34d632e3e71869c",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0155_p49_repetida-em-v-rias-p-ginas-logo-cabe-alho-.jpg": {
+    "mtime": 1787063445.7049909,
+    "ast_hash": "3b8474f9c125d639395ddc123d6b30dd",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0156_p49_duplicata.jpg": {
+    "mtime": 1787063445.7050433,
+    "ast_hash": "17d9c91b1814d34df1b6970ede943085",
+    "semantic_hash": ""
+  }
+}

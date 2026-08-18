@@ -5,7 +5,8 @@ App mobile de flashcards com **repetição espaçada** (algoritmo SM-2, estilo A
 ## Funcionalidades
 
 - **Decks e flashcards** — crie, edite e organize decks com emoji, cor, capa, tags e imagens nos cards
-- **Geração com IA** — gere cards automaticamente a partir de um tópico, texto, imagem ou PDF (Claude)
+- **Geração com IA** — gere cards automaticamente a partir de um tópico, texto, imagem, PDF, PowerPoint (.pptx) ou Word (.docx) (Claude)
+- **Figuras do próprio material** — as ilustrações do arquivo enviado viram imagem dos cards (ver [`extractor/`](extractor/README.md))
 - **Repetição espaçada (SM-2)** — avaliação **binária** (*Errei* / *Entendi*, também por gesto de swipe) reagenda cada card na hora certa
 - **4 modos de prática** — flashcards clássicos, **Quiz** de alternativas, **Escrever** (digite a resposta, com correção semântica por IA) e **Alternado** (flashcards + quiz intercalados)
 - **Comunidade** — publique decks (modelo *snapshot*, com licença por deck), descubra/baixe decks de outros e avalie com estrelas — uma das **5 abas** (Início · Decks · Comunidade · Progresso · Perfil)

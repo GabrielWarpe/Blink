@@ -13,14 +13,18 @@ import type { Flashcard } from '@/types';
 import {
   generateCards,
   quizQuestionToCard,
-  detectFileContentType,
-  type GenerateContentType,
   type GenerateMode,
 } from '@/lib/api/generateCards';
 import {
   importDocument,
+  detectSourceFormat,
   IMPORT_STATUS_LABEL,
+  FORMAT_HELP,
+  MAX_SOURCE_BYTES,
+  PICKER_MIME_TYPES,
   type ImportStatus,
+  type SourceFormat,
+  type SourceKind,
 } from '@/lib/api/importDocument';
 import { makeFlashcard } from '@/services/ai';
 import { pickCardImages } from '@/services/images';
@@ -29,18 +33,26 @@ import { Button } from '@/components/ui/Button';
 import { cardShadow } from '@/components/ui/Card';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
-/** Anexo único da geração: PDF, Word (.docx) ou imagem, já em base64. */
+/** Anexo único da geração: PDF, PowerPoint, Word ou imagem, já em base64. */
 interface Attachment {
   name: string;
   base64: string;
-  contentType: Exclude<GenerateContentType, 'text'>;
+  format: SourceFormat;
 }
 
-const ATTACHMENT_ICON: Record<Attachment['contentType'], string> = {
+const ATTACHMENT_ICON: Record<SourceKind, string> = {
   pdf: 'document-text',
+  pptx: 'easel',
   docx: 'document-text',
   image: 'image',
 };
+
+/**
+ * Formatos que só o pipeline de documento lê — ele extrai as figuras do arquivo
+ * para que virem imagem de card. Os demais seguem no caminho antigo, que
+ * responde na hora.
+ */
+const DOCUMENT_PIPELINE: SourceKind[] = ['pdf', 'pptx'];
 
 interface AiGeneratorFormProps {
   /** Recebe os cards gerados, já no modelo do app (quiz vira quizOptions). */
@@ -74,12 +86,7 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
   const pickFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: [
-          'text/plain',
-          'application/pdf',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'image/*',
-        ],
+        type: ['text/plain', ...PICKER_MIME_TYPES],
         copyToCacheDirectory: true,
       });
       if (result.canceled) return;
@@ -94,22 +101,23 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
         return;
       }
 
-      const contentType = detectFileContentType(file.mimeType, file.name);
-      if (!contentType) {
-        Alert.alert(
-          'Formato não suportado',
-          'Selecione um PDF, um Word (.docx), uma imagem ou um arquivo de texto.',
-        );
+      // O seletor filtra por tipo, mas nem todo sistema respeita o filtro —
+      // barrar aqui é o que garante mensagem clara em vez de erro lá na frente.
+      const format = detectSourceFormat(file.mimeType, file.name);
+      if (!format) {
+        Alert.alert('Formato não suportado', FORMAT_HELP);
         return;
       }
-      // Limite da Edge Function/API: base64 infla ~33%.
-      if (file.size != null && file.size > 24 * 1024 * 1024) {
-        Alert.alert('Arquivo muito grande', 'Escolha um arquivo de até 24 MB.');
+      if (file.size != null && file.size > MAX_SOURCE_BYTES) {
+        Alert.alert(
+          'Arquivo muito grande',
+          `Escolha um arquivo de até ${Math.floor(MAX_SOURCE_BYTES / 1024 / 1024)} MB.`,
+        );
         return;
       }
 
       const base64 = await new FileSystem.File(file.uri).base64();
-      setAttachment({ name: file.name, base64, contentType });
+      setAttachment({ name: file.name, base64, format });
     } catch {
       Alert.alert('Erro', 'Não foi possível ler o arquivo.');
     }
@@ -123,7 +131,7 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
     setAttachment({
       name: 'Foto da galeria',
       base64: img.base64,
-      contentType: 'image',
+      format: { kind: 'image', mime: 'image/jpeg', extension: 'jpg' },
     });
   };
 
@@ -138,12 +146,18 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
     try {
       const n = Math.min(Math.max(parseInt(count, 10) || 10, 1), 30);
 
-      // PDF vai pelo pipeline de documento: extrai as figuras do arquivo e a
-      // IA decide quais ajudam a memorizar. Os demais anexos seguem no caminho
-      // antigo, que responde na hora.
-      if (attachment?.contentType === 'pdf') {
+      // PDF e PPTX vão pelo pipeline de documento: extrai as figuras do arquivo
+      // e a IA decide quais ajudam a memorizar. Os demais anexos seguem no
+      // caminho antigo, que responde na hora.
+      if (attachment && DOCUMENT_PIPELINE.includes(attachment.format.kind)) {
         const doc = await importDocument(
-          { base64: attachment.base64, name: attachment.name, mode: genMode, count: n },
+          {
+            base64: attachment.base64,
+            name: attachment.name,
+            format: attachment.format,
+            mode: genMode,
+            count: n,
+          },
           setProgress,
         );
         if (!doc.ok) {
@@ -160,7 +174,9 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
       }
 
       const result = await generateCards({
-        contentType: attachment?.contentType ?? 'text',
+        contentType: attachment
+          ? (attachment.format.kind as 'docx' | 'image')
+          : 'text',
         content: attachment ? attachment.base64 : topic.trim(),
         mode: genMode,
         count: n,
@@ -227,7 +243,7 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
             style={cardShadow}
           >
             <Ionicons
-              name={ATTACHMENT_ICON[attachment.contentType] as never}
+              name={ATTACHMENT_ICON[attachment.format.kind] as never}
               size={18}
               color={colors.primary}
             />
@@ -242,8 +258,8 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
             </TouchableOpacity>
           </View>
           <Text className="text-outline font-inter-regular text-xs">
-            {attachment.contentType === 'pdf'
-              ? 'As figuras do PDF entram nos cards quando ajudarem a memorizar.'
+            {DOCUMENT_PIPELINE.includes(attachment.format.kind)
+              ? 'As figuras do arquivo entram nos cards quando ajudarem a memorizar.'
               : 'O material será gerado a partir deste anexo.'}
           </Text>
         </View>

@@ -75,30 +75,59 @@ export async function pickCardImages(maxCount: number): Promise<CardImage[]> {
 }
 
 /**
- * Abre a galeria para escolher a CAPA do deck — mesmo caminho da foto de
- * perfil: picker com corte quadrado e base64 direto, sem manipulator. A capa
- * não usa o Storage: é salva como data URI na coluna `cover_url` do deck.
+ * Lado máximo da capa de deck. Ela aparece como miniatura nas listas — 800px
+ * cobre qualquer tela com sobra. Sem este teto, uma foto de 4000px virava
+ * 1,5 MB por deck, e como a capa morava DENTRO da linha do banco, cada
+ * abertura da lista de decks baixava tudo de novo: foi isso que estourou o
+ * limite de egress do Supabase (5 GB/mês) em 18/08/2026.
+ */
+const COVER_MAX_DIMENSION = 800;
+
+/**
+ * Abre a galeria para escolher a CAPA do deck: corte quadrado no picker,
+ * depois teto de 800px e JPEG no manipulator — mesmo pipeline das imagens de
+ * card, só que menor. O destino é o Storage (ver `uploadDeckCover`), nunca
+ * mais data URI dentro do banco.
  */
 export async function pickDeckCover(): Promise<CardImage | null> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     allowsEditing: true,
     aspect: [1, 1],
-    quality: 0.4,
-    base64: true,
+    quality: 1, // a compressão fica por conta do manipulator, abaixo
   });
   if (result.canceled) return null;
   const asset = result.assets[0];
-  if (!asset?.base64) return null;
-  return { uri: asset.uri, base64: asset.base64 };
+  if (!asset) return null;
+
+  const largest = Math.max(asset.width ?? 0, asset.height ?? 0);
+  const actions: ImageManipulator.Action[] =
+    largest > COVER_MAX_DIMENSION
+      ? [{ resize: { width: COVER_MAX_DIMENSION } }]
+      : [];
+  const out = await ImageManipulator.manipulateAsync(asset.uri, actions, {
+    compress: JPEG_QUALITY,
+    format: ImageManipulator.SaveFormat.JPEG,
+    base64: true,
+  });
+  if (!out.base64) return null;
+  return { uri: out.uri, base64: out.base64 };
 }
 
 /**
- * Converte a imagem escolhida no valor a salvar em `cover_url`: nova (com
- * base64) vira data URI; já salva (URL http ou data URI) passa direto.
+ * Sobe a capa para o `card-images` e devolve a URL pública a salvar em
+ * `cover_url`. Capa já hospedada (edição sem troca) passa direto.
+ *
+ * URL em vez de data URI é o que faz o egress parar de sangrar: o expo-image
+ * guarda a imagem em cache no aparelho, então recarregar a lista de decks não
+ * baixa capa nenhuma de novo.
  */
-export function imageToDataUri(img: CardImage): string {
-  return img.base64 ? `data:image/jpeg;base64,${img.base64}` : img.uri;
+export async function uploadDeckCover(
+  userId: string,
+  img: CardImage,
+): Promise<string> {
+  const [url] = await uploadCardImages(userId, [img]);
+  return url ?? img.uri;
 }
 
 /** Decodifica base64 sem depender de `atob` (indisponível em alguns runtimes). */

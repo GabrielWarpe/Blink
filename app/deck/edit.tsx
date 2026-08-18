@@ -15,7 +15,7 @@ import { db } from '@/services/database';
 import { errorMessage } from '@/utils/errors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDecks } from '@/hooks/useDecks';
-import { imageToDataUri, type CardImage } from '@/services/images';
+import { uploadDeckCover, type CardImage } from '@/services/images';
 import {
   getPublishedFor,
   publishDeck,
@@ -100,8 +100,8 @@ export default function EditDeckScreen() {
     if (!id || !user) return;
     setSaving(true);
     try {
-      // Capa (se houver) vira data URI base64 salvo direto no deck — sem Storage.
-      const coverUrl = cover ? imageToDataUri(cover) : null;
+      // Capa (se houver) sobe para o Storage; no deck fica só a URL.
+      const coverUrl = cover ? await uploadDeckCover(user.id, cover) : null;
       const base = {
         name: title.trim(),
         cover_url: coverUrl,

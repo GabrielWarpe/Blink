@@ -216,6 +216,10 @@ function RootNavigator() {
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
+        name="deck/import"
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
         name="deck/card"
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />

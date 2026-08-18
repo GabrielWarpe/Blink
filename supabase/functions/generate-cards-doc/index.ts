@@ -7,6 +7,15 @@
 // 202 na hora e segue trabalhando em segundo plano (`EdgeRuntime.waitUntil`),
 // atualizando o `status` — que é o que o app fica lendo para mostrar progresso.
 //
+// A extração em si NÃO acontece aqui: PDF exige PyMuPDF, que não tem equivalente
+// viável no runtime Deno (256 MB de RAM, ~200 ms de CPU, 20 MB de bundle). Quem
+// lê o arquivo é o serviço Python de `extractor/`, e é lá que mora o roteador
+// por formato — PDF, PPTX, DOCX e imagem entram por lá e saem no mesmo formato.
+// Esta função orquestra: valida a posse do job, chama o extrator, chama a IA.
+//
+// Com `extract_only`, para depois da extração e não chega a chamar a IA. É o
+// modo da Fase 1: dá para conferir texto e figuras antes de gastar um token.
+//
 // POST { job_id } → 202 { accepted: true }
 //
 // Segredos necessários (supabase secrets set):
@@ -26,6 +35,9 @@ const MAX_PROMPT_IMAGES = 20;
 // Teto de texto. Sonnet 5 tem 1M de contexto, mas mandar um livro inteiro
 // custa caro e dilui o foco.
 const MAX_TEXT_CHARS = 120_000;
+// Validade das URLs assinadas do bucket privado. Uma hora cobre com folga a
+// revisão logo após a extração; reabrir um job antigo reassina no cliente.
+const SIGNED_URL_TTL = 60 * 60;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -36,6 +48,8 @@ const CORS_HEADERS = {
 type Status =
   | "queued"
   | "extracting"
+  // Terminal quando o job é `extract_only`: extraiu, nada de IA.
+  | "extracted"
   | "generating"
   | "assembling"
   | "done"
@@ -47,15 +61,34 @@ interface CatalogImage {
   path: string;
   thumb_path: string;
   caption: string | null;
-  kind: "embedded" | "page";
+  kind: "embedded" | "page" | "standalone";
   size: [number, number];
+}
+
+/** Ressalva da extração: deu certo, mas com algo que o usuário precisa saber. */
+interface ExtractionWarning {
+  code: string;
+  message: string;
 }
 
 interface Bundle {
   source: { type: string; pages: number; scanned: boolean; title: string | null };
   pages: { page: number; text: string; tables: string[]; images: number[] }[];
   catalog: CatalogImage[];
+  warnings: ExtractionWarning[];
   stats: Record<string, unknown>;
+}
+
+interface Job {
+  id: string;
+  user_id: string;
+  source_path: string;
+  source_name: string;
+  source_mime: string | null;
+  extract_only: boolean;
+  mode: "flashcards" | "quiz";
+  card_count: number;
+  language: string;
 }
 
 interface GeneratedCard {
@@ -164,7 +197,7 @@ async function setStatus(
 /** Chama o serviço Python e devolve o bundle já lido do bucket. */
 async function extractDocument(
   admin: SupabaseClient,
-  job: { id: string; user_id: string; source_path: string; source_name: string },
+  job: Job,
 ): Promise<Bundle> {
   const url = Deno.env.get("EXTRACTOR_URL");
   const token = Deno.env.get("EXTRACTOR_TOKEN");
@@ -179,15 +212,30 @@ async function extractDocument(
       user_id: job.user_id,
       job_id: job.id,
       source_path: job.source_path,
-      mime: "application/pdf",
+      // O roteador do extrator decide o formato por aqui. Mandar o mime fixo
+      // faria todo arquivo entrar como PDF e quebrar PPTX/DOCX/imagem.
+      mime: job.source_mime ?? "",
       filename: job.source_name,
+      // Renderizar página de PDF digitalizado só serve para a IA LER a página.
+      // Sem geração no fluxo, é tempo e storage jogados fora.
+      render_scanned_pages: !job.extract_only,
+      // Tabelas idem: só o prompt da geração usa, e detectá-las é a parte mais
+      // cara do PDF. O preview responde em segundos sem elas.
+      extract_tables: !job.extract_only,
+      // Miniaturas também são insumo do prompt — no preview só dobrariam os
+      // uploads, que são o grosso do tempo do job.
+      thumbnails: !job.extract_only,
     }),
   });
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
     if (response.status === 415) {
-      throw new JobError("formato", "Este formato de arquivo ainda não é suportado.");
+      // O serviço já devolve a mensagem pronta e específica ("PowerPoint antigo
+      // (.ppt) ainda não é suportado. Exporte como..."), bem mais útil que um
+      // texto genérico escrito aqui.
+      throw new JobError("formato", extractDetail(detail) ??
+        "Este formato de arquivo ainda não é suportado. Exporte como PDF, DOCX ou PPTX.");
     }
     if (response.status === 413) {
       throw new JobError("arquivo_grande", "O arquivo é grande demais.");
@@ -198,7 +246,17 @@ async function extractDocument(
         "Não consegui ler o documento. Ele pode estar corrompido ou protegido por senha.",
       );
     }
-    throw new JobError("extracao", `Falha na extração (${response.status}). ${detail.slice(0, 160)}`);
+    if (response.status === 504 || response.status === 524) {
+      // 524 é o proxy/túnel desistindo de esperar — a extração pode até ter
+      // terminado depois, mas a resposta não chegou.
+      throw new JobError(
+        "extracao_timeout",
+        "A leitura demorou demais para responder. Tente um arquivo menor.",
+      );
+    }
+    // Página de erro HTML de proxy não é mensagem para usuário.
+    const clean = detail.trimStart().startsWith("<") ? "" : detail.slice(0, 160);
+    throw new JobError("extracao", `Falha na extração (${response.status}). ${clean}`.trim());
   }
 
   const { bundle_path } = (await response.json()) as { bundle_path: string };
@@ -206,7 +264,62 @@ async function extractDocument(
   if (error || !data) {
     throw new JobError("extracao", "Extraí o documento mas não consegui reler o resultado.");
   }
-  return JSON.parse(await data.text()) as Bundle;
+  const bundle = JSON.parse(await data.text()) as Bundle;
+  bundle.warnings ??= [];
+  return bundle;
+}
+
+/** FastAPI embrulha a mensagem em `{"detail": "..."}`. */
+function extractDetail(body: string): string | null {
+  try {
+    const detail = (JSON.parse(body) as { detail?: unknown }).detail;
+    return typeof detail === "string" && detail.trim() ? detail : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Saída da extração, uniforme para qualquer formato de entrada — é este o
+ * contrato que o app consome. As URLs são assinadas porque o bucket `imports` é
+ * privado: o material de estudo do usuário nunca vira link público. Só a figura
+ * que de fato virar card é copiada para o `card-images` (ver `publishImages`).
+ */
+async function buildExtraction(
+  admin: SupabaseClient,
+  job: Job,
+  bundle: Bundle,
+): Promise<Record<string, unknown>> {
+  const folder = `${job.user_id}/${job.id}`;
+  const paths = bundle.catalog.map((image) => `${folder}/${image.path}`);
+
+  const { data: signed } = paths.length > 0
+    ? await admin.storage.from(IMPORTS_BUCKET).createSignedUrls(paths, SIGNED_URL_TTL)
+    : { data: [] };
+
+  const texto = bundle.pages
+    .map((p) => {
+      const tables = p.tables.length > 0 ? `\n\n${p.tables.join("\n\n")}` : "";
+      return `--- página ${p.page} ---\n${p.text}${tables}`;
+    })
+    .join("\n\n");
+
+  return {
+    texto,
+    imagens: bundle.catalog.map((image, index) => ({
+      image_id: image.id,
+      // O caminho é o que dura: a URL assinada expira, e a tela reassina a
+      // partir daqui quando reabre um job antigo.
+      path: paths[index],
+      url: signed?.[index]?.signedUrl ?? null,
+      largura: image.size[0],
+      altura: image.size[1],
+      pagina: image.page,
+      legenda: image.caption,
+    })),
+    avisos: bundle.warnings,
+    fonte: bundle.source,
+  };
 }
 
 /**
@@ -394,18 +507,30 @@ async function publishImages(
 }
 
 async function process(admin: SupabaseClient, jobId: string): Promise<void> {
-  const { data: job } = await admin
+  const { data } = await admin
     .from("import_jobs")
     .select("*")
     .eq("id", jobId)
     .single();
+  const job = data as Job | null;
   if (!job) return;
 
   try {
     await setStatus(admin, jobId, "extracting");
     const bundle = await extractDocument(admin, job);
+    const extraction = await buildExtraction(admin, job, bundle);
 
-    await setStatus(admin, jobId, "generating", { stats: bundle.stats });
+    // Fase 1: para aqui. A IA nunca é chamada — dá para conferir o que saiu do
+    // arquivo antes de gastar um token com ele.
+    if (job.extract_only) {
+      await setStatus(admin, jobId, "extracted", {
+        extraction,
+        stats: bundle.stats,
+      });
+      return;
+    }
+
+    await setStatus(admin, jobId, "generating", { extraction, stats: bundle.stats });
     const { blocks, used } = await buildUserBlocks(admin, job, bundle);
     const system = buildSystemPrompt(
       job.mode,

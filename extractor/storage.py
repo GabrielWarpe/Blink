@@ -46,7 +46,14 @@ def download(bucket: str, path: str) -> bytes:
     return response.content
 
 
-def upload(bucket: str, path: str, data: bytes, content_type: str) -> None:
+def upload(
+    bucket: str,
+    path: str,
+    data: bytes,
+    content_type: str,
+    client: httpx.Client | None = None,
+) -> None:
+    """Sobe um objeto. Passe `client` para reaproveitar a conexão em lote."""
     url = f"{SUPABASE_URL}/storage/v1/object/{bucket}/{path}"
     headers = {
         **_headers(),
@@ -54,10 +61,38 @@ def upload(bucket: str, path: str, data: bytes, content_type: str) -> None:
         # Reprocessar o mesmo job não pode falhar por arquivo já existente.
         "x-upsert": "true",
     }
-    with httpx.Client(timeout=TIMEOUT) as client:
+    if client is not None:
         response = client.post(url, headers=headers, content=data)
+    else:
+        with httpx.Client(timeout=TIMEOUT) as one_shot:
+            response = one_shot.post(url, headers=headers, content=data)
     if response.status_code not in (200, 201):
         raise StorageError(
             f"upload falhou ({response.status_code}) em {bucket}/{path}: "
             f"{response.text[:200]}"
         )
+
+
+def upload_many(bucket: str, items: list[tuple[str, bytes, str]], workers: int = 8) -> None:
+    """
+    Sobe vários objetos em paralelo, reaproveitando conexões.
+
+    Existe porque um job real sobe centenas de arquivos (figura + miniatura de
+    cada), e um por um — cada qual abrindo TLS do zero — levava mais tempo que a
+    extração inteira: foi o que estourou o teto de 100 s do túnel de
+    desenvolvimento. Oito por vez com conexão reaproveitada resolve com folga, e
+    o Storage aguenta esse paralelismo sem reclamar.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    limits = httpx.Limits(max_connections=workers, max_keepalive_connections=workers)
+    with httpx.Client(timeout=TIMEOUT, limits=limits) as client:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = [
+                pool.submit(upload, bucket, path, data, content_type, client)
+                for path, data, content_type in items
+            ]
+            # `result()` propaga a primeira exceção — melhor falhar o job do que
+            # devolver um bundle que aponta para figuras que não subiram.
+            for future in futures:
+                future.result()
