@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "supabase/schema.sql": {
-    "mtime": 1787094846.9746618,
-    "ast_hash": "8c8998e4786e84380ce77b184436876b",
+    "mtime": 1787104453.106729,
+    "ast_hash": "bc0394a8879d9735fdaaec6eb9d6a193",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -730,8 +730,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/generate-cards-doc/index.ts": {
-    "mtime": 1787094971.4701283,
-    "ast_hash": "b31412315a96f6d8ed3b9ed768f108d9",
+    "mtime": 1787104764.4702458,
+    "ast_hash": "78d63cb8865d11a1af57821a30d0f428",
     "semantic_hash": ""
   },
   ".claude/graphify-context.sh": {
@@ -1572,6 +1572,11 @@
   "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0156_p49_duplicata.jpg": {
     "mtime": 1787063445.7050433,
     "ast_hash": "17d9c91b1814d34df1b6970ede943085",
+    "semantic_hash": ""
+  },
+  "extractor/scripts/benchmark.py": {
+    "mtime": 1787104800.616856,
+    "ast_hash": "09db9509ca63600a369a2c2c73f51879",
     "semantic_hash": ""
   }
 }
