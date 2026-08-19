@@ -48,11 +48,13 @@ const ATTACHMENT_ICON: Record<SourceKind, string> = {
 };
 
 /**
- * Formatos que só o pipeline de documento lê — ele extrai as figuras do arquivo
- * para que virem imagem de card. Os demais seguem no caminho antigo, que
- * responde na hora.
+ * TODO anexo vai pelo pipeline de documento: é o único caminho que extrai as
+ * figuras do arquivo e as anexa aos cards. Antes, DOCX caía no caminho antigo
+ * (só texto, figuras perdidas) e imagem solta virava contexto de visão sem
+ * nunca ser anexada ao card. O caminho antigo (`generate-cards`) segue vivo só
+ * para tópico/texto digitado.
  */
-const DOCUMENT_PIPELINE: SourceKind[] = ['pdf', 'pptx'];
+const DOCUMENT_PIPELINE: SourceKind[] = ['pdf', 'pptx', 'docx', 'image'];
 
 interface AiGeneratorFormProps {
   /** Recebe os cards gerados, já no modelo do app (quiz vira quizOptions). */
@@ -146,9 +148,9 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
     try {
       const n = Math.min(Math.max(parseInt(count, 10) || 10, 1), 30);
 
-      // PDF e PPTX vão pelo pipeline de documento: extrai as figuras do arquivo
-      // e a IA decide quais ajudam a memorizar. Os demais anexos seguem no
-      // caminho antigo, que responde na hora.
+      // Anexo vai pelo pipeline de documento: extrai as figuras do arquivo e a
+      // IA monta as perguntas a partir delas. Tópico digitado segue no caminho
+      // antigo, que responde na hora.
       if (attachment && DOCUMENT_PIPELINE.includes(attachment.format.kind)) {
         const doc = await importDocument(
           {
@@ -174,10 +176,8 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
       }
 
       const result = await generateCards({
-        contentType: attachment
-          ? (attachment.format.kind as 'docx' | 'image')
-          : 'text',
-        content: attachment ? attachment.base64 : topic.trim(),
+        contentType: 'text',
+        content: topic.trim(),
         mode: genMode,
         count: n,
       });
@@ -258,9 +258,8 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
             </TouchableOpacity>
           </View>
           <Text className="text-outline font-inter-regular text-xs">
-            {DOCUMENT_PIPELINE.includes(attachment.format.kind)
-              ? 'As figuras do arquivo entram nos cards quando ajudarem a memorizar.'
-              : 'O material será gerado a partir deste anexo.'}
+            As figuras do arquivo viram perguntas quando ensinam algo. Todo card
+            já vem com alternativas para estudar como quiz.
           </Text>
         </View>
       )}
@@ -279,7 +278,9 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
         </View>
       )}
 
-      {/* Flashcards × Quiz */}
+      {/* Flashcards × Quiz — só para tópico digitado. Card gerado de arquivo já
+          sai com frente, verso e alternativas, então não há o que escolher. */}
+      {!attachment && (
       <View className="gap-1.5">
         <Text className="text-on-surface-variant font-inter-medium text-sm">
           O que gerar
@@ -322,6 +323,7 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
             : 'Frente e verso clássicos, sem alternativas de quiz.'}
         </Text>
       </View>
+      )}
 
       <Button
         variant="primary"
@@ -331,9 +333,11 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
       >
         {generating
           ? 'Gerando...'
-          : genMode === 'quiz'
-            ? 'Gerar quiz'
-            : 'Gerar flashcards'}
+          : attachment
+            ? 'Gerar cards do arquivo'
+            : genMode === 'quiz'
+              ? 'Gerar quiz'
+              : 'Gerar flashcards'}
       </Button>
     </View>
   );

@@ -95,8 +95,11 @@ export default function AddCardsScreen() {
       }[] = [];
       for (const c of cards) {
         const pending = pendingImagesRef.current[c.id] ?? [];
+        // Sem o `: c.images` a imagem do card gerado por IA sumia aqui: ela já
+        // vem hospedada (a Edge Function copiou para o `card-images`), então não
+        // passa por `pendingImagesRef`, que só guarda escolha manual.
         const urls =
-          pending.length > 0 ? await uploadCardImages(user.id, pending) : [];
+          pending.length > 0 ? await uploadCardImages(user.id, pending) : c.images;
         payload.push({
           front: c.front,
           back: c.back,

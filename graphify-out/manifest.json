@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "app/deck/add-cards.tsx": {
-    "mtime": 1783580312.3254201,
-    "ast_hash": "60fff30eca77c7a29826729b1b38b8c1",
+    "mtime": 1787094514.5794249,
+    "ast_hash": "41b97eff0a6513a9fd98ee974e96c1d3",
     "semantic_hash": ""
   },
   "app/deck/card.tsx": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "app/deck/create.tsx": {
-    "mtime": 1787080002.2284667,
-    "ast_hash": "1a09f39b25b1b6b142440b68bd8dae89",
+    "mtime": 1787094756.073315,
+    "ast_hash": "d4c8a584e754ea8b39cf19ee02bd6c22",
     "semantic_hash": ""
   },
   "app/deck/edit.tsx": {
@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "components/AiGeneratorForm.tsx": {
-    "mtime": 1787056839.1082635,
-    "ast_hash": "f33c36ce40558aea89acded58025506e",
+    "mtime": 1787094748.4904318,
+    "ast_hash": "97b0803c336f2bc1426510225299b6cc",
     "semantic_hash": ""
   },
   "components/CardImagePicker.tsx": {
@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   "hooks/useDecks.ts": {
-    "mtime": 1785458255.3426108,
-    "ast_hash": "6c275231ffed79fb8987e473415b9bfa",
+    "mtime": 1787094525.312733,
+    "ast_hash": "a490ae7a817e5f2e1da95826674af7d0",
     "semantic_hash": ""
   },
   "hooks/useStreak.ts": {
@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "supabase/schema.sql": {
-    "mtime": 1787056720.5897589,
-    "ast_hash": "ba2b01d96c19aee321fb2a478b3542a2",
+    "mtime": 1787104453.106729,
+    "ast_hash": "bc0394a8879d9735fdaaec6eb9d6a193",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -730,8 +730,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/generate-cards-doc/index.ts": {
-    "mtime": 1787080848.016127,
-    "ast_hash": "9edcff776e9652a0db918c057e4b09f6",
+    "mtime": 1787104764.4702458,
+    "ast_hash": "78d63cb8865d11a1af57821a30d0f428",
     "semantic_hash": ""
   },
   ".claude/graphify-context.sh": {
@@ -1572,6 +1572,11 @@
   "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/rejeitadas/0156_p49_duplicata.jpg": {
     "mtime": 1787063445.7050433,
     "ast_hash": "17d9c91b1814d34df1b6970ede943085",
+    "semantic_hash": ""
+  },
+  "extractor/scripts/benchmark.py": {
+    "mtime": 1787104800.616856,
+    "ast_hash": "09db9509ca63600a369a2c2c73f51879",
     "semantic_hash": ""
   }
 }

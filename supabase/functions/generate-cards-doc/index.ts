@@ -29,9 +29,27 @@ const MODEL = "claude-sonnet-5";
 const IMPORTS_BUCKET = "imports";
 const CARD_IMAGES_BUCKET = "card-images";
 
-// Teto de figuras enviadas ao modelo. Cada uma custa tokens de visão, e passar
-// de ~20 não melhora a escolha — só encarece.
-const MAX_PROMPT_IMAGES = 20;
+// Teto de figuras enviadas ao modelo. Era 20, escolhidas por área — o que numa
+// apostila sem legendas vira "as 20 maiores" e derruba justo a série didática
+// pequena que a extração faz questão de preservar (rizogênese 82×151). 60
+// figuras a ~650 tokens de visão custam centavos e o modelo passa a escolher
+// entre o material inteiro.
+const MAX_PROMPT_IMAGES = 60;
+/**
+ * Escolhe as figuras que vão ao modelo, espalhadas pelo documento.
+ *
+ * Ordenar por tamanho concentra tudo nas páginas de prancha grande e deixa
+ * capítulos sem representação. Aqui as figuras são agrupadas por página (as
+ * melhores de cada uma primeiro) e distribuídas em RODADAS: toda página entrega
+ * a sua 1ª figura antes de qualquer página entregar a 2ª, e assim por diante até
+ * encher o orçamento.
+ *
+ * Um teto fixo por página (3) foi testado e recusado: na apostila real ele
+ * descartava 63 das 111 figuras enquanto deixava 12 das 60 vagas vazias, e
+ * cortava pela metade a série de rizogênese — 5 estágios que vivem todos na
+ * página 17. A ordem das rodadas já garante a diversidade sem jogar material
+ * fora.
+ */
 // Teto de texto. Sonnet 5 tem 1M de contexto, mas mandar um livro inteiro
 // custa caro e dilui o foco.
 const MAX_TEXT_CHARS = 120_000;
@@ -86,6 +104,9 @@ interface Job {
   source_name: string;
   source_mime: string | null;
   extract_only: boolean;
+  // Mantido por compatibilidade com a coluna e com o caminho de texto puro
+  // (`generate-cards`). O pipeline de documento ignora: todo card sai como
+  // flashcard E quiz ao mesmo tempo.
   mode: "flashcards" | "quiz";
   card_count: number;
   language: string;
@@ -96,6 +117,7 @@ interface GeneratedCard {
   back: string;
   page: number;
   image_id: number | null;
+  image_reason: string | null;
   quiz_options: string[];
 }
 
@@ -109,7 +131,6 @@ function json(status: number, body: unknown): Response {
 // ── Prompt ───────────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(
-  mode: "flashcards" | "quiz",
   count: number,
   language: string,
   hasImages: boolean,
@@ -117,39 +138,64 @@ function buildSystemPrompt(
   const base = `Você cria material de estudo a partir de um documento que o aluno enviou.
 
 Regras gerais:
-- Gere EXATAMENTE ${count} ${mode === "flashcards" ? "flashcards" : "questões de múltipla escolha"} sobre o conteúdo do documento.
+- Gere EXATAMENTE ${count} cards sobre o conteúdo do documento.
 - Escreva tudo em ${language}.
-- Cada item cobre UMA ideia. Nada de pergunta dupla.
+- Cada card cobre UMA ideia. Nada de pergunta dupla.
 - Use a numeração de página do documento no campo "page".
-${
-    mode === "quiz"
-      ? `- Em "quiz_options", devolva EXATAMENTE 3 alternativas ERRADAS mas plausíveis, no mesmo estilo e tamanho da correta (que vai em "back"). Nunca repita a correta entre elas.\n`
-      : `- Deixe "quiz_options" como lista vazia.\n`
-  }`;
+- Ignore capa, sumário, ficha catalográfica, aviso de direitos autorais e recado
+  do autor ("me siga nas redes", contatos). Isso não é conteúdo de estudo.
+
+TODO card é flashcard E quiz ao mesmo tempo:
+- "front" é a pergunta, "back" é a resposta correta.
+- "quiz_options" traz EXATAMENTE 3 alternativas ERRADAS. Nunca repita a correta.
+- As erradas precisam ser PLAUSÍVEIS e do mesmo assunto: outras estruturas da
+  mesma região, etapas vizinhas do mesmo processo, valores da mesma ordem.
+  Alternativa de assunto alheio entrega a resposta.
+- PARIDADE DE FORMA (regra dura): as quatro opções — a correta e as três erradas
+  — devem ter comprimento e nível de detalhe equivalentes. A correta NÃO pode ser
+  sistematicamente a mais longa nem a mais curta; se der para acertar medindo o
+  tamanho da alternativa, o quiz não vale nada. Explicação longa vai no enunciado
+  ou no verso, nunca dentro de uma alternativa.`;
 
   if (!hasImages) {
-    return `${base}- Este documento não tem figuras aproveitáveis: devolva "image_id" sempre null.`;
+    return `${base}
+
+Este documento não tem figuras aproveitáveis: devolva "image_id" e
+"image_reason" sempre null.`;
   }
 
   return `${base}
-Sobre as FIGURAS:
-Você recebeu as figuras do documento numeradas (IMAGEM #1, #2…). Em cada card,
-"image_id" é o número de UMA figura, ou null.
 
-- Anexe uma figura SOMENTE quando ela ajuda a memorizar: diagrama, esquema,
-  fluxograma, mapa, gráfico, figura anatômica, ilustração explicativa, tabela
-  que vale como imagem. Nunca por estética.
-- Escolha pelo SIGNIFICADO, não pela proximidade. Leia a legenda, o texto ao
-  redor e as referências ("ver figura 2") antes de decidir. A figura da página
-  certa pode ser a errada para aquele card.
-- Quando a figura sozinha basta para formular a pergunta, escreva a FRENTE como
-  pergunta de identificação — "Que estrutura está indicada?", "Que fase do ciclo
-  esta figura representa?" — e a resposta no verso. Use este formato só quando a
-  figura for inequívoca: se ela mostra vinte estruturas e a pergunta é sobre uma,
-  faça uma pergunta comum com a figura de apoio.
-- Uma figura pode servir a mais de um card, mas não repita a mesma pergunta.
-- Prefira QUALIDADE a cobertura: é muito melhor 3 cards com figura realmente
-  útil do que 15 com figura decorativa. Na dúvida, "image_id": null.`;
+Sobre as FIGURAS — leia com atenção, é o que diferencia este material:
+
+Você recebeu as figuras do documento numeradas (IMAGEM #1, #2…).
+
+NÃO escreva o card primeiro para depois procurar uma figura que combine — é
+assim que se anexa figura decorativa. Faça o caminho inverso, figura por figura:
+
+1. Olhe a figura e pergunte: o que ela ENSINA?
+2. Ela sustenta uma pergunta SOZINHA, sem depender do texto ao redor?
+3. Só se sim, escreva a pergunta DERIVADA dela ("Que estrutura está indicada?",
+   "Que fase do processo esta figura representa?"), a resposta e as 3 erradas —
+   estas últimas tiradas do que a própria figura mostra (outras estruturas
+   visíveis nela, estruturas vizinhas).
+4. Se a resposta for não, siga para a próxima figura. O resto dos cards sai do
+   texto, com "image_id": null.
+
+Regras duras:
+- Se a figura JÁ TRAZ O NOME da estrutura escrito nela (rótulo, legenda interna,
+  seta com texto), NÃO faça pergunta de identificação sobre ela — o card se
+  autorresponde. Use-a como apoio de outra pergunta, ou não use.
+- Se a figura mostra vinte estruturas e a pergunta é sobre uma sem indicação
+  clara (seta, destaque, círculo), ela NÃO é inequívoca: "image_id": null.
+- No máximo 2 cards por figura, e nunca a mesma pergunta duas vezes.
+- Escolha pelo SIGNIFICADO, não pela proximidade: a figura da página certa pode
+  ser a errada para aquele card.
+- Ao usar uma figura, "image_reason" explica em UMA frase por que ela responde
+  àquela pergunta ("a seta indica o forame incisivo"). Sem figura, deixe null.
+- Na dúvida, "image_id": null — figura errada é pior que card sem figura. Mas
+  não seja tímido a ponto de ignorar figura boa: se ela ensina e é inequívoca,
+  use.`;
 }
 
 const CARD_SCHEMA = {
@@ -166,9 +212,19 @@ const CARD_SCHEMA = {
           // `anyOf` em vez de type: ["integer","null"] — é a forma que os
           // structured outputs aceitam para campo anulável.
           image_id: { anyOf: [{ type: "integer" }, { type: "null" }] },
+          // Justificativa do par figura↔pergunta. Obrigar a explicar melhora a
+          // escolha e deixa rastro para depurar figura errada.
+          image_reason: { anyOf: [{ type: "string" }, { type: "null" }] },
           quiz_options: { type: "array", items: { type: "string" } },
         },
-        required: ["front", "back", "page", "image_id", "quiz_options"],
+        required: [
+          "front",
+          "back",
+          "page",
+          "image_id",
+          "image_reason",
+          "quiz_options",
+        ],
         additionalProperties: false,
       },
     },
@@ -183,6 +239,92 @@ class JobError extends Error {
   constructor(public code: string, message: string) {
     super(message);
   }
+}
+
+/**
+ * Cota por plano. A geração custa dinheiro real (~R$0,36 a R$1,09 por apostila
+ * conforme o modelo), então o teto é do NEGÓCIO, não um número técnico.
+ *
+ * `free` é vitalício de propósito: 5 por mês, para sempre, é uma conta que corre
+ * todo mês por usuário que nunca assina — com mil cadastrados vira uma fatura
+ * permanente. 5 uma vez é custo de aquisição, gasto uma vez só.
+ *
+ * `pro` tem teto alto em vez de "ilimitado": ilimitado não existe quando cada
+ * uso custa, e é sempre o usuário mais engajado que estoura a margem dele.
+ */
+const PLAN_QUOTAS: Record<string, { limit: number; lifetime: boolean; label: string }> = {
+  free: {
+    limit: 5,
+    lifetime: true,
+    label: "Você usou suas 5 gerações gratuitas. Assine para continuar gerando.",
+  },
+  pro: {
+    limit: 100,
+    lifetime: false,
+    label: "Você atingiu o limite de 100 gerações neste mês.",
+  },
+};
+/** Job parado mais que isto sem avançar está órfão (Edge Function morreu). */
+const STALE_JOB_MINUTES = 10;
+
+/**
+ * Cota do plano, contada no BANCO — o app não pode afrouxar o próprio limite.
+ *
+ * Conta só jobs que chegaram a chamar a IA (extração-apenas não custa nada) e
+ * ignora os que falharam: cobrar do usuário por um erro nosso seria injusto.
+ * Quando a assinatura existir, o webhook do pagamento só troca `profiles.plan`
+ * — nada aqui muda.
+ */
+async function enforceQuota(admin: SupabaseClient, job: Job): Promise<void> {
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("plan")
+    .eq("id", job.user_id)
+    .maybeSingle();
+
+  const plan = (profile as { plan?: string } | null)?.plan ?? "free";
+  const quota = PLAN_QUOTAS[plan] ?? PLAN_QUOTAS.free;
+
+  let query = admin
+    .from("import_jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", job.user_id)
+    .eq("extract_only", false)
+    .neq("id", job.id)
+    .in("status", ["generating", "assembling", "done"]);
+
+  if (!quota.lifetime) {
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    query = query.gte("created_at", since);
+  }
+
+  const { count } = await query;
+  if ((count ?? 0) >= quota.limit) {
+    throw new JobError("cota_plano", quota.label);
+  }
+}
+
+/**
+ * Marca como erro os jobs que pararam no meio.
+ *
+ * Uma Edge Function pode morrer (timeout, deploy, falha de rede) e deixar a
+ * linha presa em `extracting` para sempre — o app desiste pelo timeout dele, mas
+ * a ficha fica suja e conta na cota. Roda a cada novo job em vez de depender de
+ * agendador. Usa `updated_at`, não `created_at`: um arquivo grande legítimo
+ * ainda em processamento atualiza o status e não pode ser confundido com
+ * abandono.
+ */
+async function sweepStaleJobs(admin: SupabaseClient): Promise<void> {
+  const cutoff = new Date(Date.now() - STALE_JOB_MINUTES * 60 * 1000).toISOString();
+  await admin
+    .from("import_jobs")
+    .update({
+      status: "error",
+      error_code: "interrompido",
+      error_message: "O processamento foi interrompido. Tente de novo.",
+    })
+    .in("status", ["queued", "extracting", "generating", "assembling"])
+    .lt("updated_at", cutoff);
 }
 
 async function setStatus(
@@ -327,6 +469,38 @@ async function buildExtraction(
  * O rótulo vem ANTES de cada imagem — é assim que o modelo amarra o número
  * à figura que vem em seguida.
  */
+function selectImages(catalog: CatalogImage[]): CatalogImage[] {
+  const byPage = new Map<number, CatalogImage[]>();
+  for (const image of catalog) {
+    const list = byPage.get(image.page) ?? [];
+    list.push(image);
+    byPage.set(image.page, list);
+  }
+
+  // Dentro da página: legenda primeiro (perfil de figura didática), depois área.
+  for (const list of byPage.values()) {
+    list.sort((a, b) => {
+      const byCaption = Number(Boolean(b.caption)) - Number(Boolean(a.caption));
+      if (byCaption !== 0) return byCaption;
+      return b.size[0] * b.size[1] - a.size[0] * a.size[1];
+    });
+  }
+
+  const pages = [...byPage.keys()].sort((a, b) => a - b);
+  const deepest = Math.max(...[...byPage.values()].map((l) => l.length), 0);
+  const picked: CatalogImage[] = [];
+  for (let round = 0; round < deepest && picked.length < MAX_PROMPT_IMAGES; round++) {
+    for (const page of pages) {
+      const image = byPage.get(page)![round];
+      if (image) picked.push(image);
+      if (picked.length >= MAX_PROMPT_IMAGES) break;
+    }
+  }
+
+  // Na ordem do documento: o modelo lê as figuras junto com o texto.
+  return picked.sort((a, b) => a.id - b.id);
+}
+
 async function buildUserBlocks(
   admin: SupabaseClient,
   job: { user_id: string; id: string },
@@ -350,13 +524,7 @@ async function buildUserBlocks(
     },
   ];
 
-  // Prioriza figura com legenda e maior — é o perfil de figura didática.
-  const ranked = [...bundle.catalog].sort((a, b) => {
-    const byCaption = Number(Boolean(b.caption)) - Number(Boolean(a.caption));
-    if (byCaption !== 0) return byCaption;
-    return b.size[0] * b.size[1] - a.size[0] * a.size[1];
-  });
-  const used = ranked.slice(0, MAX_PROMPT_IMAGES).sort((a, b) => a.id - b.id);
+  const used = selectImages(bundle.catalog);
 
   const folder = `${job.user_id}/${job.id}`;
   for (const image of used) {
@@ -471,6 +639,122 @@ async function callModel(
  * conteúdo, igual ao upload manual (`services/images.ts`), então a mesma figura
  * usada em dois cards ocupa espaço uma vez só.
  */
+/** Quantas vezes a mesma figura pode aparecer no deck. */
+const MAX_CARDS_PER_IMAGE = 2;
+
+interface ValidationResult {
+  cards: GeneratedCard[];
+  dropped: number;
+  /** Motivos, para as stats do job — é o que explica "pedi 15 e vieram 13". */
+  reasons: Record<string, number>;
+}
+
+/**
+ * Confere o que o modelo devolveu antes de virar card do usuário.
+ *
+ * Structured output garante o FORMATO, não a verdade: nada impede o modelo de
+ * citar a imagem 999, repetir a correta entre as alternativas ou grudar a mesma
+ * prancha em cinco cards. Como o usuário não revisa as figuras separadas, esta
+ * é a única barreira entre uma escolha ruim e o deck dele.
+ */
+function validateCards(
+  cards: GeneratedCard[],
+  sent: CatalogImage[],
+): ValidationResult {
+  const validIds = new Set(sent.map((i) => i.id));
+  const usePerImage = new Map<number, number>();
+  const out: GeneratedCard[] = [];
+  const reasons: Record<string, number> = {};
+
+  const drop = (reason: string) => {
+    reasons[reason] = (reasons[reason] ?? 0) + 1;
+  };
+
+  for (const card of cards) {
+    const front = (card.front ?? "").trim();
+    const back = (card.back ?? "").trim();
+    if (!front || !back) {
+      drop("frente ou verso vazio");
+      continue;
+    }
+
+    const options = (Array.isArray(card.quiz_options) ? card.quiz_options : [])
+      .map((o) => (o ?? "").trim())
+      .filter(Boolean);
+    // Alternativa igual à correta entrega a resposta; repetida idem.
+    const unique = [...new Set(options)].filter(
+      (o) => o.toLowerCase() !== back.toLowerCase(),
+    );
+    if (unique.length !== 3) {
+      drop("alternativas inválidas");
+      continue;
+    }
+
+    let imageId = card.image_id;
+    let reason = card.image_reason;
+
+    if (imageId != null && !validIds.has(imageId)) {
+      // O modelo citou uma figura que não recebeu. O card ainda vale como card
+      // de texto — descartar tudo puniria conteúdo bom por causa da figura.
+      drop("figura inexistente");
+      imageId = null;
+      reason = null;
+    }
+    if (imageId != null && !(reason ?? "").trim()) {
+      drop("figura sem justificativa");
+      imageId = null;
+      reason = null;
+    }
+    if (imageId != null) {
+      const used = usePerImage.get(imageId) ?? 0;
+      if (used >= MAX_CARDS_PER_IMAGE) {
+        drop("figura repetida demais");
+        imageId = null;
+        reason = null;
+      } else {
+        usePerImage.set(imageId, used + 1);
+      }
+    }
+    if (imageId == null) reason = null;
+
+    out.push({
+      ...card,
+      front,
+      back,
+      quiz_options: unique,
+      image_id: imageId,
+      image_reason: reason,
+    });
+  }
+
+  return { cards: out, dropped: cards.length - out.length, reasons };
+}
+
+/**
+ * Viés conhecido: o modelo escreve a correta como definição completa e as
+ * erradas como fragmentos, e o quiz passa a se resolver medindo o tamanho da
+ * alternativa. Por acaso, cada posição deveria ficar perto de 25%.
+ */
+function answerLengthBias(cards: GeneratedCard[]): Record<string, number> {
+  let longest = 0;
+  let shortest = 0;
+  for (const card of cards) {
+    const others = card.quiz_options.map((o) => o.length);
+    const correct = card.back.length;
+    // Estritamente maior/menor que TODAS as outras. Empate não conta: num quiz
+    // bem equilibrado ("Esmalte", "Dentina", "Cemento") as alternativas têm
+    // tamanho parecido de propósito, e contar empate marcaria 100% de viés
+    // justamente no caso que queremos.
+    if (others.every((n) => correct > n)) longest++;
+    if (others.every((n) => correct < n)) shortest++;
+  }
+  const total = Math.max(1, cards.length);
+  return {
+    correct_is_longest_pct: Math.round((longest / total) * 100),
+    correct_is_shortest_pct: Math.round((shortest / total) * 100),
+  };
+}
+
 async function publishImages(
   admin: SupabaseClient,
   job: { user_id: string; id: string },
@@ -507,16 +791,24 @@ async function publishImages(
 }
 
 async function process(admin: SupabaseClient, jobId: string): Promise<void> {
+  await sweepStaleJobs(admin);
+
+  // Reivindica o job: só sai de `queued` UMA vez. Se outra execução já pegou
+  // (retry do cliente, reinvocação, dois toques no botão), o update não casa,
+  // não volta linha, e esta sai sem chamar a IA nem cobrar de novo.
+  // Compare-and-swap no próprio banco — sem coluna nova, sem trava externa.
   const { data } = await admin
     .from("import_jobs")
-    .select("*")
+    .update({ status: "extracting" })
     .eq("id", jobId)
-    .single();
+    .eq("status", "queued")
+    .select("*")
+    .maybeSingle();
+
   const job = data as Job | null;
-  if (!job) return;
+  if (!job) return; // já reivindicado, ou job inexistente
 
   try {
-    await setStatus(admin, jobId, "extracting");
     const bundle = await extractDocument(admin, job);
     const extraction = await buildExtraction(admin, job, bundle);
 
@@ -530,15 +822,23 @@ async function process(admin: SupabaseClient, jobId: string): Promise<void> {
       return;
     }
 
+    await enforceQuota(admin, job);
+
     await setStatus(admin, jobId, "generating", { extraction, stats: bundle.stats });
     const { blocks, used } = await buildUserBlocks(admin, job, bundle);
-    const system = buildSystemPrompt(
-      job.mode,
-      job.card_count,
-      job.language,
-      used.length > 0,
-    );
-    const cards = await callModel(system, blocks, job.card_count);
+    const system = buildSystemPrompt(job.card_count, job.language, used.length > 0);
+    const raw = await callModel(system, blocks, job.card_count);
+
+    // O modelo pode citar figura que não recebeu, repetir a correta entre as
+    // alternativas ou grudar a mesma prancha em vários cards: nada disso pode
+    // chegar ao usuário, que não revisa as figuras.
+    const { cards, dropped, reasons } = validateCards(raw, used);
+    if (cards.length === 0) {
+      throw new JobError(
+        "resposta_invalida",
+        "A geração não produziu cards válidos. Tente de novo.",
+      );
+    }
 
     await setStatus(admin, jobId, "assembling");
     const urls = await publishImages(admin, job, cards, bundle.catalog);
@@ -546,7 +846,7 @@ async function process(admin: SupabaseClient, jobId: string): Promise<void> {
     const result = cards.map((c) => ({
       front: c.front,
       back: c.back,
-      quizOptions: Array.isArray(c.quiz_options) ? c.quiz_options.slice(0, 3) : [],
+      quizOptions: c.quiz_options,
       images: c.image_id != null && urls.has(c.image_id) ? [urls.get(c.image_id)!] : [],
     }));
 
@@ -556,6 +856,9 @@ async function process(admin: SupabaseClient, jobId: string): Promise<void> {
         ...bundle.stats,
         images_sent: used.length,
         cards_with_image: result.filter((c) => c.images.length > 0).length,
+        cards_dropped: dropped,
+        ...(dropped > 0 ? { dropped_reasons: reasons } : {}),
+        ...answerLengthBias(cards),
       },
     });
   } catch (e) {

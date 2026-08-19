@@ -606,3 +606,32 @@ alter table import_jobs add constraint import_jobs_status_check check (
 );
 
 notify pgrst, 'reload schema';
+
+-- ── Importação: cota diária por usuário ─────────────────────────────────────
+-- A geração por IA custa dinheiro, então existe teto por usuário checado no
+-- BANCO (nunca no app, que o usuário controla). A consulta filtra por dono +
+-- janela de 24 h; sem este índice ela varre a tabela a cada geração.
+create index if not exists idx_import_jobs_quota
+  on import_jobs(user_id, created_at desc)
+  where extract_only = false;
+
+-- A varredura de jobs órfãos busca por status + `updated_at` (não `created_at`:
+-- arquivo grande ainda processando atualiza o status e não pode ser confundido
+-- com abandono).
+create index if not exists idx_import_jobs_stale
+  on import_jobs(status, updated_at);
+
+notify pgrst, 'reload schema';
+
+-- ── Plano do usuário (freemium) ─────────────────────────────────────────────
+-- A geração por IA custa dinheiro real, então o teto de uso é do NEGÓCIO e não
+-- um número técnico. `free` recebe 5 gerações VITALÍCIAS (custo de aquisição,
+-- gasto uma vez) e `pro` recebe 100 por mês (teto alto em vez de "ilimitado",
+-- que não existe quando cada uso custa).
+--
+-- A Edge Function lê esta coluna para decidir a cota; quando a assinatura
+-- existir, o webhook do pagamento só troca o valor aqui.
+alter table profiles add column if not exists plan text not null default 'free'
+  check (plan in ('free', 'pro'));
+
+notify pgrst, 'reload schema';

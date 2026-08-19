@@ -13,7 +13,15 @@ export interface NewDeckInput {
   coverUrl?: string | null;
   sourceType: SourceType;
   tags?: string[];
-  cards: { front: string; back: string; quizOptions?: string[] }[];
+  // `images` são URLs já hospedadas no `card-images` (upload manual ou escolha
+  // da IA). O tipo omitia o campo e só não quebrava porque o payload chega por
+  // variável, sem checagem de excesso de propriedades.
+  cards: {
+    front: string;
+    back: string;
+    images?: string[];
+    quizOptions?: string[];
+  }[];
 }
 
 export function useDecks() {

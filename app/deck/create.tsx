@@ -137,8 +137,11 @@ export default function CreateDeckScreen() {
       }[] = [];
       for (const c of cards) {
         const pending = pendingImagesRef.current[c.id] ?? [];
+        // Sem o `: c.images` a imagem do card gerado por IA sumia aqui: ela já
+        // vem hospedada (a Edge Function copiou para o `card-images`), então não
+        // passa por `pendingImagesRef`, que só guarda escolha manual.
         const urls =
-          pending.length > 0 ? await uploadCardImages(user.id, pending) : [];
+          pending.length > 0 ? await uploadCardImages(user.id, pending) : c.images;
         payload.push({
           front: c.front,
           back: c.back,
@@ -304,9 +307,10 @@ export default function CreateDeckScreen() {
             />
           )}
 
-          {/* Conferir a extração antes de gerar: mostra o texto e as figuras que
-              saem do arquivo, sem gastar geração com material que não rende. */}
-          {mode === 'ai' && (
+          {/* Ferramenta interna de calibragem do extrator: mostra texto e
+              figuras cruas do arquivo. Fora da experiência do aluno de
+              propósito — ele recebe os cards prontos, não o monte de figuras. */}
+          {__DEV__ && mode === 'ai' && (
             <TouchableOpacity
               onPress={() => router.push('/deck/import')}
               activeOpacity={0.7}
