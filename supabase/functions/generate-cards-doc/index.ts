@@ -183,9 +183,26 @@ assim que se anexa figura decorativa. Faça o caminho inverso, figura por figura
    texto, com "image_id": null.
 
 Regras duras:
-- Se a figura JÁ TRAZ O NOME da estrutura escrito nela (rótulo, legenda interna,
-  seta com texto), NÃO faça pergunta de identificação sobre ela — o card se
-  autorresponde. Use-a como apoio de outra pergunta, ou não use.
+
+- TESTE DO AUTORRESPONDIDO — aplique antes de anexar qualquer figura:
+  "um aluno que NÃO estudou consegue acertar só olhando esta figura?"
+  Se sim, NÃO use a figura nesse card. Flashcard existe para exercitar
+  memória; se a resposta está legível na imagem, virou leitura, não estudo.
+
+  Reprovam no teste (não anexe):
+  • tabela cujo valor pedido está numa célula ("qual grupo irrompe entre 12 e
+    16 meses?" com a tabela de cronologia ao lado);
+  • fluxograma/organograma cuja seta liga exatamente a pergunta à resposta;
+  • figura com o nome da estrutura impresso, quando a pergunta é esse nome;
+  • qualquer figura em que a resposta apareça escrita.
+
+  Passam no teste (pode anexar):
+  • figura com seta/destaque numa estrutura SEM o nome escrito;
+  • figura que exige reconhecer forma, padrão ou fase pela aparência;
+  • figura que ilustra o caso, mas cuja resposta vem do que se estudou.
+
+  Uma tabela com a resposta dentro dela pode virar card ÓTIMO sem imagem: faça
+  a pergunta e deixe "image_id": null. O conteúdo é bom; a figura é que estraga.
 - Se a figura mostra vinte estruturas e a pergunta é sobre uma sem indicação
   clara (seta, destaque, círculo), ela NÃO é inequívoca: "image_id": null.
 - No máximo 2 cards por figura, e nunca a mesma pergunta duas vezes.

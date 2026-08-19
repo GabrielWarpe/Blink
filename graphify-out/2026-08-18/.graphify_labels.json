@@ -1,10 +1,10 @@
 {
-  "0": "AiGeneratorForm.tsx",
+  "0": "importDocument.ts",
   "1": "main.py",
   "2": "achievements.ts",
   "3": "SettingsContext.tsx",
-  "4": "decks.tsx",
-  "5": "index.tsx",
+  "4": "backup.ts",
+  "5": "decks.tsx",
   "6": "useThemeColors",
   "7": "expo",
   "8": "Blink (flashcards app)",
@@ -68,14 +68,17 @@
   "66": "graphify reference: transcribe video and audio",
   "67": "CLAUDE.md",
   "68": "extraction-spec.md",
+  "69": "settings.tsx",
   "70": "pdf.py",
   "71": "expo-secure-store",
+  "72": "storage.py",
   "73": "expo",
+  "74": "generateCards.ts",
+  "75": "DeckAvatar.tsx",
   "78": "progress.tsx",
   "79": "pptx.py",
   "80": "docx.py",
   "81": "ExtractedImage",
   "82": "answer.ts",
-  "84": "benchmark.py",
-  "88": "ActivityHeatmap.tsx"
+  "84": "benchmark.py"
 }

@@ -730,8 +730,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/generate-cards-doc/index.ts": {
-    "mtime": 1787104764.4702458,
-    "ast_hash": "78d63cb8865d11a1af57821a30d0f428",
+    "mtime": 1787105963.4482496,
+    "ast_hash": "a09e2f0fa6ad3dc50079ae7bd0165231",
     "semantic_hash": ""
   },
   ".claude/graphify-context.sh": {
@@ -1575,8 +1575,13 @@
     "semantic_hash": ""
   },
   "extractor/scripts/benchmark.py": {
-    "mtime": 1787104800.616856,
-    "ast_hash": "09db9509ca63600a369a2c2c73f51879",
+    "mtime": 1787105977.2853734,
+    "ast_hash": "f8a55256592c148a0e2b91f78891d49a",
+    "semantic_hash": ""
+  },
+  "extractor/saida/20f1d6_5796b42c58d0422190e5be83370461e2/benchmark.html": {
+    "mtime": 1787105748.2297564,
+    "ast_hash": "801fef3ce430c50ad181f0f7648b533a",
     "semantic_hash": ""
   }
 }

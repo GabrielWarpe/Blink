@@ -63,10 +63,13 @@ class Model:
     supports_effort: bool = True
 
 
+# Preços POR TOKEN em dólar, já no valor PÓS-PROMOÇÃO. As promoções vencem
+# (Sonnet 5 em 31/08/2026, Gemini Flash em 31/12/2026) e a decisão precisa valer
+# depois disso — comparar preço promocional escolheria o modelo errado.
 MODELS = [
     Model("Sonnet 5", "anthropic", "claude-sonnet-5", 3.00, 15.00),
     Model("Haiku 4.5", "anthropic", "claude-haiku-4-5", 1.00, 5.00, supports_effort=False),
-    Model("Gemini 3 Flash", "gemini", "gemini-3-flash", 1.50, 7.50),
+    Model("Gemini 3.7 Flash", "gemini", "gemini-3.7-flash", 1.50, 7.50),
 ]
 
 CARD_SCHEMA: dict[str, Any] = {
@@ -139,9 +142,26 @@ assim que se anexa figura decorativa. Faça o caminho inverso, figura por figura
 4. Se não, siga para a próxima. O resto sai do texto, com "image_id": null.
 
 Regras duras:
-- Se a figura JÁ TRAZ O NOME da estrutura escrito nela (rótulo, legenda interna,
-  seta com texto), NÃO faça pergunta de identificação sobre ela — o card se
-  autorresponde.
+
+- TESTE DO AUTORRESPONDIDO — aplique antes de anexar qualquer figura:
+  "um aluno que NÃO estudou consegue acertar só olhando esta figura?"
+  Se sim, NÃO use a figura nesse card. Flashcard existe para exercitar
+  memória; se a resposta está legível na imagem, virou leitura, não estudo.
+
+  Reprovam no teste (não anexe):
+  • tabela cujo valor pedido está numa célula ("qual grupo irrompe entre 12 e
+    16 meses?" com a tabela de cronologia ao lado);
+  • fluxograma/organograma cuja seta liga exatamente a pergunta à resposta;
+  • figura com o nome da estrutura impresso, quando a pergunta é esse nome;
+  • qualquer figura em que a resposta apareça escrita.
+
+  Passam no teste (pode anexar):
+  • figura com seta/destaque numa estrutura SEM o nome escrito;
+  • figura que exige reconhecer forma, padrão ou fase pela aparência;
+  • figura que ilustra o caso, mas cuja resposta vem do que se estudou.
+
+  Uma tabela com a resposta dentro dela pode virar card ÓTIMO sem imagem: faça
+  a pergunta e deixe "image_id": null. O conteúdo é bom; a figura é que estraga.
 - Se mostra vinte estruturas e a pergunta é sobre uma sem indicação clara,
   ela NÃO é inequívoca: "image_id": null.
 - No máximo 2 cards por figura.
