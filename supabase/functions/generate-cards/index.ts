@@ -11,6 +11,11 @@ import { Buffer } from "node:buffer";
 import mammoth from "npm:mammoth@1.11.0";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+// Mesmo interruptor da `generate-cards-doc`: `AI_PROVIDER=gemini` atende por
+// aqui também. Sem isto, gerar a partir de um TÓPICO DIGITADO continuaria indo
+// para a Anthropic — e falhando quando só há chave do Gemini configurada.
+const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const GEMINI_MODELS = ["gemini-3.5-flash", "gemini-3.7-flash", "gemini-3.6-flash"];
 // Haiku: mais barato e suficiente para extração/geração de cards.
 const MODEL = "claude-haiku-4-5-20251001";
 
@@ -29,6 +34,65 @@ interface GenerateRequest {
   mode: Mode;
   count?: number;
   language?: string;
+}
+
+/**
+ * Chama o Gemini e devolve uma `Response` no formato da Anthropic
+ * (`{content:[{type:"text",text}]}`), para o restante desta função continuar
+ * igual — o tratamento de erro, o parse e a validação não mudam.
+ */
+async function callGemini(
+  system: string,
+  blocks: unknown[],
+  maxTokens: number,
+): Promise<Response> {
+  const apiKey = Deno.env.get("GEMINI_API_KEY") ?? "";
+  const parts = (blocks as { type: string; text?: string; source?: { data?: string } }[])
+    .map((b) =>
+      b.type === "text"
+        ? { text: b.text ?? "" }
+        : { inline_data: { mime_type: "image/jpeg", data: b.source?.data ?? "" } }
+    );
+
+  let last: Response | null = null;
+  for (const model of GEMINI_MODELS) {
+    const attempt = await fetch(`${GEMINI_API_BASE}/${model}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          // Folga para o raciocínio interno. Nos modelos Gemini 3.x o "pensar"
+          // é cobrado DENTRO de `maxOutputTokens` — medido: uma resposta de 93
+          // tokens veio acompanhada de 1.291 de raciocínio. Com o teto
+          // calculado para a Anthropic (~300 por questão), o orçamento acabava
+          // antes da resposta e o JSON chegava cortado ao meio.
+          maxOutputTokens: Math.max(maxTokens + 4096, 8192),
+        },
+      }),
+    });
+    // 503 (lotado) e 404 (modelo aposentado) não são erro nosso: próximo da fila.
+    if (attempt.ok) {
+      const data = await attempt.json() as {
+        candidates?: { content?: { parts?: { text?: string }[] } }[];
+      };
+      const text = (data.candidates?.[0]?.content?.parts ?? [])
+        .map((p) => p.text ?? "").join("");
+      return new Response(JSON.stringify({ content: [{ type: "text", text }] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    // Cota grátis é POR MODELO (20 req/dia cada): 429 também vale trocar.
+    if (attempt.status !== 503 && attempt.status !== 404 && attempt.status !== 429) {
+      return attempt;
+    }
+    await attempt.body?.cancel();
+    last = attempt;
+  }
+  return last ?? new Response("{}", { status: 503 });
 }
 
 function json(status: number, body: unknown): Response {
@@ -137,12 +201,12 @@ Deno.serve(async (req) => {
     return json(405, { error: "method_not_allowed", message: "Use POST." });
   }
 
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  const useGemini = (Deno.env.get("AI_PROVIDER") ?? "anthropic").toLowerCase() === "gemini";
+  const apiKey = Deno.env.get(useGemini ? "GEMINI_API_KEY" : "ANTHROPIC_API_KEY");
   if (!apiKey) {
     return json(500, {
       error: "config",
-      message:
-        "ANTHROPIC_API_KEY não configurada. Rode: supabase secrets set ANTHROPIC_API_KEY=...",
+      message: `${useGemini ? "GEMINI_API_KEY" : "ANTHROPIC_API_KEY"} não configurada.`,
     });
   }
 
@@ -222,20 +286,23 @@ Deno.serve(async (req) => {
   const perItem = mode === "quiz" ? 300 : 150;
   const maxTokens = Math.min(Math.max(1024, count * perItem + 500), 8192);
 
-  const response = await fetch(ANTHROPIC_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: maxTokens,
-      system: buildSystemPrompt(mode, count, language),
-      messages: [{ role: "user", content: userBlocks }],
-    }),
-  });
+  const system = buildSystemPrompt(mode, count, language);
+  const response = useGemini
+    ? await callGemini(system, userBlocks, maxTokens)
+    : await fetch(ANTHROPIC_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: "user", content: userBlocks }],
+      }),
+    });
 
   if (!response.ok) {
     const err = (await response.json().catch(() => ({}))) as {
@@ -243,8 +310,16 @@ Deno.serve(async (req) => {
     };
     const upstreamMsg = err.error?.message ?? "";
 
+    // Cota do Gemini: a mensagem dele também cita "billing", então sem esta
+    // guarda um limite diário aparecia para o usuário como "créditos esgotados".
+    if (useGemini && response.status === 429) {
+      return json(429, {
+        error: "rate_limit",
+        message: "O limite diário gratuito da IA foi atingido. Tente de novo amanhã.",
+      });
+    }
     // Créditos esgotados: a Anthropic responde 400 com mensagem de billing.
-    if (/credit balance|billing|purchase/i.test(upstreamMsg)) {
+    if (!useGemini && /credit balance|billing|purchase/i.test(upstreamMsg)) {
       return json(402, {
         error: "no_credits",
         message: "Créditos da API esgotados. Tente novamente mais tarde.",

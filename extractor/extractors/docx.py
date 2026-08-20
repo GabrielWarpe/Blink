@@ -42,17 +42,18 @@ class DocxExtractor:
         )
 
     def extract(self, data: bytes, filename: str, opts: Options) -> Bundle:
-        return extract_docx(data)
+        return extract_docx(data, opts)
 
 
-def extract_docx(data: bytes) -> Bundle:
+def extract_docx(data: bytes, opts: Options | None = None) -> Bundle:
+    opts = opts or Options()
     zf = ooxml.open_zip(data)
     try:
         root = ooxml.parse_xml(zf, DOCUMENT)
         body = root.find("w:body", NS) if root is not None else None
 
         text, tables = _read_body(body)
-        images = _read_images(zf, root)
+        images = _read_images(zf, root) if opts.extract_images else []
 
         pages: list[dict[str, Any]] = [
             {

@@ -307,21 +307,10 @@ export default function CreateDeckScreen() {
             />
           )}
 
-          {/* Ferramenta interna de calibragem do extrator: mostra texto e
-              figuras cruas do arquivo. Fora da experiência do aluno de
-              propósito — ele recebe os cards prontos, não o monte de figuras. */}
-          {__DEV__ && mode === 'ai' && (
-            <TouchableOpacity
-              onPress={() => router.push('/deck/import')}
-              activeOpacity={0.7}
-              className="flex-row items-center justify-center gap-1.5 py-2"
-            >
-              <Ionicons name="eye-outline" size={15} color={colors.outline} />
-              <Text className="text-outline font-inter-medium text-sm">
-                Ver o que sai de um arquivo
-              </Text>
-            </TouchableOpacity>
-          )}
+          {/* A tela de conferência da extração (`/deck/import`) continua
+              existindo como ferramenta de calibragem do filtro, mas sem link:
+              chega-se a ela navegando direto para a rota. O aluno recebe os
+              cards prontos e não tem o que fazer com o monte de figuras cruas. */}
 
           {/* Manual Mode */}
           {mode === 'manual' && (

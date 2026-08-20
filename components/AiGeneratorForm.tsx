@@ -75,13 +75,19 @@ interface AiGeneratorFormProps {
 export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) {
   const colors = useThemeColors();
   const [topic, setTopic] = useState('');
-  const [count, setCount] = useState('10');
+  // 15, não 10: um documento rende muito mais que um tópico digitado, e 10
+  // cards para uma apostila de 49 páginas cobre pouco. O usuário ajusta.
+  const [count, setCount] = useState('15');
   const [genMode, setGenMode] = useState<GenerateMode>('flashcards');
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [generating, setGenerating] = useState(false);
   // Só o caminho de PDF tem progresso: ele leva dezenas de segundos e o
   // usuário precisa ver que não travou.
   const [progress, setProgress] = useState<ImportStatus | null>(null);
+  // Resultado da última geração por arquivo. Só números: serve para o usuário
+  // aprender quais dos SEUS materiais rendem figura e decidir melhor da próxima
+  // vez — sem nunca expor o monte de figuras cruas.
+  const [lastRun, setLastRun] = useState<string | null>(null);
 
   // ── Anexos ─────────────────────────────────────────────────────────────────
 
@@ -145,6 +151,7 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
       return;
     }
     setGenerating(true);
+    setLastRun(null);
     try {
       const n = Math.min(Math.max(parseInt(count, 10) || 10, 1), 30);
 
@@ -166,6 +173,13 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
           Alert.alert('Não foi possível gerar', doc.message);
           return;
         }
+        const comFigura = doc.cards.filter(c => c.images.length > 0).length;
+        setLastRun(
+          `${doc.cards.length} cards · ${comFigura} com figura` +
+            (comFigura === 0
+              ? ' — as figuras deste material não sustentavam perguntas'
+              : ''),
+        );
         onGenerated(
           doc.cards.map(c =>
             makeFlashcard(c.front, c.back, c.images, c.quizOptions),
@@ -257,9 +271,18 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
               <Ionicons name="close-circle" size={18} color={colors.outline} />
             </TouchableOpacity>
           </View>
+
           <Text className="text-outline font-inter-regular text-xs">
-            As figuras do arquivo viram perguntas quando ensinam algo. Todo card
-            já vem com alternativas para estudar como quiz.
+            Todo card já vem com alternativas para estudar como quiz.
+          </Text>
+        </View>
+      )}
+
+      {lastRun != null && progress == null && (
+        <View className="flex-row items-center gap-2 px-1">
+          <Ionicons name="checkmark-circle" size={15} color={colors.success} />
+          <Text className="flex-1 text-outline font-inter-regular text-xs">
+            {lastRun}
           </Text>
         </View>
       )}

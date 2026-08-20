@@ -635,3 +635,12 @@ alter table profiles add column if not exists plan text not null default 'free'
   check (plan in ('free', 'pro'));
 
 notify pgrst, 'reload schema';
+
+-- ── Importação: usar ou não as figuras do material ──────────────────────────
+-- Nem todo material tem figura que ensine: ebook com ilustração decorativa,
+-- livro só de texto. Nesses casos procurar figura é tempo e custo jogados fora
+-- (as imagens são mais da metade dos tokens do prompt). O usuário escolhe na
+-- hora de gerar; o padrão é aproveitar, que é o diferencial do app.
+alter table import_jobs add column if not exists use_images boolean not null default true;
+
+notify pgrst, 'reload schema';

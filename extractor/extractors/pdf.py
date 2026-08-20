@@ -63,7 +63,8 @@ def extract_pdf(data: bytes, opts: Options | None = None) -> Bundle:
 
             page_images: list[int] = []
             kept_here = 0
-            for order, info in enumerate(page.get_images(full=True)):
+            figuras = page.get_images(full=True) if opts.extract_images else []
+            for order, info in enumerate(figuras):
                 if len(images) >= MAX_RAW_IMAGES:
                     break
                 item = _read_embedded(doc, page, blocks, info, next_id, number, order)
@@ -78,14 +79,16 @@ def extract_pdf(data: bytes, opts: Options | None = None) -> Bundle:
                 page_images.append(next_id)
                 next_id += 1
 
-            if kept_here == 0 and _looks_vectorial(page):
+            # Sem busca de figura não há o que avisar sobre figura vetorial, e
+            # `get_drawings` custa caro numa página densa.
+            if opts.extract_images and kept_here == 0 and _looks_vectorial(page):
                 vector_pages.append(number)
 
             pages.append(
                 {
                     "page": number,
                     "text": text,
-                    "tables": _tables(page) if opts.extract_tables else [],
+                    "tables": _tables(page, len(text)) if opts.extract_tables else [],
                     "images": page_images,
                 }
             )
@@ -250,7 +253,7 @@ def _find_caption(blocks: list[tuple], rect: fitz.Rect) -> str | None:
 MAX_TABLES_PER_PAGE = 3
 
 
-def _tables(page: fitz.Page) -> list[str]:
+def _tables(page: fitz.Page, page_chars: int = 0) -> list[str]:
     """
     Tabelas em markdown. Silencioso: versões antigas do PyMuPDF não têm.
 
@@ -271,7 +274,7 @@ def _tables(page: fitz.Page) -> list[str]:
     words = page.get_text("words")  # uma passada; (x0, y0, x1, y1, texto, ...)
     out: list[str] = []
     for table in tables:
-        md = _table_markdown(table, words)
+        md = _table_markdown(table, words, page_chars)
         if md:
             out.append(md)
         if len(out) >= MAX_TABLES_PER_PAGE:
@@ -279,12 +282,17 @@ def _tables(page: fitz.Page) -> list[str]:
     return out
 
 
-def _table_markdown(table, words: list[tuple]) -> str | None:
+def _table_markdown(table, words: list[tuple], page_chars: int) -> str | None:
     """Markdown de uma tabela, ou None se ela parece grade decorativa."""
     rows = getattr(table, "rows", None) or []
     if len(rows) < 2:
         return None
 
+    # Cada palavra pertence a UMA célula só. Sem isto, quando o detector erra e
+    # marca a página inteira como tabela de 17 colunas sobrepostas, o mesmo
+    # texto cai em várias células: uma página virou 823 mil caracteres e o lixo
+    # duplicado tomou o lugar do documento no prompt.
+    taken: set[int] = set()
     grid: list[list[str]] = []
     filled = 0
     for row in rows:
@@ -294,11 +302,14 @@ def _table_markdown(table, words: list[tuple]) -> str | None:
                 cells.append("")
                 continue
             x0, y0, x1, y1 = bbox
-            text = " ".join(
-                w[4]
-                for w in words
-                if x0 <= (w[0] + w[2]) / 2 <= x1 and y0 <= (w[1] + w[3]) / 2 <= y1
-            ).strip()
+            parts: list[str] = []
+            for index, w in enumerate(words):
+                if index in taken:
+                    continue
+                if x0 <= (w[0] + w[2]) / 2 <= x1 and y0 <= (w[1] + w[3]) / 2 <= y1:
+                    parts.append(w[4])
+                    taken.add(index)
+            text = " ".join(parts).strip()
             cells.append(text)
             if text:
                 filled += 1
@@ -314,7 +325,14 @@ def _table_markdown(table, words: list[tuple]) -> str | None:
     head, *rest = grid
     lines = ["| " + " | ".join(head) + " |", "|" + "---|" * width]
     lines += ["| " + " | ".join(r) + " |" for r in rest]
-    return "\n".join(lines)
+    markdown = "\n".join(lines)
+
+    # Rede de segurança: tabela de verdade não é maior que a página que a
+    # contém. Se for, o detector pegou o layout inteiro — melhor deixar o texto
+    # cru da página falar do que encher o prompt de moldura.
+    if page_chars and len(markdown) > page_chars * 1.6:
+        return None
+    return markdown
 
 
 def _render_pages(

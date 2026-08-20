@@ -51,6 +51,9 @@ class ExtractRequest(BaseModel):
     # Tabelas em markdown: a parte mais cara do PDF, e só o prompt da geração
     # usa. O preview desliga para responder rápido.
     extract_tables: bool = True
+    # Procurar figuras. Desligado quando o usuário diz que o material não tem
+    # figura aproveitável: pula leitura, normalização e upload das imagens.
+    extract_images: bool = True
     # Miniaturas (versão 900px de cada figura): só o prompt da geração usa.
     # No preview elas dobravam o número de uploads — e o upload, a ~0,7s de
     # ida e volta cada, é onde o tempo do job realmente mora.
@@ -103,6 +106,7 @@ def extract_document(
             Options(
                 render_scanned_pages=body.render_scanned_pages,
                 extract_tables=body.extract_tables,
+                extract_images=body.extract_images,
             ),
         )
     except UnsupportedFormat as e:

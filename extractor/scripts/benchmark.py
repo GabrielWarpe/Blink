@@ -44,7 +44,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # Espelham a Edge Function — o benchmark tem de medir o que roda em produção.
 MAX_PROMPT_IMAGES = 60
 # (o rodízio por rodadas substituiu o teto por página — ver select_images)
-MAX_TEXT_CHARS = 120_000
+MAX_TEXT_CHARS = 400_000
 CARDS_TO_GENERATE = 15
 THUMB_SIZES = (700, 900)
 
@@ -106,7 +106,8 @@ def build_system_prompt(count: int, language: str, has_images: bool) -> str:
     base = f"""Você cria material de estudo a partir de um documento que o aluno enviou.
 
 Regras gerais:
-- Gere EXATAMENTE {count} cards sobre o conteúdo do documento.
+- Gere ATÉ {count} cards. Este número é TETO, não meta: se o material só
+  sustenta 12 boas questões, devolva 12. QUALIDADE GANHA de quantidade.
 - Escreva tudo em {language}.
 - Cada card cobre UMA ideia. Nada de pergunta dupla.
 - Use a numeração de página do documento no campo "page".
@@ -130,44 +131,107 @@ TODO card é flashcard E quiz ao mesmo tempo:
 
 Sobre as FIGURAS — leia com atenção, é o que diferencia este material:
 
-Você recebeu as figuras do documento numeradas (IMAGEM #1, #2…).
+Você recebeu as figuras do documento numeradas (IMAGEM #1, #2…). Esse número é
+uso INTERNO, só para você preencher "image_id" — o aluno nunca vê numeração
+nenhuma. NUNCA escreva "IMAGEM #71", "a Imagem #24" ou "figura 3" dentro de
+"front", "back" ou nas alternativas: o card mostra UMA figura, então diga
+simplesmente "a figura", "o esquema ao lado", "a radiografia", ou nem cite —
+"Que estrutura as setas indicam?" já se entende sozinho.
 
 NÃO escreva o card primeiro para depois procurar uma figura que combine — é
 assim que se anexa figura decorativa. Faça o caminho inverso, figura por figura:
 
 1. Olhe a figura e pergunte: o que ela ENSINA?
 2. Ela sustenta uma pergunta SOZINHA, sem depender do texto ao redor?
-3. Só se sim, escreva a pergunta DERIVADA dela, a resposta e as 3 erradas —
-   estas tiradas do que a própria figura mostra.
-4. Se não, siga para a próxima. O resto sai do texto, com "image_id": null.
+3. Só se sim, escreva a pergunta DERIVADA dela ("Que estrutura está indicada?",
+   "Que fase do processo esta figura representa?"), a resposta e as 3 erradas —
+   estas últimas tiradas do que a própria figura mostra (outras estruturas
+   visíveis nela, estruturas vizinhas).
+4. Se a resposta for não, siga para a próxima figura. O resto dos cards sai do
+   texto, com "image_id": null.
 
 Regras duras:
 
-- TESTE DO AUTORRESPONDIDO — aplique antes de anexar qualquer figura:
-  "um aluno que NÃO estudou consegue acertar só olhando esta figura?"
-  Se sim, NÃO use a figura nesse card. Flashcard existe para exercitar
-  memória; se a resposta está legível na imagem, virou leitura, não estudo.
+- LOGOTIPO NUNCA VIRA CARD. Marca de empresa, tecnologia, produto, instituição,
+  rede social, linguagem ou ferramenta não é material de estudo — "que
+  tecnologia este logo representa?" testa reconhecimento de marca, não
+  conteúdo. Se a figura é essencialmente um logotipo, "image_id": null, sempre.
+  O mesmo vale para banner, capa, brasão, foto de pessoa e captura de tela
+  decorativa.
 
-  Reprovam no teste (não anexe):
+- DIAGRAMA É O MELHOR MATERIAL QUE EXISTE. Entidade-relacionamento, caso de uso,
+  sequência, classes, fluxograma, arquitetura, esquema anatômico, corte
+  histológico, ciclo, linha do tempo, mapa: são figuras que ENSINAM estrutura e
+  relação, e é onde a pergunta com imagem vale mais.
+
+- SE A PERGUNTA FALA DE UMA FIGURA, ANEXE AQUELA FIGURA — não é opcional.
+  Escrever "no Modelo Entidade-Relacionamento, qual entidade se liga a X?",
+  "segundo o fluxograma...", "no esquema de classificação..." e deixar
+  "image_id": null é pedir que o aluno adivinhe do que você está falando. Se o
+  diagrama está entre as figuras que você recebeu, ele é obrigatório nesse card.
+  Se NÃO está, reescreva a pergunta sem citar a figura.
+
+- Faça perguntas EXIGENTES sobre os diagramas: qual relação existe entre dois
+  elementos, que etapa vem depois, que classificação aquele padrão representa,
+  o que muda entre os casos A, B e C. Interpretar um diagrama denso é estudo de
+  alto nível — é aí que este material ganha de um resumo de texto.
+
+- TESTE DO AUTORRESPONDIDO — faça isto ANTES de anexar qualquer figura:
+  **leia TODO o texto visível dentro da imagem.** Se a sua resposta, ou uma
+  paráfrase próxima dela, aparecer escrita ali em qualquer lugar — título,
+  rótulo, legenda interna, caixa, rodapé, trecho de código — o card está
+  autorrespondido: "image_id": null. Sem exceção, e independente de a figura
+  parecer um diagrama.
+
+  Exemplos reais que passaram indevidamente:
+  • figura de CSS Grid com a propriedade "grid-template-columns: repeat(3, 1fr)"
+    impressa nela, e
+    a pergunta era exatamente essa propriedade;
+  • comparação escrita "FLEXBOX: unidimensional / GRID: bidimensional", e a
+    pergunta era a diferença entre os dois;
+  • quadro com "let — para reatribuição", e a pergunta era quando usar "let".
+  Nos três a figura era bonita e do assunto certo — e entregava a resposta.
+
+  INFOGRÁFICO, QUADRO-RESUMO E SLIDE quase nunca servem: são texto diagramado,
+  e esse texto já está no documento. O que serve é figura cuja informação é
+  VISUAL — forma, posição, relação espacial, padrão — e que você não
+  conseguiria descrever só em palavras.
+
+  Reprovam (não anexe — a figura entrega a resposta de graça):
   • tabela cujo valor pedido está numa célula ("qual grupo irrompe entre 12 e
     16 meses?" com a tabela de cronologia ao lado);
-  • fluxograma/organograma cuja seta liga exatamente a pergunta à resposta;
   • figura com o nome da estrutura impresso, quando a pergunta é esse nome;
-  • qualquer figura em que a resposta apareça escrita.
+  • seta rotulada que liga exatamente a pergunta à resposta;
+  • **captura de tela perguntando o que está escrito nela** — "quais os três
+    itens listados no painel?", "qual o nome do usuário exibido?". Isso decora
+    dado de exemplo, não conteúdo. Nomes, listas e valores de demonstração que
+    aparecem numa interface NUNCA são matéria de estudo. Se a tela ensina algo,
+    pergunte sobre o CONCEITO (que fluxo ela representa, que papel de usuário
+    acessa aquilo), nunca sobre o texto que está nela.
 
-  Passam no teste (pode anexar):
+  PASSAM, e são os melhores cards que existem:
   • figura com seta/destaque numa estrutura SEM o nome escrito;
-  • figura que exige reconhecer forma, padrão ou fase pela aparência;
-  • figura que ilustra o caso, mas cuja resposta vem do que se estudou.
+  • reconhecer forma, padrão, fase ou classificação pela aparência;
+  • **interpretar um diagrama denso** — qual entidade se relaciona com qual, que
+    etapa vem depois, o que distingue o caso A do B. Aqui a resposta está na
+    figura, mas só chega quem entende o que está vendo: isso é estudo, não
+    leitura, e o card deve existir COM a figura.
+
+  Na dúvida entre os dois casos: se a pergunta exige entender e não apenas
+  localizar, anexe.
 
   Uma tabela com a resposta dentro dela pode virar card ÓTIMO sem imagem: faça
   a pergunta e deixe "image_id": null. O conteúdo é bom; a figura é que estraga.
-- Se mostra vinte estruturas e a pergunta é sobre uma sem indicação clara,
-  ela NÃO é inequívoca: "image_id": null.
-- No máximo 2 cards por figura.
-- "image_reason" explica em UMA frase por que a figura responde à pergunta.
-- Na dúvida, "image_id": null — mas não seja tímido a ponto de ignorar figura
-  boa."""
+- Se a figura mostra vinte estruturas e a pergunta é sobre uma sem indicação
+  clara (seta, destaque, círculo), ela NÃO é inequívoca: "image_id": null.
+- No máximo 2 cards por figura, e nunca a mesma pergunta duas vezes.
+- Escolha pelo SIGNIFICADO, não pela proximidade: a figura da página certa pode
+  ser a errada para aquele card.
+- Ao usar uma figura, "image_reason" explica em UMA frase por que ela responde
+  àquela pergunta ("a seta indica o forame incisivo"). Sem figura, deixe null.
+- Na dúvida, "image_id": null — figura errada é pior que card sem figura. Mas
+  não seja tímido a ponto de ignorar figura boa: se ela ensina e é inequívoca,
+  use."""
 
 
 # ── Seleção de figuras (mesma regra da Edge Function) ───────────────────────

@@ -39,10 +39,11 @@ class PptxExtractor:
         )
 
     def extract(self, data: bytes, filename: str, opts: Options) -> Bundle:
-        return extract_pptx(data)
+        return extract_pptx(data, opts)
 
 
-def extract_pptx(data: bytes) -> Bundle:
+def extract_pptx(data: bytes, opts: Options | None = None) -> Bundle:
+    opts = opts or Options()
     zf = ooxml.open_zip(data)
     try:
         slides = _slide_parts(zf)
@@ -67,7 +68,8 @@ def extract_pptx(data: bytes) -> Bundle:
                 text = f"{text}\n\n[notas do apresentador]\n{notes}".strip()
 
             page_images: list[int] = []
-            for order, media in enumerate(_slide_media(zf, part, root)):
+            midias = _slide_media(zf, part, root) if opts.extract_images else []
+            for order, media in enumerate(midias):
                 if len(images) >= MAX_RAW_IMAGES:
                     break
                 if media not in cache:

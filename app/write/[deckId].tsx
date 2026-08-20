@@ -8,7 +8,9 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +24,6 @@ import { FinishPromptModal } from '@/components/FinishPromptModal';
 import { useSettings } from '@/contexts/SettingsContext';
 import { checkAnswer } from '@/utils/answer';
 import { Button } from '@/components/ui/Button';
-import { CardImages } from '@/components/CardImages';
 import { SessionTimer } from '@/components/SessionTimer';
 import { StudySetup } from '@/components/StudySetup';
 import { SessionResult } from '@/components/SessionResult';
@@ -34,10 +35,15 @@ function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
 }
 
+// Mesma proporção do quiz: a figura precisa de espaço para ser lida, mas o
+// campo de resposta tem de continuar visível sem rolar.
+const WRITE_HERO_HEIGHT_RATIO = 0.32;
+
 export default function WriteScreen() {
   const { deckId } = useLocalSearchParams<{ deckId: string }>();
   const router = useRouter();
   const colors = useThemeColors();
+  const { height: screenHeight } = useWindowDimensions();
   const { settings } = useSettings();
   const [deck, setDeck] = useState<Deck | null>(null);
 
@@ -321,10 +327,23 @@ export default function WriteScreen() {
               <Text className="text-on-surface font-jakarta-bold text-xl leading-7">
                 {currentCard.front}
               </Text>
+              {/* A figura é parte da pergunta, não ilustração: numa miniatura
+                  de 72 px não dá para ler um esquema anatômico. Mesmo formato do
+                  quiz — inteira (`contain`), nunca cortada. */}
               {currentCard.images.length > 0 && (
-                <View className="mt-3 items-start">
-                  <CardImages images={currentCard.images} size={72} />
-                </View>
+                <Image
+                  source={{ uri: currentCard.images[0] }}
+                  contentFit="contain"
+                  cachePolicy="memory-disk"
+                  transition={0}
+                  style={{
+                    width: '100%',
+                    height: screenHeight * WRITE_HERO_HEIGHT_RATIO,
+                    borderRadius: 12,
+                    backgroundColor: colors.surfaceContainerHigh,
+                    marginTop: 12,
+                  }}
+                />
               )}
             </View>
 

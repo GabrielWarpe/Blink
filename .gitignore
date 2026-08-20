@@ -25,3 +25,5 @@ graphify-out/.graphify_root
 extractor/__pycache__/
 extractor/.venv/
 *.pyc
+# Saída dos testes locais de extração (try_local.py / benchmark.py)
+extractor/saida/

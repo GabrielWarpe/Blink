@@ -26,6 +26,18 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-5";
 
+// Qual provedor atende a geração. Um interruptor por secret, não uma camada de
+// abstração: são duas funções e um `if`. Serve para depurar o fluxo com a chave
+// grátis do Gemini antes de gastar crédito pago, e depois para trocar para o
+// vencedor do benchmark sem reescrever nada.
+//   supabase secrets set AI_PROVIDER=gemini GEMINI_API_KEY=...
+const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+// Em ordem de preferência. Os modelos mais novos são os mais disputados: medido
+// em 19/08/2026 na camada grátis, 3.7 e 3.6 devolviam 503 depois de ~30 s de
+// espera enquanto o 3.5 respondia em 16 s. Cair para o próximo da lista é mais
+// rápido e mais confiável do que insistir no mesmo.
+const GEMINI_MODELS = ["gemini-3.5-flash", "gemini-3.7-flash", "gemini-3.6-flash"];
+
 const IMPORTS_BUCKET = "imports";
 const CARD_IMAGES_BUCKET = "card-images";
 
@@ -50,9 +62,12 @@ const MAX_PROMPT_IMAGES = 60;
  * página 17. A ordem das rodadas já garante a diversidade sem jogar material
  * fora.
  */
-// Teto de texto. Sonnet 5 tem 1M de contexto, mas mandar um livro inteiro
-// custa caro e dilui o foco.
-const MAX_TEXT_CHARS = 120_000;
+// Teto de texto. Era 120k, e numa apostila de 49 páginas isso entregava só 15
+// delas ao modelo — as figuras das outras 34 chegavam SEM o texto que as
+// explica, e ele não conseguia ligar uma coisa à outra. Medido com material
+// real: subir para o documento inteiro levou de 1 para 7 os cards com figura.
+// O teto continua existindo para livro inteiro não estourar o contexto.
+const MAX_TEXT_CHARS = 400_000;
 // Validade das URLs assinadas do bucket privado. Uma hora cobre com folga a
 // revisão logo após a extração; reabrir um job antigo reassina no cliente.
 const SIGNED_URL_TTL = 60 * 60;
@@ -104,6 +119,8 @@ interface Job {
   source_name: string;
   source_mime: string | null;
   extract_only: boolean;
+  /** O usuário quer aproveitar as figuras do material? */
+  use_images: boolean;
   // Mantido por compatibilidade com a coluna e com o caminho de texto puro
   // (`generate-cards`). O pipeline de documento ignora: todo card sai como
   // flashcard E quiz ao mesmo tempo.
@@ -138,7 +155,11 @@ function buildSystemPrompt(
   const base = `Você cria material de estudo a partir de um documento que o aluno enviou.
 
 Regras gerais:
-- Gere EXATAMENTE ${count} cards sobre o conteúdo do documento.
+- Gere ATÉ ${count} cards sobre o conteúdo do documento. Este número é TETO, não
+  meta: se o material só sustenta 12 boas questões, devolva 12. Preencher a cota
+  com pergunta óbvia, repetida, de detalhe irrelevante ou inventada estraga o
+  deck inteiro — o aluno perde a confiança no material e para de estudar. Entre
+  entregar o número pedido e entregar só o que presta, QUALIDADE GANHA sempre.
 - Escreva tudo em ${language}.
 - Cada card cobre UMA ideia. Nada de pergunta dupla.
 - Use a numeração de página do documento no campo "page".
@@ -168,7 +189,12 @@ Este documento não tem figuras aproveitáveis: devolva "image_id" e
 
 Sobre as FIGURAS — leia com atenção, é o que diferencia este material:
 
-Você recebeu as figuras do documento numeradas (IMAGEM #1, #2…).
+Você recebeu as figuras do documento numeradas (IMAGEM #1, #2…). Esse número é
+uso INTERNO, só para você preencher "image_id" — o aluno nunca vê numeração
+nenhuma. NUNCA escreva "IMAGEM #71", "a Imagem #24" ou "figura 3" dentro de
+"front", "back" ou nas alternativas: o card mostra UMA figura, então diga
+simplesmente "a figura", "o esquema ao lado", "a radiografia", ou nem cite —
+"Que estrutura as setas indicam?" já se entende sozinho.
 
 NÃO escreva o card primeiro para depois procurar uma figura que combine — é
 assim que se anexa figura decorativa. Faça o caminho inverso, figura por figura:
@@ -184,22 +210,73 @@ assim que se anexa figura decorativa. Faça o caminho inverso, figura por figura
 
 Regras duras:
 
-- TESTE DO AUTORRESPONDIDO — aplique antes de anexar qualquer figura:
-  "um aluno que NÃO estudou consegue acertar só olhando esta figura?"
-  Se sim, NÃO use a figura nesse card. Flashcard existe para exercitar
-  memória; se a resposta está legível na imagem, virou leitura, não estudo.
+- LOGOTIPO NUNCA VIRA CARD. Marca de empresa, tecnologia, produto, instituição,
+  rede social, linguagem ou ferramenta não é material de estudo — "que
+  tecnologia este logo representa?" testa reconhecimento de marca, não
+  conteúdo. Se a figura é essencialmente um logotipo, "image_id": null, sempre.
+  O mesmo vale para banner, capa, brasão, foto de pessoa e captura de tela
+  decorativa.
 
-  Reprovam no teste (não anexe):
+- DIAGRAMA É O MELHOR MATERIAL QUE EXISTE. Entidade-relacionamento, caso de uso,
+  sequência, classes, fluxograma, arquitetura, esquema anatômico, corte
+  histológico, ciclo, linha do tempo, mapa: são figuras que ENSINAM estrutura e
+  relação, e é onde a pergunta com imagem vale mais.
+
+- SE A PERGUNTA FALA DE UMA FIGURA, ANEXE AQUELA FIGURA — não é opcional.
+  Escrever "no Modelo Entidade-Relacionamento, qual entidade se liga a X?",
+  "segundo o fluxograma...", "no esquema de classificação..." e deixar
+  "image_id": null é pedir que o aluno adivinhe do que você está falando. Se o
+  diagrama está entre as figuras que você recebeu, ele é obrigatório nesse card.
+  Se NÃO está, reescreva a pergunta sem citar a figura.
+
+- Faça perguntas EXIGENTES sobre os diagramas: qual relação existe entre dois
+  elementos, que etapa vem depois, que classificação aquele padrão representa,
+  o que muda entre os casos A, B e C. Interpretar um diagrama denso é estudo de
+  alto nível — é aí que este material ganha de um resumo de texto.
+
+- TESTE DO AUTORRESPONDIDO — faça isto ANTES de anexar qualquer figura:
+  **leia TODO o texto visível dentro da imagem.** Se a sua resposta, ou uma
+  paráfrase próxima dela, aparecer escrita ali em qualquer lugar — título,
+  rótulo, legenda interna, caixa, rodapé, trecho de código — o card está
+  autorrespondido: "image_id": null. Sem exceção, e independente de a figura
+  parecer um diagrama.
+
+  Exemplos reais que passaram indevidamente:
+  • figura de CSS Grid com a propriedade "grid-template-columns: repeat(3, 1fr)"
+    impressa nela, e
+    a pergunta era exatamente essa propriedade;
+  • comparação escrita "FLEXBOX: unidimensional / GRID: bidimensional", e a
+    pergunta era a diferença entre os dois;
+  • quadro com "let — para reatribuição", e a pergunta era quando usar "let".
+  Nos três a figura era bonita e do assunto certo — e entregava a resposta.
+
+  INFOGRÁFICO, QUADRO-RESUMO E SLIDE quase nunca servem: são texto diagramado,
+  e esse texto já está no documento. O que serve é figura cuja informação é
+  VISUAL — forma, posição, relação espacial, padrão — e que você não
+  conseguiria descrever só em palavras.
+
+  Reprovam (não anexe — a figura entrega a resposta de graça):
   • tabela cujo valor pedido está numa célula ("qual grupo irrompe entre 12 e
     16 meses?" com a tabela de cronologia ao lado);
-  • fluxograma/organograma cuja seta liga exatamente a pergunta à resposta;
   • figura com o nome da estrutura impresso, quando a pergunta é esse nome;
-  • qualquer figura em que a resposta apareça escrita.
+  • seta rotulada que liga exatamente a pergunta à resposta;
+  • **captura de tela perguntando o que está escrito nela** — "quais os três
+    itens listados no painel?", "qual o nome do usuário exibido?". Isso decora
+    dado de exemplo, não conteúdo. Nomes, listas e valores de demonstração que
+    aparecem numa interface NUNCA são matéria de estudo. Se a tela ensina algo,
+    pergunte sobre o CONCEITO (que fluxo ela representa, que papel de usuário
+    acessa aquilo), nunca sobre o texto que está nela.
 
-  Passam no teste (pode anexar):
+  PASSAM, e são os melhores cards que existem:
   • figura com seta/destaque numa estrutura SEM o nome escrito;
-  • figura que exige reconhecer forma, padrão ou fase pela aparência;
-  • figura que ilustra o caso, mas cuja resposta vem do que se estudou.
+  • reconhecer forma, padrão, fase ou classificação pela aparência;
+  • **interpretar um diagrama denso** — qual entidade se relaciona com qual, que
+    etapa vem depois, o que distingue o caso A do B. Aqui a resposta está na
+    figura, mas só chega quem entende o que está vendo: isso é estudo, não
+    leitura, e o card deve existir COM a figura.
+
+  Na dúvida entre os dois casos: se a pergunta exige entender e não apenas
+  localizar, anexe.
 
   Uma tabela com a resposta dentro dela pode virar card ÓTIMO sem imagem: faça
   a pergunta e deixe "image_id": null. O conteúdo é bom; a figura é que estraga.
@@ -383,7 +460,10 @@ async function extractDocument(
       extract_tables: !job.extract_only,
       // Miniaturas também são insumo do prompt — no preview só dobrariam os
       // uploads, que são o grosso do tempo do job.
-      thumbnails: !job.extract_only,
+      thumbnails: !job.extract_only && job.use_images !== false,
+      // O usuário disse que o material não tem figura aproveitável: nem
+      // procurar. Poupa o upload das imagens e metade dos tokens do prompt.
+      extract_images: job.use_images !== false,
     }),
   });
 
@@ -542,14 +622,31 @@ async function buildUserBlocks(
   ];
 
   const used = selectImages(bundle.catalog);
-
   const folder = `${job.user_id}/${job.id}`;
+
+  // Em paralelo, em lotes. Uma de cada vez levava 57 s para 60 miniaturas de
+  // 12 KB — o tempo era todo ida e volta de rede, e sozinho estourava o limite
+  // de execução da função antes mesmo de a IA ser chamada.
+  const DOWNLOAD_BATCH = 12;
+  const bytesById = new Map<number, Uint8Array>();
+  for (let i = 0; i < used.length; i += DOWNLOAD_BATCH) {
+    const lote = used.slice(i, i + DOWNLOAD_BATCH);
+    await Promise.all(
+      lote.map(async (image) => {
+        const { data } = await admin.storage
+          .from(IMPORTS_BUCKET)
+          .download(`${folder}/${image.thumb_path}`);
+        if (data) bytesById.set(image.id, new Uint8Array(await data.arrayBuffer()));
+      }),
+    );
+  }
+
+  // Só as que realmente foram enviadas contam como "vistas pelo modelo": é esta
+  // lista que o validador usa para recusar `image_id` de figura inexistente.
+  const sent: CatalogImage[] = [];
   for (const image of used) {
-    const { data } = await admin.storage
-      .from(IMPORTS_BUCKET)
-      .download(`${folder}/${image.thumb_path}`);
-    if (!data) continue;
-    const bytes = new Uint8Array(await data.arrayBuffer());
+    const bytes = bytesById.get(image.id);
+    if (!bytes) continue;
     blocks.push({
       type: "text",
       text: `IMAGEM #${image.id} — página ${image.page}${image.caption ? ` — legenda: "${image.caption}"` : ""}`,
@@ -558,9 +655,10 @@ async function buildUserBlocks(
       type: "image",
       source: { type: "base64", media_type: "image/jpeg", data: base64(bytes) },
     });
+    sent.push(image);
   }
 
-  return { blocks, used };
+  return { blocks, used: sent };
 }
 
 function base64(bytes: Uint8Array): string {
@@ -572,11 +670,139 @@ function base64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
+/** Roteia para o provedor configurado. Ambos devolvem o MESMO JSON de cards. */
 async function callModel(
   system: string,
   blocks: unknown[],
   count: number,
 ): Promise<GeneratedCard[]> {
+  const provider = (Deno.env.get("AI_PROVIDER") ?? "anthropic").toLowerCase();
+  const call = () =>
+    provider === "gemini" ? callGemini(system, blocks) : callAnthropic(system, blocks);
+
+  // Uma segunda tentativa, curta. O `callGemini` já percorre vários modelos por
+  // conta própria, então insistir mais aqui só faz a FALHA demorar: cada 503 do
+  // Gemini leva ~30 s para voltar, e o usuário ficou 2,5 min olhando para uma
+  // tela que ia falhar de qualquer jeito.
+  let text = "";
+  for (let attempt = 1; ; attempt++) {
+    try {
+      text = await call();
+      break;
+    } catch (e) {
+      const retryable = e instanceof JobError &&
+        (e.code === "overloaded" || e.code === "rate_limit");
+      if (!retryable || attempt >= 2) throw e;
+      await new Promise((r) => setTimeout(r, 5000));
+    }
+  }
+
+  let parsed: { cards?: GeneratedCard[] };
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new JobError("resposta_invalida", "A IA devolveu uma resposta inesperada.");
+  }
+
+  const cards = (parsed.cards ?? []).filter(
+    (c) =>
+      typeof c?.front === "string" && c.front.trim() &&
+      typeof c?.back === "string" && c.back.trim(),
+  );
+  if (cards.length === 0) {
+    throw new JobError(
+      "conteudo_insuficiente",
+      "Não consegui extrair conteúdo suficiente deste documento para gerar cards.",
+    );
+  }
+  return cards.slice(0, count);
+}
+
+/**
+ * Gemini. Mesmo prompt e mesmo schema do caminho da Anthropic — muda só o
+ * formato do envelope: `inline_data` em vez de `source.base64`, e o schema vai
+ * em `responseJsonSchema`.
+ */
+async function callGemini(system: string, blocks: unknown[]): Promise<string> {
+  const apiKey = Deno.env.get("GEMINI_API_KEY");
+  if (!apiKey) throw new JobError("config", "GEMINI_API_KEY não configurada.");
+
+  const parts = (blocks as {
+    type: string;
+    text?: string;
+    source?: { data: string };
+  }[]).map((b) =>
+    b.type === "text"
+      ? { text: b.text ?? "" }
+      : { inline_data: { mime_type: "image/jpeg", data: b.source?.data ?? "" } }
+  );
+
+  const body = JSON.stringify({
+    system_instruction: { parts: [{ text: system }] },
+    contents: [{ role: "user", parts }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseJsonSchema: CARD_SCHEMA,
+      maxOutputTokens: 16000,
+    },
+  });
+
+  // Percorre a lista até um modelo aceitar. Sobrecarga (503) e indisponível
+  // (404, modelo aposentado) não são erro nosso: é só ir para o próximo.
+  let response: Response | null = null;
+  for (const model of GEMINI_MODELS) {
+    const attempt = await fetch(`${GEMINI_API_BASE}/${model}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body,
+    });
+    // 503 = lotado, 404 = modelo aposentado, 429 = cota diária esgotada. A cota
+    // grátis é POR MODELO (20 req/dia cada), então cair para o próximo da lista
+    // triplica o que dá para usar num dia — e nenhum dos três é erro nosso.
+    const proximo = attempt.status === 503 || attempt.status === 404 ||
+      attempt.status === 429;
+    if (attempt.ok || !proximo) {
+      response = attempt;
+      break;
+    }
+    await attempt.body?.cancel();
+  }
+
+  if (!response) {
+    throw new JobError(
+      "overloaded",
+      "A IA está sobrecarregada agora. Tente de novo em um minuto.",
+    );
+  }
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    if (response.status === 429) {
+      throw new JobError(
+        "rate_limit",
+        "O limite diário gratuito da IA foi atingido. Tente de novo amanhã.",
+      );
+    }
+    if (/API key|PERMISSION_DENIED|API_KEY_INVALID/i.test(text)) {
+      throw new JobError("invalid_api_key", "A chave da IA foi recusada.");
+    }
+    throw new JobError("upstream", `Erro na API da IA (${response.status}).`);
+  }
+
+  const data = (await response.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+  };
+  const candidate = data.candidates?.[0];
+  if (!candidate) {
+    throw new JobError("resposta_invalida", "A IA não devolveu conteúdo.");
+  }
+  if (candidate.finishReason === "SAFETY") {
+    throw new JobError("recusado", "A IA recusou gerar material a partir deste documento.");
+  }
+  return (candidate.content?.parts ?? []).map((p) => p.text ?? "").join("");
+}
+
+async function callAnthropic(system: string, blocks: unknown[]): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) throw new JobError("config", "ANTHROPIC_API_KEY não configurada.");
 
@@ -611,7 +837,10 @@ async function callModel(
       throw new JobError("no_credits", "Créditos da API esgotados. Tente mais tarde.");
     }
     if (response.status === 429) {
-      throw new JobError("rate_limit", "Muitas gerações seguidas. Tente em instantes.");
+      throw new JobError(
+        "rate_limit",
+        "O limite diário gratuito da IA foi atingido. Tente de novo amanhã.",
+      );
     }
     if (response.status === 529) {
       throw new JobError("overloaded", "A IA está sobrecarregada. Tente em instantes.");
@@ -631,24 +860,7 @@ async function callModel(
     );
   }
 
-  const text = data.content?.find((b) => b.type === "text")?.text ?? "";
-  let parsed: { cards?: GeneratedCard[] };
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    throw new JobError("resposta_invalida", "A IA devolveu uma resposta inesperada.");
-  }
-
-  const cards = (parsed.cards ?? []).filter(
-    (c) => typeof c?.front === "string" && c.front.trim() && typeof c?.back === "string" && c.back.trim(),
-  );
-  if (cards.length === 0) {
-    throw new JobError(
-      "conteudo_insuficiente",
-      "Não consegui extrair conteúdo suficiente deste documento para gerar cards.",
-    );
-  }
-  return cards.slice(0, count);
+  return data.content?.find((b) => b.type === "text")?.text ?? "";
 }
 
 /**

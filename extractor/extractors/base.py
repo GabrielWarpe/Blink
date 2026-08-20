@@ -71,6 +71,11 @@ class Options:
     # da geração — o preview nem as mostra. O job de extração-apenas desliga;
     # o de geração liga, onde +10 s somem atrás do tempo de IA.
     extract_tables: bool = True
+    # Procurar figuras no arquivo. Desligado quando o usuário diz que o material
+    # não tem figura aproveitável (livro só de texto, ebook com ilustração
+    # decorativa): pula a leitura, a normalização e o upload das imagens, que
+    # juntos são a maior fatia do tempo.
+    extract_images: bool = True
 
 
 @dataclass

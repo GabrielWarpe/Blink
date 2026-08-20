@@ -119,11 +119,15 @@ export function QuizQuestion({
           ainda pode ser respondida. */}
       {notice != null && <TimeUpNotice message={notice} />}
 
-      {/* Imagem-destaque (só a primeira, se o card tiver imagens) */}
+      {/* Imagem-destaque (só a primeira, se o card tiver imagens).
+          `contain`, nunca `cover`: aqui a figura É a pergunta — num esquema com
+          os painéis A, B e C, cortar as bordas tira justamente o que se pede
+          para comparar, e o aluno escolhe entre quatro alternativas sem ver
+          metade da imagem. */}
       {card.images.length > 0 && (
         <Image
           source={{ uri: card.images[0] }}
-          contentFit="cover"
+          contentFit="contain"
           cachePolicy="memory-disk"
           transition={0}
           style={{

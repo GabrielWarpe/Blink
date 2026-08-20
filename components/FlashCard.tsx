@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { ImageBackground } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,10 +12,10 @@ import type { Flashcard } from '@/types';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useCardSize } from '@/hooks/useCardSize';
 
-// Quando o card tem imagem, essa fração da altura fica reservada para o
-// scrim + texto da pergunta, ancorados embaixo (a faixa em si cresce com o
-// texto — isto é só o teto do degradê, não uma altura fixa do texto).
-const FRONT_SCRIM_HEIGHT_RATIO = 0.55;
+// Teto da faixa de texto quando o card tem imagem. A faixa cresce com a
+// pergunta, mas metade do card é o limite: passar disso espreme a figura, que
+// é justamente o que a pergunta manda olhar.
+const FRONT_TEXT_MAX_RATIO = 0.5;
 
 interface FlashCardProps {
   card: Flashcard;
@@ -72,59 +71,46 @@ export function FlashCard({ card, flipped, onPress }: FlashCardProps) {
         className="rounded-card overflow-hidden border border-outline-variant/30"
       >
         {hasImage ? (
-          <ImageBackground
-            source={{ uri: card.images[0] }}
-            contentFit="cover"
-            cachePolicy="memory-disk"
-            transition={0}
-            style={{ flex: 1 }}
-          >
-            <View className="absolute top-4 right-4 bg-black/50 rounded-full px-3 py-1">
-              <Text className="text-white font-inter-medium text-xs">
-                Questão
-              </Text>
-            </View>
-            {card.images.length > 1 && (
-              <View className="absolute top-4 left-4 bg-black/50 rounded-full px-2.5 py-1">
-                <Text className="text-white font-inter-medium text-xs">
-                  1/{card.images.length}
+          // Figura em cima, pergunta embaixo — sem sobreposição.
+          //
+          // Antes a imagem preenchia o card com `cover` e o texto flutuava por
+          // cima: num esquema com os painéis A, B e C, o C era cortado e o
+          // rodapé sumia atrás da faixa preta. A pergunta citava o que não dava
+          // para ver. Aqui a figura tem faixa própria e aparece inteira.
+          <View className="flex-1 bg-surface-container">
+            <View className="flex-1 bg-surface-container-highest">
+              <Image
+                source={{ uri: card.images[0] }}
+                contentFit="contain"
+                cachePolicy="memory-disk"
+                transition={0}
+                style={{ flex: 1 }}
+              />
+              <View className="absolute top-4 right-4 bg-primary/10 rounded-full px-3 py-1">
+                <Text className="text-primary font-inter-medium text-xs">
+                  Questão
                 </Text>
               </View>
-            )}
+              {card.images.length > 1 && (
+                <View className="absolute top-4 left-4 bg-primary/10 rounded-full px-2.5 py-1">
+                  <Text className="text-primary font-inter-medium text-xs">
+                    1/{card.images.length}
+                  </Text>
+                </View>
+              )}
+            </View>
 
-            {/* Degradê decorativo: cobre até FRONT_SCRIM_HEIGHT_RATIO da
-                altura do card, puramente visual (o texto vive na faixa
-                sólida abaixo, que cresce com o conteúdo). */}
-            <LinearGradient
-              pointerEvents="none"
-              colors={['transparent', 'rgba(0,0,0,0.85)']}
-              style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: CARD_HEIGHT * FRONT_SCRIM_HEIGHT_RATIO,
-              }}
-            />
-
-            {/* Faixa de texto: altura automática (cresce com a pergunta),
-                ancorada embaixo, sobre fundo sólido para legibilidade. */}
+            {/* Cresce com a pergunta, mas nunca passa de metade do card: numa
+                pergunta longa a figura ainda precisa ter espaço. */}
             <View
-              className="absolute left-0 right-0 bottom-0 px-6 pt-8 pb-6"
-              style={{ backgroundColor: 'rgba(0,0,0,0.78)' }}
+              className="px-6 py-5 justify-center"
+              style={{ maxHeight: CARD_HEIGHT * FRONT_TEXT_MAX_RATIO }}
             >
-              <Text
-                className="text-white font-jakarta-bold text-xl leading-7 text-center"
-                style={{
-                  textShadowColor: 'rgba(0,0,0,0.5)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 4,
-                }}
-              >
+              <Text className="text-on-surface font-jakarta-bold text-lg leading-7 text-center">
                 {card.front}
               </Text>
             </View>
-          </ImageBackground>
+          </View>
         ) : (
           <View className="flex-1 bg-surface-container items-center justify-center p-8">
             <View className="absolute top-4 right-4 bg-primary/10 rounded-full px-3 py-1">
