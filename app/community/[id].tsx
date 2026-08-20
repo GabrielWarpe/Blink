@@ -159,6 +159,13 @@ export default function CommunityDeckScreen() {
   const { user, profile } = useAuth();
 
   const [deck, setDeck] = useState<CommunityDeckRow | null>(null);
+  /**
+   * O deck não está disponível — apagado pelo autor OU tirado do ar pela
+   * moderação (a RLS simplesmente não devolve a linha). Sem este estado a
+   * tela ficava no spinner para sempre, porque `!deck` era indistinguível
+   * de "ainda carregando".
+   */
+  const [indisponivel, setIndisponivel] = useState(false);
   const [cards, setCards] = useState<CommunityCardRow[]>([]);
   const [reviews, setReviews] = useState<DeckRatingRow[]>([]);
   // Dois conceitos distintos: ter uma cópia AGORA (controla o botão Baixar —
@@ -193,6 +200,9 @@ export default function CommunityDeckScreen() {
     if (full) {
       setDeck(full.deck);
       setCards(full.cards);
+      setIndisponivel(false);
+    } else {
+      setIndisponivel(true);
     }
     const [revs, copy, dl, mine] = await Promise.all([
       listReviews(id),
@@ -344,6 +354,31 @@ export default function CommunityDeckScreen() {
       setSubmitting(false);
     }
   };
+
+  if (!loading && indisponivel) {
+    return (
+      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <View className="flex-row items-center px-3 pt-2 pb-2">
+          <TouchableOpacity onPress={() => router.back()} className="p-2">
+            <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
+          </TouchableOpacity>
+        </View>
+        <View className="flex-1 items-center justify-center px-10">
+          <Ionicons name="eye-off-outline" size={40} color={colors.outline} />
+          <Text className="text-on-surface font-jakarta-bold text-lg mt-4 text-center">
+            Deck indisponível
+          </Text>
+          {/* Sem dizer QUAL dos dois motivos: quem denunciou não precisa saber
+              se a denúncia foi acatada, e o autor de um deck removido não deve
+              descobrir isso por uma tela pública. */}
+          <Text className="text-outline font-inter-regular text-sm mt-2 text-center">
+            Este deck não está mais na comunidade. Pode ter sido removido pelo
+            autor ou pela moderação.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (loading || !deck) {
     return (

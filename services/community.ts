@@ -31,7 +31,17 @@ export async function listCommunityDecks(opts: {
   search?: string;
   sort?: CommunitySort;
 }): Promise<CommunityDeckRow[]> {
-  let query = supabase.from('community_decks').select('*');
+  // `unlisted` é como o painel administrativo tira um deck do ar (fila de
+  // denúncias). O filtro aqui é por clareza e por índice — quem de fato
+  // impede a leitura é a RLS, porque filtro de cliente qualquer um contorna.
+  //
+  // Note que isto exclui o deck removido do PRÓPRIO autor da vitrine pública:
+  // a RLS o deixa enxergar o deck (para saber que ainda existe), mas ele não
+  // pode aparecer na lista como se estivesse no ar.
+  let query = supabase
+    .from('community_decks')
+    .select('*')
+    .or('unlisted.is.null,unlisted.eq.false');
 
   const term = opts.search?.trim();
   if (term) query = query.ilike('title', `%${term}%`);

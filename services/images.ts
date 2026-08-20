@@ -130,6 +130,59 @@ export async function uploadDeckCover(
   return url ?? img.uri;
 }
 
+/**
+ * Lado máximo da foto de perfil. Ela nunca aparece maior que ~96px (aba de
+ * perfil, autor do deck, avaliação), então 256px já cobre tela retina com
+ * sobra.
+ *
+ * O teto aqui pesa MAIS que o da capa, porque o avatar é DENORMALIZADO: ao
+ * publicar um deck ele é copiado para `community_decks.author_avatar_url`, e
+ * ao avaliar, para `deck_ratings.reviewer_avatar_url`. Uma foto guardada como
+ * data URI vira uma cópia por deck publicado e uma por avaliação — e a aba
+ * Comunidade lê até 100 dessas linhas de uma vez. Era o mesmo erro das capas
+ * (egress estourado em 18/08/2026), multiplicado.
+ */
+const AVATAR_MAX_DIMENSION = 256;
+
+/**
+ * Abre a galeria para escolher a FOTO DE PERFIL: corte quadrado no picker,
+ * teto de 256px e JPEG. Mesmo pipeline da capa — o destino é o Storage (ver
+ * `uploadAvatar`), nunca data URI dentro do banco.
+ */
+export async function pickAvatar(): Promise<CardImage | null> {
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 1, // a compressão fica por conta do manipulator, abaixo
+  });
+  if (result.canceled) return null;
+  const asset = result.assets[0];
+  if (!asset) return null;
+
+  const largest = Math.max(asset.width ?? 0, asset.height ?? 0);
+  const actions: ImageManipulator.Action[] =
+    largest > AVATAR_MAX_DIMENSION
+      ? [{ resize: { width: AVATAR_MAX_DIMENSION } }]
+      : [];
+  const out = await ImageManipulator.manipulateAsync(asset.uri, actions, {
+    compress: JPEG_QUALITY,
+    format: ImageManipulator.SaveFormat.JPEG,
+    base64: true,
+  });
+  if (!out.base64) return null;
+  return { uri: out.uri, base64: out.base64 };
+}
+
+/** Sobe a foto de perfil e devolve a URL pública a salvar em `avatar_url`. */
+export async function uploadAvatar(
+  userId: string,
+  img: CardImage,
+): Promise<string> {
+  const [url] = await uploadCardImages(userId, [img]);
+  return url ?? img.uri;
+}
+
 /** Decodifica base64 sem depender de `atob` (indisponível em alguns runtimes). */
 export function base64ToBytes(b64: string): Uint8Array {
   const alphabet =

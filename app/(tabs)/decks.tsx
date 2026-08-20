@@ -37,7 +37,6 @@ import { SwipeableDeckRow } from '@/components/SwipeableDeckRow';
 import { EnterAnimation } from '@/components/EnterAnimation';
 import { LoadError } from '@/components/LoadError';
 import { useReplayOnFocus } from '@/hooks/useReplayOnFocus';
-import { CARD_RADIUS } from '@/constants/radius';
 import {
   StudyModePicker,
   useStudyModePicker,
@@ -364,11 +363,7 @@ export default function DecksScreen() {
           )
         }
         renderItem={({ item, index }) => (
-          <EnterAnimation
-            index={index}
-            shimmerRadius={CARD_RADIUS}
-            runKey={runKey}
-          >
+          <EnterAnimation index={index} runKey={runKey}>
             <SwipeableDeckRow
               onDelete={() =>
                 Alert.alert(

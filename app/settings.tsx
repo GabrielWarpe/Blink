@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { db } from '@/services/database';
+import { deleteAccount } from '@/lib/api/deleteAccount';
 import { ensureNotificationPermission } from '@/services/notifications';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -34,9 +35,10 @@ import {
 } from '@/constants/study';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
-// Caixa de entrada para onde vai o "Enviar feedback". Troque quando houver um
-// e-mail de suporte dedicado.
-const FEEDBACK_EMAIL = 'gabrielmaicawarpechowski@aluno.santoangelo.uri.br';
+// Caixa de entrada do "Enviar feedback". É a conta DO APP, não a pessoal de
+// ninguém: e-mail de aluno expira na formatura e vai embutido em toda cópia
+// instalada, onde não dá para trocar sem publicar versão nova.
+const FEEDBACK_EMAIL = 'blinkflashcards@gmail.com';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -44,6 +46,9 @@ export default function SettingsScreen() {
   const { user, profile, signOut, refreshProfile } = useAuth();
   const { settings, update } = useSettings();
   const colors = useThemeColors();
+
+  /** Exclusão em curso — trava o botão para não disparar duas vezes. */
+  const [deleting, setDeleting] = useState(false);
 
   // Meta diária vive no perfil (Supabase); editada inline aqui.
   const [dailyGoal, setDailyGoal] = useState('20');
@@ -71,9 +76,6 @@ export default function SettingsScreen() {
       { text: 'Cancelar', style: 'cancel' as const },
     ]);
   };
-
-  const soon = () =>
-    Alert.alert('Em breve', 'Esta funcionalidade estará disponível em breve.');
 
   // Ao ativar uma notificação, garante a permissão antes de salvar a opção.
   const toggleNotification = async (
@@ -136,22 +138,49 @@ export default function SettingsScreen() {
     ]);
   };
 
+  /**
+   * Exclusão da conta, AQUI DENTRO — a Apple recusa app que manda o usuário
+   * pedir isso por e-mail (diretriz 5.1.1(v)).
+   *
+   * Duas confirmações de propósito: a primeira diz o que se perde, a segunda
+   * é o ponto sem volta. Ação destrutiva e irreversível não pode depender de
+   * um toque só, ainda mais num link de texto que fica logo abaixo de "Sair".
+   */
   const handleDeleteAccount = () => {
+    if (deleting) return;
     Alert.alert(
       'Excluir conta',
-      'Esta ação é permanente e remove todos os seus decks e dados. Para prosseguir, entre em contato com o suporte.',
+      'Isto apaga para sempre o seu perfil, seus decks, seu histórico de estudo, o que você publicou na comunidade e os arquivos que enviou.\n\nNão há como desfazer.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Falar com suporte',
+          text: 'Continuar',
           style: 'destructive',
           onPress: () =>
-            void Linking.openURL(
-              'mailto:suporte@recall.app?subject=Exclus%C3%A3o%20de%20conta',
-            ).catch(soon),
+            Alert.alert('Tem certeza?', 'Última confirmação.', [
+              { text: 'Cancelar', style: 'cancel' },
+              {
+                text: 'Excluir minha conta',
+                style: 'destructive',
+                onPress: () => void confirmDeleteAccount(),
+              },
+            ]),
         },
       ],
     );
+  };
+
+  const confirmDeleteAccount = async () => {
+    setDeleting(true);
+    const result = await deleteAccount();
+    setDeleting(false);
+    if (!result.ok) {
+      Alert.alert('Erro', result.message);
+      return;
+    }
+    // Sem alerta de sucesso: `deleteAccount` já encerrou a sessão, então o
+    // roteador leva para a tela de entrada. Um alerta em cima disso ficaria
+    // órfão numa tela que o usuário não pediu para ver.
   };
 
   return (
@@ -422,9 +451,15 @@ export default function SettingsScreen() {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleDeleteAccount} className="items-center">
+            <TouchableOpacity
+              onPress={handleDeleteAccount}
+              disabled={deleting}
+              accessibilityRole="button"
+              accessibilityLabel="Excluir conta permanentemente"
+              className="items-center"
+            >
               <Text className="text-outline font-inter-regular text-sm underline">
-                Excluir conta
+                {deleting ? 'Excluindo...' : 'Excluir conta'}
               </Text>
             </TouchableOpacity>
           </View>

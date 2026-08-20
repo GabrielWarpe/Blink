@@ -286,10 +286,16 @@ export default function PublishDeckScreen() {
                   // Já publicado não é escolhível aqui: esta tela põe deck novo
                   // no ar. Mexer no que já está publicado é pela página da
                   // publicação (botão "Editar publicação").
+                  // Deck tirado do ar pela moderação: republicar por cima
+                  // seria burlar a decisão, então o caminho fica fechado e o
+                  // motivo aparece escrito — sumir sem explicação faria o autor
+                  // achar que é bug e tentar de novo.
                   const reason =
-                    snapshot != null
-                      ? 'Já publicado — edite pela página da publicação.'
-                      : blockedReason(deck);
+                    snapshot?.unlisted === true
+                      ? 'Removido pela moderação. Fale com o suporte.'
+                      : snapshot != null
+                        ? 'Já publicado — edite pela página da publicação.'
+                        : blockedReason(deck);
                   const count = `${deck.cards.length} ${deck.cards.length === 1 ? 'card' : 'cards'}`;
                   return (
                     <TouchableOpacity
@@ -364,7 +370,11 @@ export default function PublishDeckScreen() {
                 <Text className="text-outline font-inter-regular text-xs mt-0.5">
                   {selected.cards.length}{' '}
                   {selected.cards.length === 1 ? 'card' : 'cards'}
-                  {published.has(selected.id) ? ' · publicado' : ''}
+                  {published.get(selected.id)?.unlisted === true
+                    ? ' · removido pela moderação'
+                    : published.has(selected.id)
+                      ? ' · publicado'
+                      : ''}
                 </Text>
               </View>
               {/* Editando, o deck é fixo — não há lista para trocar. */}

@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "app/community/[id].tsx": {
-    "mtime": 1787235253.9600582,
-    "ast_hash": "883284e90f96c7c570fc3409edf783c0",
+    "mtime": 1785343010.5065787,
+    "ast_hash": "09c23776afa570f355ce540d292a6354",
     "semantic_hash": ""
   },
   "app/deck/[id].tsx": {
@@ -410,8 +410,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1787234031.001878,
-    "ast_hash": "b592bdbb059449bfed712989cb59b4e7",
+    "mtime": 1785291459.6819031,
+    "ast_hash": "112eb86f062e89ea171e12f4fe525e51",
     "semantic_hash": ""
   },
   "services/achievementIcons.ts": {
@@ -435,8 +435,8 @@
     "semantic_hash": ""
   },
   "services/community.ts": {
-    "mtime": 1787235209.0621572,
-    "ast_hash": "051cd6fcd4edf00188554ee10205455c",
+    "mtime": 1787187023.829512,
+    "ast_hash": "f33ce96af7cc74c4c51a4e7375bf22b0",
     "semantic_hash": ""
   },
   "services/database.ts": {
@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "supabase/schema.sql": {
-    "mtime": 1787235644.6147602,
-    "ast_hash": "bd8bfc77524237a65230f6c3dd7a5318",
+    "mtime": 1787231162.8816078,
+    "ast_hash": "3a1e7dbaa3fd83ab6ca501debe812b82",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -490,8 +490,8 @@
     "semantic_hash": ""
   },
   "types/db.ts": {
-    "mtime": 1787235223.1573594,
-    "ast_hash": "37574124357cecb5c909eb6ed3c7dcaf",
+    "mtime": 1785343010.5131135,
+    "ast_hash": "8faff38a5fcf81786459f3abe6b1e273",
     "semantic_hash": ""
   },
   "types/index.ts": {
@@ -650,8 +650,8 @@
     "semantic_hash": ""
   },
   "app/community/publish.tsx": {
-    "mtime": 1787235268.7371008,
-    "ast_hash": "aa7dae5ddc85d285699c55fe726af737",
+    "mtime": 1785343010.5066803,
+    "ast_hash": "e9c6e8d5623a7f897a1e4cdc9e6d32d3",
     "semantic_hash": ""
   },
   "components/FilterSheet.tsx": {
@@ -807,26 +807,6 @@
   "supabase/functions/delete-account/index.ts": {
     "mtime": 1787233121.9763749,
     "ast_hash": "7a5bf3907c3c28e8a65d4104ed4a4ca2",
-    "semantic_hash": ""
-  },
-  "eas.json": {
-    "mtime": 1787233991.8518333,
-    "ast_hash": "a5e54c3b6ddcaf30b6b1b4c7968e4626",
-    "semantic_hash": ""
-  },
-  "scripts/test-delete-account.py": {
-    "mtime": 1787233693.4487352,
-    "ast_hash": "ebf3e33a0652db1718b49e2c2952629f",
-    "semantic_hash": ""
-  },
-  "scripts/test-moderation.py": {
-    "mtime": 1787235421.3246336,
-    "ast_hash": "10696728515b68da6afa8c53bd0b87f0",
-    "semantic_hash": ""
-  },
-  "LANCAMENTO.md": {
-    "mtime": 1787234304.3193996,
-    "ast_hash": "9297c890965aa3e73aca9aef2f1ebdbd",
     "semantic_hash": ""
   }
 }

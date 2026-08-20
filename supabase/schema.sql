@@ -625,12 +625,15 @@ notify pgrst, 'reload schema';
 
 -- ── Plano do usuário (freemium) ─────────────────────────────────────────────
 -- A geração por IA custa dinheiro real, então o teto de uso é do NEGÓCIO e não
--- um número técnico. `free` recebe 5 gerações VITALÍCIAS (custo de aquisição,
--- gasto uma vez) e `pro` recebe 100 por mês (teto alto em vez de "ilimitado",
--- que não existe quando cada uso custa).
+-- um número técnico.
 --
--- A Edge Function lê esta coluna para decidir a cota; quando a assinatura
--- existir, o webhook do pagamento só troca o valor aqui.
+-- ATENÇÃO — esta coluna está APOSENTADA (20/08/2026). Quem manda na cota agora
+-- é o modelo do painel administrativo: `user_subscriptions` aponta o plano,
+-- `plans.limits` traz os limites e `user_subscriptions.overrides` sobrescreve
+-- chave a chave. A Edge Function `generate-cards-doc` lê DE LÁ
+-- (`ai_generations_per_month`), não daqui — ter dois lugares dizendo o limite
+-- foi justamente o problema. A coluna segue existindo só para não quebrar
+-- nada que ainda a leia; mudar o valor aqui não altera cota nenhuma.
 alter table profiles add column if not exists plan text not null default 'free'
   check (plan in ('free', 'pro'));
 
@@ -642,5 +645,49 @@ notify pgrst, 'reload schema';
 -- (as imagens são mais da metade dos tokens do prompt). O usuário escolhe na
 -- hora de gerar; o padrão é aproveitar, que é o diferencial do app.
 alter table import_jobs add column if not exists use_images boolean not null default true;
+
+notify pgrst, 'reload schema';
+
+-- ── Moderação: fazer o `unlisted` VALER ─────────────────────────────────────
+-- O painel administrativo marca `community_decks.unlisted` para tirar um deck
+-- do ar (fila de denúncias, papel "Moderador"). Só que as políticas de leitura
+-- eram `using (true)`: o app listava e abria o deck removido do mesmo jeito, e
+-- o botão de remover não removia nada. Filtrar apenas no cliente também não
+-- resolveria — qualquer um com o token consegue consultar a tabela direto.
+--
+-- O autor continua enxergando o próprio deck removido de propósito: sumir sem
+-- explicação faria ele achar que houve bug e republicar na hora.
+drop policy if exists "Community decks are readable" on community_decks;
+create policy "Community decks are readable" on community_decks
+  for select to authenticated
+  using (coalesce(unlisted, false) = false or author_id = auth.uid());
+
+-- Os cards seguem o deck: sem isto, o conteúdo removido continuaria legível
+-- por quem consultasse `community_cards` pelo id do deck.
+drop policy if exists "Community cards are readable" on community_cards;
+create policy "Community cards are readable" on community_cards
+  for select to authenticated
+  using (
+    exists (
+      select 1 from community_decks cd
+      where cd.id = community_deck_id
+        and (coalesce(cd.unlisted, false) = false or cd.author_id = auth.uid())
+    )
+  );
+
+-- A lista pública filtra por `unlisted` em toda consulta; sem índice isso vira
+-- varredura da tabela inteira a cada abertura da aba Comunidade.
+create index if not exists idx_community_decks_visible
+  on community_decks(unlisted, rating_avg desc, downloads_count desc);
+
+notify pgrst, 'reload schema';
+
+-- Políticas criadas em paralelo pelo painel administrativo (agosto/2026) que
+-- reabriam o buraco: `using (published_at is not null)` é SEMPRE verdadeiro
+-- (a coluna tem default `now()`), e como as políticas de RLS se somam com OU,
+-- bastava uma delas para o deck removido continuar legível. São redundantes
+-- com as de cima em todo o resto, então saem.
+drop policy if exists "published decks are readable" on community_decks;
+drop policy if exists "cards of published decks are readable" on community_cards;
 
 notify pgrst, 'reload schema';

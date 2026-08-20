@@ -10,3 +10,11 @@ venv/
 README.md
 fly.toml
 .dockerignore
+
+# Saída dos testes locais (try_local.py / benchmark.py): são as figuras
+# extraídas de PDFs de teste, dezenas de MB que não têm nada a ver com o
+# serviço. Sem isto a imagem carrega material de estudo do usuário junto.
+saida/
+scripts/
+.env
+.env.local

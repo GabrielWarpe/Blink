@@ -335,66 +335,90 @@ class JobError extends Error {
   }
 }
 
+/** Chave do limite dentro de `plans.limits` / `user_subscriptions.overrides`. */
+const GENERATION_LIMIT_KEY = "ai_generations_per_month";
+/** Plano de quem ainda não tem linha em `user_subscriptions` (cadastro novo). */
+const FALLBACK_PLAN_ID = "free";
 /**
- * Cota por plano. A geração custa dinheiro real (~R$0,36 a R$1,09 por apostila
- * conforme o modelo), então o teto é do NEGÓCIO, não um número técnico.
- *
- * `free` é vitalício de propósito: 5 por mês, para sempre, é uma conta que corre
- * todo mês por usuário que nunca assina — com mil cadastrados vira uma fatura
- * permanente. 5 uma vez é custo de aquisição, gasto uma vez só.
- *
- * `pro` tem teto alto em vez de "ilimitado": ilimitado não existe quando cada
- * uso custa, e é sempre o usuário mais engajado que estoura a margem dele.
+ * Último recurso, se nem o plano `free` existir na tabela. Conservador de
+ * propósito: sem nenhuma configuração legível, ninguém gera à vontade.
  */
-const PLAN_QUOTAS: Record<string, { limit: number; lifetime: boolean; label: string }> = {
-  free: {
-    limit: 5,
-    lifetime: true,
-    label: "Você usou suas 5 gerações gratuitas. Assine para continuar gerando.",
-  },
-  pro: {
-    limit: 100,
-    lifetime: false,
-    label: "Você atingiu o limite de 100 gerações neste mês.",
-  },
-};
+const DEFAULT_GENERATION_LIMIT = 5;
 /** Job parado mais que isto sem avançar está órfão (Edge Function morreu). */
 const STALE_JOB_MINUTES = 10;
 
 /**
  * Cota do plano, contada no BANCO — o app não pode afrouxar o próprio limite.
  *
+ * A fonte de verdade é o modelo do painel administrativo: `user_subscriptions`
+ * aponta o plano, `plans.limits` traz os limites e `user_subscriptions.overrides`
+ * sobrescreve chave a chave (é assim que o suporte concede exceção a um usuário
+ * sem criar um plano novo). Ler daqui, e não de uma tabela em código, é o que
+ * permite mudar limite pela tela do painel em vez de por deploy.
+ *
  * Conta só jobs que chegaram a chamar a IA (extração-apenas não custa nada) e
  * ignora os que falharam: cobrar do usuário por um erro nosso seria injusto.
- * Quando a assinatura existir, o webhook do pagamento só troca `profiles.plan`
- * — nada aqui muda.
  */
 async function enforceQuota(admin: SupabaseClient, job: Job): Promise<void> {
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("plan")
-    .eq("id", job.user_id)
+  const { data: sub } = await admin
+    .from("user_subscriptions")
+    .select("plan_id, status, overrides, plans(limits)")
+    .eq("user_id", job.user_id)
     .maybeSingle();
 
-  const plan = (profile as { plan?: string } | null)?.plan ?? "free";
-  const quota = PLAN_QUOTAS[plan] ?? PLAN_QUOTAS.free;
+  const assinatura = sub as {
+    plan_id?: string;
+    status?: string;
+    overrides?: Record<string, unknown>;
+    plans?: { limits?: Record<string, unknown> } | null;
+  } | null;
 
-  let query = admin
+  // Assinatura vencida ou cancelada não dá direito ao limite do plano.
+  const valida = assinatura != null &&
+    (assinatura.status === "active" || assinatura.status === "trialing");
+
+  let limites: Record<string, unknown> = {};
+  if (valida) {
+    // `overrides` vence `plans.limits`, chave a chave.
+    limites = {
+      ...(assinatura?.plans?.limits ?? {}),
+      ...(assinatura?.overrides ?? {}),
+    };
+  } else {
+    // Sem assinatura válida, vale o plano gratuito — ler dele, e não de um
+    // número aqui, mantém o painel como fonte única mesmo para cadastro novo
+    // cuja linha de assinatura ainda não foi criada.
+    const { data: gratuito } = await admin
+      .from("plans")
+      .select("limits")
+      .eq("id", FALLBACK_PLAN_ID)
+      .maybeSingle();
+    limites = (gratuito as { limits?: Record<string, unknown> } | null)?.limits ?? {};
+  }
+
+  const bruto = limites[GENERATION_LIMIT_KEY];
+  const limite = typeof bruto === "number" && Number.isFinite(bruto)
+    ? bruto
+    : DEFAULT_GENERATION_LIMIT;
+
+  // Limite negativo ou ausente da configuração = sem teto (plano ilimitado).
+  if (limite < 0) return;
+
+  const desde = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await admin
     .from("import_jobs")
     .select("id", { count: "exact", head: true })
     .eq("user_id", job.user_id)
     .eq("extract_only", false)
     .neq("id", job.id)
+    .gte("created_at", desde)
     .in("status", ["generating", "assembling", "done"]);
 
-  if (!quota.lifetime) {
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    query = query.gte("created_at", since);
-  }
-
-  const { count } = await query;
-  if ((count ?? 0) >= quota.limit) {
-    throw new JobError("cota_plano", quota.label);
+  if ((count ?? 0) >= limite) {
+    throw new JobError(
+      "cota_plano",
+      `Você atingiu o limite de ${limite} gerações do seu plano neste mês.`,
+    );
   }
 }
 

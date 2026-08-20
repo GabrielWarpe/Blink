@@ -17,7 +17,6 @@ import { DeckAvatar } from '@/components/DeckAvatar';
 import { EnterAnimation } from '@/components/EnterAnimation';
 import { LoadError } from '@/components/LoadError';
 import { useReplayOnFocus } from '@/hooks/useReplayOnFocus';
-import { CARD_RADIUS } from '@/constants/radius';
 import { StarRating } from '@/components/StarRating';
 import { FilterSheet, type SortOption } from '@/components/FilterSheet';
 import {
@@ -341,12 +340,7 @@ export default function CommunityScreen() {
               </Text>
               <View className="gap-3">
                 {listed.map((item, i) => (
-                  <EnterAnimation
-                    key={item.id}
-                    index={i}
-                    shimmerRadius={CARD_RADIUS}
-                    runKey={runKey}
-                  >
+                  <EnterAnimation key={item.id} index={i} runKey={runKey}>
                     <TouchableOpacity
                       activeOpacity={0.85}
                       onPress={() => router.push(`/community/${item.id}` as Href)}

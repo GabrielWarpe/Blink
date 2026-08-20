@@ -120,6 +120,15 @@ export interface CommunityDeckRow {
   /** Autor da raiz da cadeia, quando este deck é uma adaptação de outro. */
   original_author_id: string | null;
   original_author_name: string | null;
+  /**
+   * Tirado do ar pela moderação (painel administrativo, fila de denúncias).
+   * Some do catálogo para todo mundo; só o autor continua enxergando, para
+   * saber que o deck existe e não foi engolido por um bug. Null em linhas
+   * antigas = no ar.
+   */
+  unlisted: boolean | null;
+  /** Destacado pela curadoria do painel. */
+  is_featured: boolean | null;
   published_at: string;
   updated_at: string;
 }

@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import { pickAvatar as pickProfilePhoto, uploadAvatar } from '@/services/images';
 import { db } from '@/services/database';
 import { ensureNotificationPermission } from '@/services/notifications';
 import { useAuth } from '@/contexts/AuthContext';
@@ -87,21 +87,17 @@ export default function ProfileScreen() {
   const pickAvatar = async () => {
     if (!user || savingAvatar) return;
     // No iOS a galeria usa o PHPicker (não exige permissão de biblioteca).
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.4,
-      base64: true,
-    });
-    if (result.canceled) return;
-    const asset = result.assets[0];
-    if (!asset?.base64) return;
+    const picked = await pickProfilePhoto();
+    if (!picked) return;
 
     setSavingAvatar(true);
     try {
-      const dataUri = `data:image/jpeg;base64,${asset.base64}`;
-      await db.profile.update(user.id, { avatar_url: dataUri });
+      // Storage, não data URI no banco: o avatar é copiado para cada deck
+      // publicado e cada avaliação, e a aba Comunidade lê 100 linhas de uma
+      // vez — guardá-lo dentro da linha multiplicava o egress. Ver
+      // `pickAvatar`/`uploadAvatar` em `services/images`.
+      const url = await uploadAvatar(user.id, picked);
+      await db.profile.update(user.id, { avatar_url: url });
       await refreshProfile();
     } catch {
       Alert.alert('Erro', 'Não foi possível atualizar a foto.');

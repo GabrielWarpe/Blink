@@ -16,7 +16,6 @@ import { ProgressRing } from '@/components/ProgressRing';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EnterAnimation } from '@/components/EnterAnimation';
-import { CARD_RADIUS } from '@/constants/radius';
 import { useReplayOnFocus } from '@/hooks/useReplayOnFocus';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -218,11 +217,8 @@ export default function HomeScreen() {
           </View>
 
           {decks.length === 0 ? (
-            // A margem sai do Card e vem para o invólucro: assim os limites do
-            // invólucro batem com os do card, e o recorte da faixa de luz
-            // acompanha a borda certa em vez de vazar pelas laterais.
             <View className="mx-5">
-              <EnterAnimation shimmerRadius={CARD_RADIUS} runKey={runKey}>
+              <EnterAnimation runKey={runKey}>
                 <Card className="p-8 items-center">
                   <View
                     className="w-16 h-16 rounded-card items-center justify-center mb-4"
