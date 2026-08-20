@@ -129,7 +129,12 @@ export async function publishDeck(
     source_playlist_id: deck.id,
     title: deck.title,
     description: deck.description || null,
-    cover_url: deck.coverUrl,
+    // Nunca publicar capa em `data:` — ela é copiada para a tabela da
+    // comunidade, aparece na lista de TODA gente e é copiada de novo a cada
+    // download. Um deck com capa base64 de 1,5 MB vira megabytes de tráfego
+    // multiplicados por usuário. Capa vive no Storage (`uploadDeckCover`);
+    // se por algum motivo chegar uma base64 aqui, publica sem capa.
+    cover_url: deck.coverUrl?.startsWith('data:') ? null : deck.coverUrl,
     tags: deck.tags,
     card_count: deck.cards.length,
     author_name: author.name,
