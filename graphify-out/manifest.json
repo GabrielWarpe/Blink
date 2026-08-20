@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "components/AiGeneratorForm.tsx": {
-    "mtime": 1787162944.068765,
-    "ast_hash": "046b533b454147953d5676124ad00912",
+    "mtime": 1787164148.9814904,
+    "ast_hash": "9f6c4ea70276e0356577e88871ddfc9e",
     "semantic_hash": ""
   },
   "components/CardImagePicker.tsx": {
@@ -465,9 +465,9 @@
     "semantic_hash": "e32eb6476956a72c99681dd56dce1534"
   },
   "supabase/functions/generate-cards/index.ts": {
-    "mtime": 1783578097.6587014,
-    "ast_hash": "76af249a17705e18d3d837e21ef42a65",
-    "semantic_hash": "76af249a17705e18d3d837e21ef42a65"
+    "mtime": 1787164490.4575367,
+    "ast_hash": "ab7593a064df0ab278c27703a22d0819",
+    "semantic_hash": ""
   },
   "supabase/functions/grade-answer/index.ts": {
     "mtime": 1784747339.3923461,
@@ -725,13 +725,13 @@
     "semantic_hash": ""
   },
   "lib/api/importDocument.ts": {
-    "mtime": 1787159334.7592006,
-    "ast_hash": "86b1c40049b89c5727317053bc15747f",
+    "mtime": 1787164175.6520324,
+    "ast_hash": "8a9afdc8cb21559501086358ed66a6b8",
     "semantic_hash": ""
   },
   "supabase/functions/generate-cards-doc/index.ts": {
-    "mtime": 1787162532.9619966,
-    "ast_hash": "324c587e287e3c33e511be2b2bca243b",
+    "mtime": 1787164490.4573786,
+    "ast_hash": "f22b398c3d7da060868119e0d00ec2f7",
     "semantic_hash": ""
   },
   ".claude/graphify-context.sh": {

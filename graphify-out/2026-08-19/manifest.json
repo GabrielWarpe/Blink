@@ -125,8 +125,8 @@
     "semantic_hash": ""
   },
   "app/write/[deckId].tsx": {
-    "mtime": 1784748149.9680984,
-    "ast_hash": "bb5bab47ff3e15cdf9634e64a9bf8822",
+    "mtime": 1787163337.8781645,
+    "ast_hash": "9bbaf983be11a052d3b92b2f99861a56",
     "semantic_hash": ""
   },
   "babel.config.js": {
@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "components/AiGeneratorForm.tsx": {
-    "mtime": 1787160930.486367,
-    "ast_hash": "9b3f5cf4ef0310ddbcc5dd541f5afc0d",
+    "mtime": 1787162944.068765,
+    "ast_hash": "046b533b454147953d5676124ad00912",
     "semantic_hash": ""
   },
   "components/CardImagePicker.tsx": {
@@ -220,8 +220,8 @@
     "semantic_hash": "dbea34876402c7e2249401da0f6c8324"
   },
   "components/QuizQuestion.tsx": {
-    "mtime": 1784656422.87125,
-    "ast_hash": "645df12edef79509af6a77382d5d743b",
+    "mtime": 1787163258.1802518,
+    "ast_hash": "f42c1ee07d559b5e45aa8b7b7e2b16be",
     "semantic_hash": ""
   },
   "components/SessionResult.tsx": {
@@ -730,8 +730,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/generate-cards-doc/index.ts": {
-    "mtime": 1787159282.9460955,
-    "ast_hash": "06c9845d3186129353b7ff6408781a6c",
+    "mtime": 1787162532.9619966,
+    "ast_hash": "324c587e287e3c33e511be2b2bca243b",
     "semantic_hash": ""
   },
   ".claude/graphify-context.sh": {
@@ -790,8 +790,8 @@
     "semantic_hash": ""
   },
   "extractor/scripts/benchmark.py": {
-    "mtime": 1787158490.8278058,
-    "ast_hash": "c970eba991428d79eb44efecd7b8507c",
+    "mtime": 1787162532.983153,
+    "ast_hash": "30cf5bd2a2187dce0986c8174d6f149f",
     "semantic_hash": ""
   },
   "scripts/test-generate-cards.js": {
