@@ -39,8 +39,17 @@ de produção.
       Gabriel: quando ele dorme, toda importação de arquivo falha. Projeto
       `blink-extractor-23583` no Google Cloud Run já criado. **Depende de
       cartão** (escolher Pix exige R$ 200 de pré-pagamento; cartão não exige).
-- [ ] **Moderação da comunidade.** Já há 2 linhas em `deck_reports` e nenhum
-      fluxo que as trate. Sem isso, conteúdo impróprio publicado não sai do ar.
+- [ ] **Modo Escrita sem correção semântica.** A Edge Function `grade-answer`
+      existe no repo mas **nunca foi publicada**, e ainda está presa à Anthropic
+      (`claude-haiku-4-5`, sem o interruptor `AI_PROVIDER` que as outras têm) —
+      numa conta sem crédito. O app degrada certo (cai para cobertura de
+      palavras-chave e oferece "minha resposta estava certa"), então não está
+      quebrado, só desligado. Resolver junto com o crédito da IA.
+- [x] ~~**Moderação da comunidade.**~~ Resolvido em 20/08: o `unlisted` do painel
+      não removia nada porque as políticas de leitura eram `using (true)` e o
+      painel ainda tinha duas políticas `published_at is not null` (sempre
+      verdadeiras) somando por OU. Corrigido e testado em
+      `scripts/test-moderation.py`.
 - [x] ~~Avatar em base64 no banco~~ — corrigido em 20/08 (ia para
       `community_decks` e `deck_ratings`, multiplicando o egress).
 - [x] ~~E-mail de suporte pessoal~~ — trocado para `blinkflashcards@gmail.com`.

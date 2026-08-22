@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "components/AiGeneratorForm.tsx": {
-    "mtime": 1787164148.9814904,
-    "ast_hash": "9f6c4ea70276e0356577e88871ddfc9e",
+    "mtime": 1787360297.5193954,
+    "ast_hash": "cd12e9ee32e885c389a379eadf1fab2c",
     "semantic_hash": ""
   },
   "components/CardImagePicker.tsx": {
@@ -475,8 +475,8 @@
     "semantic_hash": ""
   },
   "supabase/schema.sql": {
-    "mtime": 1787235644.6147602,
-    "ast_hash": "bd8bfc77524237a65230f6c3dd7a5318",
+    "mtime": 1787418753.0013654,
+    "ast_hash": "9d839d24c37c6028f39adfa3b93ef250",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -542,11 +542,6 @@
   "assets/brand/blink_adaptive_foreground.png": {
     "mtime": 1785478531.2114482,
     "ast_hash": "71b61fb9fd976f5aeadc238d6794c361",
-    "semantic_hash": ""
-  },
-  "assets/brand/blink_app_icon_1024.png": {
-    "mtime": 1785478531.1937447,
-    "ast_hash": "f8ae26d5b73db1c5e4902604997cb19e",
     "semantic_hash": ""
   },
   ".claude/settings.json": {
@@ -730,8 +725,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/generate-cards-doc/index.ts": {
-    "mtime": 1787230892.1005898,
-    "ast_hash": "d3d48134baff9d8559cf03fb2e7d0b53",
+    "mtime": 1787421613.9955769,
+    "ast_hash": "559f420df994ff47c6c357d928efa756",
     "semantic_hash": ""
   },
   ".claude/graphify-context.sh": {
@@ -770,7 +765,7 @@
     "semantic_hash": ""
   },
   "extractor/extractors/ooxml.py": {
-    "mtime": 1787056192.9544919,
+    "mtime": 1787358176.396874,
     "ast_hash": "f715786fa83657af7e68c4b2ce8d7a54",
     "semantic_hash": ""
   },
@@ -825,8 +820,18 @@
     "semantic_hash": ""
   },
   "LANCAMENTO.md": {
-    "mtime": 1787234304.3193996,
-    "ast_hash": "9297c890965aa3e73aca9aef2f1ebdbd",
+    "mtime": 1787236327.782812,
+    "ast_hash": "fd4236b6899ef5f73d03d52ff3699824",
+    "semantic_hash": ""
+  },
+  "scripts/diagnostico.mjs": {
+    "mtime": 1787421125.1244075,
+    "ast_hash": "9b0db1c78c11c9e7379dd5694044d79a",
+    "semantic_hash": ""
+  },
+  "scripts/prova-figuras.mjs": {
+    "mtime": 1787421125.12493,
+    "ast_hash": "ab71dfa08541a00daf35529bb58c6687",
     "semantic_hash": ""
   }
 }

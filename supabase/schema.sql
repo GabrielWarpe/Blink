@@ -691,3 +691,13 @@ drop policy if exists "published decks are readable" on community_decks;
 drop policy if exists "cards of published decks are readable" on community_cards;
 
 notify pgrst, 'reload schema';
+
+-- O teto de cards por geração vive em DOIS lugares e eles precisam bater: aqui
+-- e em `MAX_CARDS` de `components/AiGeneratorForm.tsx`. Subir só no app faz o
+-- insert do job estourar esta restrição e o usuário ver "Falha ao criar o
+-- trabalho: violates check constraint" — aconteceu em 22/08/2026.
+alter table import_jobs drop constraint if exists import_jobs_card_count_check;
+alter table import_jobs add constraint import_jobs_card_count_check
+  check (card_count >= 1 and card_count <= 50);
+
+notify pgrst, 'reload schema';

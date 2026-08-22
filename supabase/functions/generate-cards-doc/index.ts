@@ -36,7 +36,20 @@ const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models
 // em 19/08/2026 na camada grátis, 3.7 e 3.6 devolviam 503 depois de ~30 s de
 // espera enquanto o 3.5 respondia em 16 s. Cair para o próximo da lista é mais
 // rápido e mais confiável do que insistir no mesmo.
-const GEMINI_MODELS = ["gemini-3.5-flash", "gemini-3.7-flash", "gemini-3.6-flash"];
+// A cota grátis é de 20 requisições por DIA e por MODELO
+// (quotaId GenerateRequestsPerDayPerProjectPerModel-FreeTier), então cada nome
+// nesta lista soma 20 ao teto diário do app. Com três modelos era 60/dia — o
+// que uma sessão de depuração esgota fácil, e o app inteiro parava. Com seis,
+// são 120. Os `-lite` ficam no fim: são a rede de segurança para o dia em que
+// os melhores acabarem, não a primeira escolha.
+const GEMINI_MODELS = [
+  "gemini-3.5-flash",
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+  "gemini-3-flash-preview",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+];
 
 const IMPORTS_BUCKET = "imports";
 const CARD_IMAGES_BUCKET = "card-images";
@@ -138,6 +151,44 @@ interface GeneratedCard {
   quiz_options: string[];
 }
 
+/**
+ * Orçamento de saída do modelo, dimensionado pelo número de cards pedidos.
+ *
+ * Era fixo em 16.000. Um card completo (pergunta, resposta, 3 alternativas
+ * plausíveis e a justificativa da figura) custa ~250 tokens de JSON, então 50
+ * cards passam de 12.000 só de conteúdo — e no Gemini os tokens de raciocínio
+ * são descontados DESTE mesmo teto, que foi o que já truncou resposta aqui
+ * antes. Com folga fixa para o raciocínio, pedir mais cards deixa de significar
+ * receber JSON cortado pela metade.
+ */
+/**
+ * Quanto tempo a função pode gastar ANTES de começar a segunda passada.
+ *
+ * A Edge Function tem teto de execução (150 s no plano grátis) e ele conta o
+ * job inteiro: extração + passada 1 + passada 2 + cópia das figuras. Medido em
+ * 22/08/2026: com uma passada os jobs concluíam em 104 s e 115 s; com duas, a
+ * função morria em silêncio e o job ficava preso em `generating` para sempre —
+ * o usuário via "demorou demais" depois de 5 minutos de espera.
+ *
+ * 95 s deixa margem para a passada 2 (30-60 s) e para publicar as imagens sem
+ * estourar. Passando disso, entrega-se o que a passada 1 fez.
+ */
+const ORCAMENTO_ANTES_DA_2A_MS = 95_000;
+
+function maxOutputTokensFor(cardCount: number): number {
+  const TOKENS_POR_CARD = 250;
+  // Medido no Gemini 3.5 Flash com 60 imagens, três rodadas: 4.539, 6.304 e
+  // 9.854 tokens de RACIOCÍNIO — e eles saem deste mesmo teto, antes de o
+  // primeiro card ser escrito. Com folga de 6.000, sobrava menos da metade do
+  // orçamento para conteúdo e duas de três rodadas terminaram em MAX_TOKENS.
+  // 14.000 cobre o pior caso medido com margem.
+  const FOLGA_RACIOCINIO = 14000;
+  return Math.min(
+    Math.max(cardCount * TOKENS_POR_CARD + FOLGA_RACIOCINIO, 20000),
+    48000,
+  );
+}
+
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -147,10 +198,97 @@ function json(status: number, body: unknown): Response {
 
 // ── Prompt ───────────────────────────────────────────────────────────────────
 
+/**
+ * Documento em que as FIGURAS são o conteúdo, não ilustração do texto.
+ *
+ * Aula de slides de medicina: 48 páginas, 6.311 caracteres (~130 por página) e
+ * 73 figuras — endoscopia, histologia, peça anatômica, radiografia. A apostila
+ * de odontologia, para comparação, tinha 310.927 caracteres em 49 páginas.
+ *
+ * Distinguir os dois importa porque o prompt padrão manda tirar "o resto dos
+ * cards do texto" — e aqui não há texto de onde tirar. Sem esse aviso o modelo
+ * devolvia 20 cards para um pedido de 50, com 2 figuras usadas de 60 enviadas.
+ */
+function isImageDense(chars: number, pages: number, images: number): boolean {
+  if (images < 15 || pages < 1) return false;
+  return chars / pages < 400;
+}
+
+/**
+ * Prompt da PASSADA DAS FIGURAS.
+ *
+ * Existe porque um pedido único ("leia o texto, olhe 60 figuras, escolha as
+ * boas e escreva 30 cards com 3 alternativas cada, seguindo 12 regras") faz o
+ * modelo se contentar: medido três vezes na mesma aula de patologia, ele
+ * devolvia 6 a 10 cards com figura de 60 figuras enviadas, e mexer na redação
+ * das regras deu 2, depois 10, depois 6 — não converge.
+ *
+ * Aqui a tarefa é uma só e é enumerável: percorrer a lista de figuras e, para
+ * cada uma que sustente pergunta, escrever o card dela. O texto do documento
+ * entra como CONTEXTO para entender as figuras, não como fonte de cards.
+ */
+function buildFigurePrompt(
+  language: string,
+  figureCount: number,
+  alvo: number,
+): string {
+  return `Você monta questões de estudo A PARTIR DAS FIGURAS de um material.
+
+Você recebeu ${figureCount} figuras, numeradas (IMAGEM #1, #2…), junto com o
+texto do documento. Sua ÚNICA tarefa agora é percorrer as figuras UMA POR UMA,
+da primeira à última, e escrever um card para cada figura que sustente uma
+pergunta. Não pule figuras sem examinar.
+
+Para CADA figura, decida:
+1. O que ela mostra? (leia o texto da página dela para entender o contexto)
+2. Ela sustenta uma pergunta que exija OLHAR para ela?
+3. Se sim, escreva o card e ponha o número dela em "image_id".
+4. Se não, siga para a próxima — sem card.
+
+Escreva tudo em ${language}.
+
+O QUE SUSTENTA PERGUNTA (seja generoso aqui):
+- Foto clínica, endoscopia, lâmina de histologia, peça anatômica, exame de
+  imagem: "que achado a figura mostra?", "que diagnóstico esse aspecto sugere?",
+  "que camada está alterada?". São as MELHORES questões que existem.
+- Esquema, diagrama, fluxograma, gráfico, tabela de imagem: relação entre
+  elementos, etapa seguinte, o que muda entre A e B.
+- Figura COM RÓTULOS também serve: pergunte o que os rótulos NÃO respondem — o
+  mecanismo, a consequência, o que mudaria na doença, por que aquilo está ali.
+
+O QUE NÃO SUSTENTA:
+- Logotipo, brasão, capa, banner, foto de pessoa, ícone decorativo.
+- Figura ilegível, ou cujo assunto você não consegue identificar.
+- Figura em que a resposta que você pensou está ESCRITA nela e não há nenhuma
+  outra pergunta possível.
+
+REGRAS DOS CARDS:
+- "front" é a pergunta, "back" a resposta certa, "quiz_options" traz EXATAMENTE
+  3 alternativas ERRADAS, plausíveis e do mesmo assunto.
+- PARIDADE: as quatro opções com comprimento e detalhe equivalentes. Se der para
+  acertar escolhendo a mais longa, o quiz não vale nada.
+- "image_id" é obrigatório em todo card desta passada. "image_reason" explica em
+  uma frase por que a figura sustenta a pergunta.
+- NUNCA escreva "IMAGEM #12" ou "figura 3" dentro do card — o aluno vê uma
+  figura só. Diga "a figura", "a lâmina", "o exame", ou nem cite.
+- No máximo 2 cards por figura, e só quando ela ensinar duas coisas distintas.
+
+META: o aluno pediu ${alvo} cards. Você recebeu ${figureCount} figuras, então há
+material de sobra — mire em ${alvo} cards, ou em quantas figuras aproveitáveis
+existirem, o que vier primeiro. Pare antes disso só se realmente tiver acabado
+as figuras que sustentam pergunta.
+
+ANTES DE DEVOLVER, confira: você examinou as ${figureCount} figuras, uma a uma?
+Medido neste material, a mesma entrada rendeu 34 cards numa rodada e 8 em outra
+— a diferença não estava nas figuras, estava em parar cedo. Não pare cedo.`;
+}
+
 function buildSystemPrompt(
   count: number,
   language: string,
   hasImages: boolean,
+  imageDense = false,
+  imageCount = 0,
 ): string {
   const base = `Você cria material de estudo a partir de um documento que o aluno enviou.
 
@@ -159,7 +297,16 @@ Regras gerais:
   meta: se o material só sustenta 12 boas questões, devolva 12. Preencher a cota
   com pergunta óbvia, repetida, de detalhe irrelevante ou inventada estraga o
   deck inteiro — o aluno perde a confiança no material e para de estudar. Entre
-  entregar o número pedido e entregar só o que presta, QUALIDADE GANHA sempre.
+  entregar o número pedido e entregar só o que presta, QUALIDADE GANHA sempre.${
+    imageDense
+      ? `
+  ATENÇÃO neste documento: ele tem POUCO TEXTO e ${imageCount} figuras. Não
+  conclua daí que há pouco material — cada figura clínica (endoscopia, lâmina,
+  peça, exame de imagem, esquema) sustenta pelo menos uma boa questão, e muitas
+  sustentam duas. Se você devolver 20 cards tendo recebido dezenas de figuras
+  aproveitáveis, você deixou material de estudo em cima da mesa.`
+      : ""
+  }
 - Escreva tudo em ${language}.
 - Cada card cobre UMA ideia. Nada de pergunta dupla.
 - Use a numeração de página do documento no campo "page".
@@ -238,8 +385,14 @@ Regras duras:
   **leia TODO o texto visível dentro da imagem.** Se a sua resposta, ou uma
   paráfrase próxima dela, aparecer escrita ali em qualquer lugar — título,
   rótulo, legenda interna, caixa, rodapé, trecho de código — o card está
-  autorrespondido: "image_id": null. Sem exceção, e independente de a figura
-  parecer um diagrama.
+  autorrespondido.
+
+  A saída certa é TROCAR A PERGUNTA, não jogar a figura fora. Uma figura com
+  rótulos continua ensinando muita coisa que os rótulos não respondem: o que
+  vem antes ou depois, por que aquela estrutura está ali, o que mudaria num
+  caso patológico, qual a relação entre dois elementos rotulados. Pergunte
+  isso. Só use "image_id": null quando NADA do que a figura mostra sustentar
+  uma pergunta que ela própria não responda por escrito.
 
   Exemplos reais que passaram indevidamente:
   • figura de CSS Grid com a propriedade "grid-template-columns: repeat(3, 1fr)"
@@ -702,7 +855,9 @@ async function callModel(
 ): Promise<GeneratedCard[]> {
   const provider = (Deno.env.get("AI_PROVIDER") ?? "anthropic").toLowerCase();
   const call = () =>
-    provider === "gemini" ? callGemini(system, blocks) : callAnthropic(system, blocks);
+    provider === "gemini"
+      ? callGemini(system, blocks, count)
+      : callAnthropic(system, blocks, count);
 
   // Uma segunda tentativa, curta. O `callGemini` já percorre vários modelos por
   // conta própria, então insistir mais aqui só faz a FALHA demorar: cada 503 do
@@ -725,7 +880,18 @@ async function callModel(
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new JobError("resposta_invalida", "A IA devolveu uma resposta inesperada.");
+    // Resposta cortada no meio (o modelo bateu o teto de tokens) invalida o
+    // JSON inteiro — e com ele os cards que já tinham vindo completos. Perder
+    // 27 cards bons porque o 28º veio pela metade custa ao usuário 2 minutos de
+    // espera e uma geração da cota, para não entregar nada.
+    const resgatados = salvageCards(text);
+    if (resgatados.length === 0) {
+      throw new JobError("resposta_invalida", "A IA devolveu uma resposta inesperada.");
+    }
+    console.warn(
+      `[generate-cards-doc] JSON inválido; resgatados ${resgatados.length} cards`,
+    );
+    parsed = { cards: resgatados };
   }
 
   const cards = (parsed.cards ?? []).filter(
@@ -743,11 +909,65 @@ async function callModel(
 }
 
 /**
+ * Recupera os cards completos de um JSON truncado.
+ *
+ * Varre o texto acumulando objetos de PRIMEIRO nível dentro do array, contando
+ * chaves e respeitando aspas e escapes — sem isso uma `}` dentro de "Qual o
+ * papel do gene {BRCA1}?" fecharia o objeto no lugar errado. Cada objeto
+ * fechado é interpretado sozinho; o último, cortado ao meio, simplesmente não
+ * fecha e fica de fora.
+ */
+function salvageCards(text: string): GeneratedCard[] {
+  const cards: GeneratedCard[] = [];
+  // Posição de cada `{` ainda aberto. Uma PILHA, e não um contador de
+  // profundidade: os cards moram dentro do objeto raiz `{"cards": [...]}`, ou
+  // seja, fecham em profundidade 1 e nunca em 0 — com contador, o único objeto
+  // capturado era a raiz, que não tem `front` e era descartada.
+  const abertos: number[] = [];
+  let emTexto = false;
+  let escapado = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (emTexto) {
+      if (escapado) escapado = false;
+      else if (ch === "\\") escapado = true;
+      else if (ch === '"') emTexto = false;
+      continue;
+    }
+
+    if (ch === '"') {
+      emTexto = true;
+    } else if (ch === "{") {
+      abertos.push(i);
+    } else if (ch === "}") {
+      const inicio = abertos.pop();
+      if (inicio === undefined) continue;
+      try {
+        const obj = JSON.parse(text.slice(inicio, i + 1)) as GeneratedCard;
+        // A raiz também fecha aqui; só interessa o que tem cara de card.
+        if (typeof obj?.front === "string" && typeof obj?.back === "string") {
+          cards.push(obj);
+        }
+      } catch {
+        // Objeto malformado no meio do caminho: ignora e segue.
+      }
+    }
+  }
+  return cards;
+}
+
+/**
  * Gemini. Mesmo prompt e mesmo schema do caminho da Anthropic — muda só o
  * formato do envelope: `inline_data` em vez de `source.base64`, e o schema vai
  * em `responseJsonSchema`.
  */
-async function callGemini(system: string, blocks: unknown[]): Promise<string> {
+async function callGemini(
+  system: string,
+  blocks: unknown[],
+  cardCount: number,
+): Promise<string> {
   const apiKey = Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) throw new JobError("config", "GEMINI_API_KEY não configurada.");
 
@@ -767,13 +987,15 @@ async function callGemini(system: string, blocks: unknown[]): Promise<string> {
     generationConfig: {
       responseMimeType: "application/json",
       responseJsonSchema: CARD_SCHEMA,
-      maxOutputTokens: 16000,
+      maxOutputTokens: maxOutputTokensFor(cardCount),
     },
   });
 
   // Percorre a lista até um modelo aceitar. Sobrecarga (503) e indisponível
   // (404, modelo aposentado) não são erro nosso: é só ir para o próximo.
   let response: Response | null = null;
+  /** Todo modelo recusado por cota (429)? Então não é sobrecarga passageira. */
+  let esgotouCota = false;
   for (const model of GEMINI_MODELS) {
     const attempt = await fetch(`${GEMINI_API_BASE}/${model}:generateContent`, {
       method: "POST",
@@ -789,13 +1011,19 @@ async function callGemini(system: string, blocks: unknown[]): Promise<string> {
       response = attempt;
       break;
     }
+    if (attempt.status === 429) esgotouCota = true;
     await attempt.body?.cancel();
   }
 
   if (!response) {
+    // Distingue "lotado agora" de "acabou a cota do dia": a primeira passa em
+    // minutos, a segunda só no dia seguinte. Dizer "tente em um minuto" quando
+    // a cota acabou faz o usuário tentar dez vezes à toa.
     throw new JobError(
-      "overloaded",
-      "A IA está sobrecarregada agora. Tente de novo em um minuto.",
+      esgotouCota ? "cota_ia_diaria" : "overloaded",
+      esgotouCota
+        ? "O limite diário de gerações da IA acabou. Ele é renovado amanhã."
+        : "A IA está sobrecarregada agora. Tente de novo em um minuto.",
     );
   }
 
@@ -826,7 +1054,11 @@ async function callGemini(system: string, blocks: unknown[]): Promise<string> {
   return (candidate.content?.parts ?? []).map((p) => p.text ?? "").join("");
 }
 
-async function callAnthropic(system: string, blocks: unknown[]): Promise<string> {
+async function callAnthropic(
+  system: string,
+  blocks: unknown[],
+  cardCount: number,
+): Promise<string> {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) throw new JobError("config", "ANTHROPIC_API_KEY não configurada.");
 
@@ -840,7 +1072,7 @@ async function callAnthropic(system: string, blocks: unknown[]): Promise<string>
     body: JSON.stringify({
       model: MODEL,
       // Cabe o raciocínio + os cards. Escolher figura é a parte que pensa.
-      max_tokens: 16000,
+      max_tokens: maxOutputTokensFor(cardCount),
       thinking: { type: "adaptive" },
       output_config: {
         effort: "medium",
@@ -1018,27 +1250,39 @@ async function publishImages(
   const wanted = [...new Set(cards.map((c) => c.image_id).filter((id): id is number => id != null))];
   const urls = new Map<number, string>();
 
-  for (const id of wanted) {
-    const image = byId.get(id);
-    if (!image) continue; // a IA citou um número que não existe: ignora
-    const { data } = await admin.storage
-      .from(IMPORTS_BUCKET)
-      .download(`${job.user_id}/${job.id}/${image.path}`);
-    if (!data) continue;
+  // EM LOTES, não em fila. Cada figura custa um download e um upload, e o tempo
+  // é quase todo ida e volta de rede: em série, 30 figuras levavam 30 a 60 s
+  // DEPOIS de a IA já ter terminado, e era isso que estourava o teto de
+  // execução da função (medido em 22/08/2026: pedido de 15 concluía em 64 s,
+  // pedido de 30 morria em silêncio). Lotes de 8 em vez de tudo de uma vez
+  // porque aqui trafega a imagem em resolução cheia, não a miniatura.
+  const LOTE = 8;
 
-    const bytes = new Uint8Array(await data.arrayBuffer());
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    const hash = [...new Uint8Array(digest)]
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-    const path = `${job.user_id}/${hash}.jpg`;
+  for (let i = 0; i < wanted.length; i += LOTE) {
+    await Promise.all(
+      wanted.slice(i, i + LOTE).map(async (id) => {
+        const image = byId.get(id);
+        if (!image) return; // a IA citou um número que não existe: ignora
+        const { data } = await admin.storage
+          .from(IMPORTS_BUCKET)
+          .download(`${job.user_id}/${job.id}/${image.path}`);
+        if (!data) return;
 
-    const { error } = await admin.storage
-      .from(CARD_IMAGES_BUCKET)
-      .upload(path, bytes, { contentType: "image/jpeg", upsert: true });
-    if (error) continue;
+        const bytes = new Uint8Array(await data.arrayBuffer());
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        const hash = [...new Uint8Array(digest)]
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        const path = `${job.user_id}/${hash}.jpg`;
 
-    urls.set(id, admin.storage.from(CARD_IMAGES_BUCKET).getPublicUrl(path).data.publicUrl);
+        const { error } = await admin.storage
+          .from(CARD_IMAGES_BUCKET)
+          .upload(path, bytes, { contentType: "image/jpeg", upsert: true });
+        if (error) return;
+
+        urls.set(id, admin.storage.from(CARD_IMAGES_BUCKET).getPublicUrl(path).data.publicUrl);
+      }),
+    );
   }
   return urls;
 }
@@ -1061,6 +1305,8 @@ async function process(admin: SupabaseClient, jobId: string): Promise<void> {
   const job = data as Job | null;
   if (!job) return; // já reivindicado, ou job inexistente
 
+  const comecou = Date.now();
+
   try {
     const bundle = await extractDocument(admin, job);
     const extraction = await buildExtraction(admin, job, bundle);
@@ -1079,8 +1325,75 @@ async function process(admin: SupabaseClient, jobId: string): Promise<void> {
 
     await setStatus(admin, jobId, "generating", { extraction, stats: bundle.stats });
     const { blocks, used } = await buildUserBlocks(admin, job, bundle);
-    const system = buildSystemPrompt(job.card_count, job.language, used.length > 0);
-    const raw = await callModel(system, blocks, job.card_count);
+    // DUAS PASSADAS quando há figuras.
+    //
+    // Uma chamada só, pedindo texto e figuras ao mesmo tempo, faz o modelo se
+    // contentar: na mesma aula de patologia (60 figuras enviadas) ele devolveu
+    // 6, 10 e 6 cards com figura em três tentativas, e reescrever as regras não
+    // mudou o patamar. Separando, cada chamada tem UMA tarefa — a primeira
+    // percorre as figuras, a segunda completa pelo texto — e a da figura deixa
+    // de competir por atenção com uma dúzia de outras instruções.
+    const raw: GeneratedCard[] = [];
+
+    if (used.length > 0) {
+      const figuras = await callModel(
+        buildFigurePrompt(job.language, used.length, job.card_count),
+        blocks,
+        job.card_count,
+      );
+      // A passada das figuras só pode devolver card COM figura; sem isso ela
+      // gastaria vagas com card de texto e a segunda passada viria repetida.
+      raw.push(...figuras.filter((c) => c.image_id != null));
+    }
+
+    // Segunda passada: completa o que faltar, a partir do texto.
+    //
+    // Ela é OPCIONAL de propósito. Medido em 22/08/2026: a passada 1 leva 35 a
+    // 78 s, a 2 levou 61 s e 98 s e nas duas vezes voltou 503 (camada grátis do
+    // Gemini congestionada) — somando 144 s e derrubando a função depois de a
+    // passada 1 já ter produzido cards bons. Perder 34 cards de figura prontos
+    // para buscar 16 de texto, num material com 130 caracteres por página, é
+    // troca ruim: se a 2 falhar, o job entrega o que a 1 fez.
+    //
+    // O piso existe pelo mesmo motivo: só vale pagar mais 60-100 s se ainda
+    // faltar uma fatia relevante do pedido.
+    // Card SEM figura é card legítimo: se a passada das figuras entregou 27 de
+    // 30, os 3 que faltam saem do texto. Existiu aqui um piso ("só completa se
+    // faltar 25%") que devolvia 27 quando o usuário pediu 30 — ele fazia sentido
+    // quando o job levava 122 s e a segunda chamada arriscava estourar o tempo,
+    // mas depois de paralelizar a cópia das figuras o mesmo job leva 62 s e a
+    // folga passou a caber. Quem protege o teto agora é só o relógio, abaixo.
+    const faltam = job.card_count - raw.length;
+    const decorrido = Date.now() - comecou;
+    const temTempo = decorrido < ORCAMENTO_ANTES_DA_2A_MS;
+    if (faltam > 0 && !temTempo) {
+      console.warn(
+        `[generate-cards-doc] pulando a passada de texto: ${Math.round(decorrido / 1000)}s já gastos`,
+      );
+    }
+    if (faltam > 0 && temTempo) {
+      const denso = isImageDense(
+        Number(bundle.stats.chars ?? 0),
+        Number(bundle.stats.pages ?? 0),
+        bundle.catalog.length,
+      );
+      // `hasImages: false` de propósito: as figuras já foram cobertas, e é o
+      // que faz este prompt exigir `image_id: null` em tudo que sair daqui.
+      const system = buildSystemPrompt(faltam, job.language, false, denso, 0);
+      // Blocos sem imagem — a segunda chamada não paga tokens de visão de novo.
+      const soTexto = blocks.filter(
+        (b) => (b as { type?: string }).type !== "image",
+      );
+      try {
+        const texto = await callModel(system, soTexto, faltam);
+        raw.push(...texto.map((c) => ({ ...c, image_id: null, image_reason: null })));
+      } catch (e) {
+        // Sem `throw`: a passada 1 já entregou material aproveitável e é ela
+        // que carrega o diferencial do produto (card com a figura do próprio
+        // material). Falhar aqui vira deck menor, não erro na cara do usuário.
+        console.warn("[generate-cards-doc] passada de texto falhou:", e);
+      }
+    }
 
     // O modelo pode citar figura que não recebeu, repetir a correta entre as
     // alternativas ou grudar a mesma prancha em vários cards: nada disso pode
@@ -1110,7 +1423,12 @@ async function process(admin: SupabaseClient, jobId: string): Promise<void> {
         images_sent: used.length,
         cards_with_image: result.filter((c) => c.images.length > 0).length,
         cards_dropped: dropped,
-        ...(dropped > 0 ? { dropped_reasons: reasons } : {}),
+        // Grava sempre que houver motivo, não só quando um card inteiro cai: o
+        // validador também remove SÓ a figura (mantendo o card), e nesse caso
+        // `dropped` fica 0. Guardar só nesse caso escondia exatamente o dado
+        // que explica "veio pouca figura" — foi um ponto cego no diagnóstico
+        // de 22/08/2026.
+        ...(Object.keys(reasons).length > 0 ? { dropped_reasons: reasons } : {}),
         ...answerLengthBias(cards),
       },
     });

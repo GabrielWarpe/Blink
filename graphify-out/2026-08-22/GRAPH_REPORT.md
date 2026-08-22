@@ -1,7 +1,7 @@
 # Graph Report - Blink  (2026-08-22)
 
 ## Corpus Check
-- 164 files · ~134,049 words
+- 164 files · ~133,607 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -98,7 +98,7 @@
 - decks.tsx
 - benchmark.py
 - useSettings
-- date-fns
+- expo-crypto
 - delete-account/index.ts
 - react-native-svg
 - SettingsContext.tsx
@@ -192,7 +192,7 @@ Nodes (27): Exception, Bundle, Extractor, Options, Contrato comum a todos os for
 
 ### Community 12 - "dependencies"
 Cohesion: 0.12
-Nodes (17): expo-crypto, @expo-google-fonts/inter, expo-image-picker, expo-linear-gradient, expo-notifications, expo-splash-screen, dependencies, expo-crypto (+9 more)
+Nodes (17): date-fns, @expo-google-fonts/inter, expo-image-picker, expo-linear-gradient, expo-notifications, expo-splash-screen, dependencies, date-fns (+9 more)
 
 ### Community 13 - "generate-cards/index.ts"
 Cohesion: 0.17

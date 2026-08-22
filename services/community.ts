@@ -135,7 +135,6 @@ export async function publishDeck(
 ): Promise<string> {
   const preset = presetFor(license);
   const meta = {
-    author_id: userId,
     source_playlist_id: deck.id,
     title: deck.title,
     description: deck.description || null,
@@ -170,6 +169,13 @@ export async function publishDeck(
   };
 
   if (existing) {
+    // `author_id` fica FORA do update de propósito. O painel administrativo dá
+    // UPDATE ao usuário por COLUNA, e `author_id` não está na lista — junto com
+    // `is_featured`, `rating_avg`, `rating_count` e `original_author_*`. É o que
+    // impede alguém de se auto-destacar, forjar a própria nota ou reescrever a
+    // autoria. Mandar a coluna no payload, mesmo com o valor idêntico, faz o
+    // Postgres recusar a instrução inteira com "permission denied for table".
+    // E ela não precisa mudar: o dono da publicação é o mesmo desde o INSERT.
     const { error } = await supabase
       .from('community_decks')
       .update(meta)
@@ -184,7 +190,9 @@ export async function publishDeck(
   } else {
     const { data, error } = await supabase
       .from('community_decks')
-      .insert(meta)
+      // No INSERT o `author_id` é obrigatório (é ele que a RLS confere contra
+      // `auth.uid()`); só o UPDATE é que não pode tocá-lo.
+      .insert({ ...meta, author_id: userId })
       .select('id')
       .single();
     guard(error);

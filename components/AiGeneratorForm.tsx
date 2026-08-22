@@ -72,6 +72,13 @@ interface AiGeneratorFormProps {
  * OU um anexo (PDF, Word, foto), modo flashcards×quiz e quantidade. Usado na
  * criação de deck e em "adicionar cards".
  */
+/**
+ * Máximo de cards por geração. O limite é de CUSTO e de tamanho da resposta
+ * do modelo, não do banco — ver `maxOutputTokensFor` na Edge Function, que
+ * dimensiona o orçamento de saída a partir deste número.
+ */
+const MAX_CARDS = 50;
+
 export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) {
   const colors = useThemeColors();
   const [topic, setTopic] = useState('');
@@ -153,7 +160,10 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
     setGenerating(true);
     setLastRun(null);
     try {
-      const n = Math.min(Math.max(parseInt(count, 10) || 10, 1), 30);
+      // Teto de 50: o campo AVISA (placeholder e rótulo), porque cortar 50
+      // para 30 em silêncio faz o usuário achar que a IA é que economizou —
+      // aconteceu, e custou uma geração para descobrir.
+      const n = Math.min(Math.max(parseInt(count, 10) || 10, 1), MAX_CARDS);
 
       // Anexo vai pelo pipeline de documento: extrai as figuras do arquivo e a
       // IA monta as perguntas a partir delas. Tópico digitado segue no caminho
@@ -235,8 +245,8 @@ export function AiGeneratorForm({ onGenerated, onTopic }: AiGeneratorFormProps) 
       <View className="flex-row gap-3 items-end">
         <View className="flex-1">
           <Input
-            label="Quantidade"
-            placeholder="10"
+            label={`Quantidade (até ${MAX_CARDS})`}
+            placeholder="15"
             value={count}
             onChangeText={setCount}
             keyboardType="number-pad"
