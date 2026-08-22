@@ -435,8 +435,8 @@
     "semantic_hash": ""
   },
   "services/community.ts": {
-    "mtime": 1787235209.0621572,
-    "ast_hash": "051cd6fcd4edf00188554ee10205455c",
+    "mtime": 1787435076.3849485,
+    "ast_hash": "c1bf249e8f29704f8a64547703cef6f2",
     "semantic_hash": ""
   },
   "services/database.ts": {
@@ -725,8 +725,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/generate-cards-doc/index.ts": {
-    "mtime": 1787421613.9955769,
-    "ast_hash": "559f420df994ff47c6c357d928efa756",
+    "mtime": 1787433868.3738813,
+    "ast_hash": "f207603b48c9484e9075bd736e347877",
     "semantic_hash": ""
   },
   ".claude/graphify-context.sh": {

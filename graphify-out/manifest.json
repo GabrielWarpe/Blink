@@ -725,8 +725,8 @@
     "semantic_hash": ""
   },
   "supabase/functions/generate-cards-doc/index.ts": {
-    "mtime": 1787433868.3738813,
-    "ast_hash": "f207603b48c9484e9075bd736e347877",
+    "mtime": 1787436483.8122733,
+    "ast_hash": "30cf245199506ac981236c27e6773edb",
     "semantic_hash": ""
   },
   ".claude/graphify-context.sh": {

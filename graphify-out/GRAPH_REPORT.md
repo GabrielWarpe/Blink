@@ -1,16 +1,16 @@
 # Graph Report - Blink  (2026-08-22)
 
 ## Corpus Check
-- 164 files · ~134,049 words
+- 164 files · ~134,250 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1168 nodes · 2810 edges · 94 communities (54 shown, 40 thin omitted)
+- 1168 nodes · 2800 edges · 95 communities (56 shown, 39 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 51 edges (avg confidence: 0.64)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c31f9d56`
+- Built from commit: `94c636c6`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -32,9 +32,9 @@
 - Blink Adaptive Icon Foreground
 - ooxml.py
 - What You Must Do When Invoked
-- community.tsx
-- AuthContext.tsx
+- decks.tsx
 - database.ts
+- community/[id].tsx
 - GlassSurface.tsx
 - grade-answer/index.ts
 - metro.config.js
@@ -94,21 +94,22 @@
 - pptx.py
 - docx.py
 - ExtractedImage
-- write/[deckId].tsx
-- decks.tsx
+- answer.ts
+- ImportConflictModal.tsx
 - benchmark.py
 - useSettings
-- date-fns
+- edit.tsx
 - delete-account/index.ts
 - react-native-svg
 - SettingsContext.tsx
-- notifications.ts
+- write/[deckId].tsx
 - ActivityHeatmap.tsx
-- CardImages.tsx
+- Deck
 - expo-asset
+- expo-crypto
 
 ## God Nodes (most connected - your core abstractions)
-1. `useThemeColors()` - 128 edges
+1. `useThemeColors()` - 127 edges
 2. `useAuth()` - 50 edges
 3. `useSettings()` - 36 edges
 4. `expo-router` - 33 edges
@@ -122,14 +123,14 @@
 ## Surprising Connections (you probably didn't know these)
 - `useStudyTimer()` --indirect_call--> `check()`  [INFERRED]
   hooks/useStudyTimer.ts → scripts/test-generate-cards.js
+- `AiGeneratorForm()` --indirect_call--> `base64()`  [INFERRED]
+  components/AiGeneratorForm.tsx → supabase/functions/generate-cards-doc/index.ts
+- `ImportScreen()` --indirect_call--> `base64()`  [INFERRED]
+  app/deck/import.tsx → supabase/functions/generate-cards-doc/index.ts
 - `TabsLayout()` --calls--> `useAuth()`  [EXTRACTED]
   app/(tabs)/_layout.tsx → contexts/AuthContext.tsx
 - `ThemeController()` --calls--> `useSettings()`  [EXTRACTED]
   app/_layout.tsx → contexts/SettingsContext.tsx
-- `MiniAvatar()` --calls--> `useThemeColors()`  [EXTRACTED]
-  app/community/[id].tsx → hooks/useThemeColors.ts
-- `AuthorReply()` --calls--> `useThemeColors()`  [EXTRACTED]
-  app/community/[id].tsx → hooks/useThemeColors.ts
 
 ## Import Cycles
 - None detected.
@@ -140,23 +141,23 @@
 - **Loop de estudo SM-2 e metricas** — readme_repeticao_espacada_sm2, readme_tabela_flashcards, readme_tabela_study_sessions, readme_tabela_card_reviews [INFERRED 0.75]
 - **Blink Icon Visual Language** — assets_brand_blink_adaptive_foreground_flashcard_stack, assets_brand_blink_adaptive_foreground_wink_face, assets_brand_blink_adaptive_foreground_flip_arrow, assets_brand_blink_adaptive_foreground_brand_palette, assets_brand_blink_adaptive_foreground_squircle_container [INFERRED 0.85]
 
-## Communities (94 total, 40 thin omitted)
+## Communities (95 total, 39 thin omitted)
 
 ### Community 0 - "progress.tsx"
 Cohesion: 0.15
-Nodes (16): Tab, ProgressScreen(), DeckAvatar(), DeckAvatarProps, DeckCard(), DeckCardProps, StreakBadge(), StreakBadgeProps (+8 more)
+Nodes (17): Tab, ProgressScreen(), StatCard(), SettingsSection(), SettingsSectionProps, StreakBadge(), StreakBadgeProps, Card() (+9 more)
 
 ### Community 1 - "main.py"
 Cohesion: 0.27
 Nodes (9): BaseModel, Versão reduzida para o prompt. Falhou? devolve a original., thumbnail(), _authorize(), extract_document(), ExtractRequest, health(), Serviço de extração de documentos do Blink.  Um endpoint só: recebe o ponteiro d (+1 more)
 
 ### Community 2 - "profile.tsx"
-Cohesion: 0.07
-Nodes (48): AchievementsScreen(), stripEmoji(), LevelsScreen(), ProfileScreen(), StatCard(), Emblem(), EmblemProps, GoalSlider() (+40 more)
+Cohesion: 0.08
+Nodes (44): AchievementsScreen(), stripEmoji(), LevelsScreen(), ProfileScreen(), Emblem(), EmblemProps, GoalSlider(), GoalSliderProps (+36 more)
 
 ### Community 3 - "study/[deckId].tsx"
-Cohesion: 0.17
-Nodes (22): QuizScreen(), StudySessionScreen(), FinishPromptModal(), QuizQuestion(), SessionResult(), SessionResultProps, shortTime(), SessionTimer() (+14 more)
+Cohesion: 0.22
+Nodes (17): QuizScreen(), StudySessionScreen(), FinishPromptModal(), QuizQuestion(), StudySetup(), TimeUpNotice(), TimeUpNoticeProps, cardShadow (+9 more)
 
 ### Community 4 - "backup.ts"
 Cohesion: 0.12
@@ -167,8 +168,8 @@ Cohesion: 0.11
 Nodes (16): catalog, check(), cinco, equilibrado, fs, path, r, sandbox (+8 more)
 
 ### Community 6 - "AiGeneratorForm.tsx"
-Cohesion: 0.11
-Nodes (29): Attachment, ICON, ImportScreen(), KIND_LABEL, AiGeneratorForm(), Attachment, ATTACHMENT_ICON, DOCUMENT_PIPELINE (+21 more)
+Cohesion: 0.06
+Nodes (45): Attachment, ICON, ImportScreen(), KIND_LABEL, AiGeneratorForm(), AiGeneratorFormProps, Attachment, ATTACHMENT_ICON (+37 more)
 
 ### Community 7 - "expo"
 Cohesion: 0.05
@@ -192,7 +193,7 @@ Nodes (27): Exception, Bundle, Extractor, Options, Contrato comum a todos os for
 
 ### Community 12 - "dependencies"
 Cohesion: 0.12
-Nodes (17): expo-crypto, @expo-google-fonts/inter, expo-image-picker, expo-linear-gradient, expo-notifications, expo-splash-screen, dependencies, expo-crypto (+9 more)
+Nodes (17): date-fns, @expo-google-fonts/inter, expo-image-picker, expo-linear-gradient, expo-notifications, expo-splash-screen, dependencies, date-fns (+9 more)
 
 ### Community 13 - "generate-cards/index.ts"
 Cohesion: 0.17
@@ -210,21 +211,21 @@ Nodes (19): Figuras na ordem em que aparecem no documento, e depois as que estã
 Cohesion: 0.07
 Nodes (26): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+18 more)
 
-### Community 17 - "community.tsx"
-Cohesion: 0.17
-Nodes (16): COMMUNITY_SORTS, CommunityScreen(), LIST_TITLE, HomeScreen(), EnterAnimation(), EnterAnimationProps, useRevealSearch(), useStudyModePicker() (+8 more)
-
-### Community 18 - "AuthContext.tsx"
+### Community 17 - "decks.tsx"
 Cohesion: 0.11
-Nodes (17): AuthContext, AuthProvider(), parseRecoveryLink(), DeleteAccountResult, GenerateContentType, GeneratedFlashcard, GeneratedQuizQuestion, GenerateErrorCode (+9 more)
+Nodes (27): COMMUNITY_SORTS, CommunityScreen(), LIST_TITLE, DECK_SORTS, DeckSort, HomeScreen(), EnterAnimation(), EnterAnimationProps (+19 more)
 
-### Community 19 - "database.ts"
-Cohesion: 0.08
-Nodes (55): AuthorReply(), CommunityDeckScreen(), Metric(), MiniAvatar(), PublishDeckScreen(), EditDeckScreen(), PublishToggle(), PublishToggleProps (+47 more)
+### Community 18 - "database.ts"
+Cohesion: 0.13
+Nodes (18): AuthContext, AuthContextType, AuthProvider(), parseRecoveryLink(), NewDeckInput, sanitizeInterval(), NewCardInput, NewFlashcardRow (+10 more)
+
+### Community 19 - "community/[id].tsx"
+Cohesion: 0.18
+Nodes (24): CommunityDeckScreen(), PublishToggle(), PublishToggleProps, CommunitySort, downloadDeck(), getCommunityDeck(), getMyRating(), hasDownloaded() (+16 more)
 
 ### Community 20 - "GlassSurface.tsx"
-Cohesion: 0.12
-Nodes (26): DeckOption, DeckPickerModal(), Props, FilterSheet(), FilterSheetProps, SortOption, Props, ModeOption (+18 more)
+Cohesion: 0.14
+Nodes (22): DeckOption, DeckPickerModal(), Props, Props, ModeOption, StudyModePicker(), AnimatedBlurView, AnimatedGlassFill() (+14 more)
 
 ### Community 22 - "metro.config.js"
 Cohesion: 0.50
@@ -275,12 +276,12 @@ Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ### Community 62 - "useThemeColors"
-Cohesion: 0.16
-Nodes (18): ForgotPasswordScreen(), LoginScreen(), mapAuthError(), FieldErrors, RegisterScreen(), ResetPasswordScreen(), ProgressRing(), ProgressRingProps (+10 more)
+Cohesion: 0.13
+Nodes (24): ForgotPasswordScreen(), LoginScreen(), mapAuthError(), FieldErrors, RegisterScreen(), AuthorReply(), Metric(), MiniAvatar() (+16 more)
 
 ### Community 63 - "create.tsx"
-Cohesion: 0.19
-Nodes (22): AddCardsScreen(), Mode, CardEditorScreen(), CreateDeckScreen(), Mode, CardImagePicker(), CardImagePickerProps, DeckCoverPicker() (+14 more)
+Cohesion: 0.17
+Nodes (22): AddCardsScreen(), Mode, CardEditorScreen(), CreateDeckScreen(), Mode, CardImagePicker(), CardImagePickerProps, CardImages() (+14 more)
 
 ### Community 69 - "TabBar.tsx"
 Cohesion: 0.19
@@ -291,8 +292,8 @@ Cohesion: 0.13
 Nodes (24): Document, digest(), normalize(), Converte para JPEG RGB com teto de lado. None se não for imagem legível., extract_pdf(), _find_caption(), _first_rect(), _looks_vectorial() (+16 more)
 
 ### Community 72 - "types/index.ts"
-Cohesion: 0.16
-Nodes (14): image, DeckMiniCard(), DeckMiniCardProps, StudyModePickerProps, useActiveTimer(), CardAnswer, Maturity, reviewCard() (+6 more)
+Cohesion: 0.15
+Nodes (21): image, useActiveTimer(), useStudySession(), checkAchievements(), Maturity, reviewCard(), prefetchCardImages(), androidChannel() (+13 more)
 
 ### Community 76 - "app/_layout.tsx"
 Cohesion: 0.08
@@ -303,8 +304,8 @@ Cohesion: 0.10
 Nodes (17): bundle, bytes, cards, comFig, ctx, GEM, H, jobs (+9 more)
 
 ### Community 78 - "settings.tsx"
-Cohesion: 0.21
-Nodes (14): SettingsScreen(), SessionTimerProps, StudySetupProps, clampGoal(), clampTimerLimit(), TIMER_LIMIT_STEPS, StudyTimerPhase, useStudyTimer() (+6 more)
+Cohesion: 0.25
+Nodes (11): SettingsScreen(), MODES, StudySetupProps, clampGoal(), clampTimerLimit(), TIMER_LIMIT_STEPS, useStudyTimer(), UseStudyTimerArgs (+3 more)
 
 ### Community 79 - "pptx.py"
 Cohesion: 0.21
@@ -318,13 +319,13 @@ Nodes (9): extract_docx(), Bundle, Element, ZipFile, DOCX — Word.  Mais simple
 Cohesion: 0.12
 Nodes (13): Any, ExtractedImage, Figura encontrada no documento, já normalizada e pronta para subir., apply_filter(), _cap_candidates(), is_flat(), postprocess(), Bundle (+5 more)
 
-### Community 82 - "write/[deckId].tsx"
-Cohesion: 0.22
-Nodes (13): shuffle(), WriteScreen(), MODES, StudySetup(), cardShadow, AnswerCheck, AnswerVerdict, checkAnswer() (+5 more)
+### Community 82 - "answer.ts"
+Cohesion: 0.39
+Nodes (8): AnswerCheck, AnswerVerdict, checkAnswer(), keywords(), levenshtein(), normalizeAnswer(), present(), STOPWORDS
 
-### Community 83 - "decks.tsx"
-Cohesion: 0.14
-Nodes (15): DECK_SORTS, DeckSort, ConflictResolution, ImportConflictModal(), Props, LoadError(), LoadErrorProps, RevealSearchBar() (+7 more)
+### Community 83 - "ImportConflictModal.tsx"
+Cohesion: 0.36
+Nodes (6): ConflictResolution, ImportConflictModal(), Props, ConflictAction, DeckConflict, ImportDeck
 
 ### Community 84 - "benchmark.py"
 Cohesion: 0.11
@@ -332,43 +333,51 @@ Nodes (27): Client, build_system_prompt(), call_anthropic(), call_gemini(), main
 
 ### Community 85 - "useSettings"
 Cohesion: 0.35
-Nodes (9): AiGeneratorFormProps, FlashCard(), FlashCardProps, QuizQuestionProps, SwipeCard(), SwipeCardProps, useSettings(), useCardSize() (+1 more)
+Nodes (9): FlashCard(), FlashCardProps, QuizQuestionProps, SwipeCard(), SwipeCardProps, useSettings(), useCardSize(), TimedSessionTarget (+1 more)
+
+### Community 86 - "edit.tsx"
+Cohesion: 0.31
+Nodes (12): PublishDeckScreen(), EditDeckScreen(), normalizeTag(), TagInput(), TagInputProps, useDecks(), getPublishedFor(), listMyPublished() (+4 more)
 
 ### Community 89 - "SettingsContext.tsx"
-Cohesion: 0.26
-Nodes (11): AppSettings, DEFAULTS, hasLegacyKeys(), LEGACY_KEYS, migrateLegacy(), parseSettings(), pushSettings(), SettingsContext (+3 more)
+Cohesion: 0.23
+Nodes (12): AppSettings, DEFAULTS, hasLegacyKeys(), LEGACY_KEYS, migrateLegacy(), parseSettings(), pushSettings(), SettingsContext (+4 more)
 
-### Community 90 - "notifications.ts"
-Cohesion: 0.30
-Nodes (11): checkAchievements(), androidChannel(), dateAt(), dueCountAt(), ensureAndroidChannel(), fireNotification(), fireStreakNotification(), parseTime() (+3 more)
+### Community 90 - "write/[deckId].tsx"
+Cohesion: 0.22
+Nodes (11): shuffle(), WriteScreen(), SessionResult(), SessionResultProps, shortTime(), SessionTimer(), SessionTimerProps, CardAnswer (+3 more)
 
 ### Community 91 - "ActivityHeatmap.tsx"
 Cohesion: 0.60
 Nodes (4): ActivityHeatmap(), ActivityHeatmapProps, alphaHex(), levelFor()
+
+### Community 92 - "Deck"
+Cohesion: 0.27
+Nodes (8): DeckAvatar(), DeckAvatarProps, DeckCard(), DeckCardProps, DeckMiniCard(), DeckMiniCardProps, StudyModePickerProps, Deck
 
 ## Ambiguous Edges - Review These
 - `Blink Product Identity` → `Spaced Repetition Card Review Loop`  [AMBIGUOUS]
   assets/brand/blink_adaptive_foreground.png · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **327 isolated node(s):** `graphify-context.sh script`, `name`, `slug`, `version`, `orientation` (+322 more)
+- **329 isolated node(s):** `⛔ Decisão travando o resto`, `Bloqueia a submissão`, `Quebra com usuários reais`, `Antes de abrir para estranhos`, `Fora do escopo da v1` (+324 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **40 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **39 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `Blink Product Identity` and `Spaced Repetition Card Review Loop`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `useThemeColors()` connect `useThemeColors` to `progress.tsx`, `profile.tsx`, `study/[deckId].tsx`, `backup.ts`, `AiGeneratorForm.tsx`, `expo`, `community.tsx`, `AuthContext.tsx`, `database.ts`, `GlassSurface.tsx`, `create.tsx`, `TabBar.tsx`, `app/_layout.tsx`, `settings.tsx`, `write/[deckId].tsx`, `decks.tsx`, `useSettings`, `ActivityHeatmap.tsx`, `CardImages.tsx`?**
-  _High betweenness centrality (0.098) - this node is a cross-community bridge._
-- **Why does `expo-router` connect `community.tsx` to `progress.tsx`, `profile.tsx`, `study/[deckId].tsx`, `TabBar.tsx`, `AiGeneratorForm.tsx`, `expo`, `app/_layout.tsx`, `settings.tsx`, `AuthContext.tsx`, `database.ts`, `decks.tsx`, `write/[deckId].tsx`, `GlassSurface.tsx`, `useThemeColors`, `create.tsx`?**
-  _High betweenness centrality (0.025) - this node is a cross-community bridge._
+- **Why does `useThemeColors()` connect `useThemeColors` to `progress.tsx`, `profile.tsx`, `study/[deckId].tsx`, `backup.ts`, `AiGeneratorForm.tsx`, `expo`, `decks.tsx`, `community/[id].tsx`, `GlassSurface.tsx`, `create.tsx`, `TabBar.tsx`, `app/_layout.tsx`, `settings.tsx`, `ImportConflictModal.tsx`, `useSettings`, `edit.tsx`, `write/[deckId].tsx`, `ActivityHeatmap.tsx`, `Deck`?**
+  _High betweenness centrality (0.083) - this node is a cross-community bridge._
 - **Why does `base64()` connect `generate-cards-doc/index.ts` to `AiGeneratorForm.tsx`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
-- **What connects `graphify-context.sh script`, `name`, `slug` to the rest of the system?**
-  _327 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _High betweenness centrality (0.038) - this node is a cross-community bridge._
+- **Why does `expo-router` connect `useThemeColors` to `progress.tsx`, `profile.tsx`, `study/[deckId].tsx`, `TabBar.tsx`, `AiGeneratorForm.tsx`, `expo`, `app/_layout.tsx`, `settings.tsx`, `decks.tsx`, `database.ts`, `community/[id].tsx`, `GlassSurface.tsx`, `edit.tsx`, `write/[deckId].tsx`, `create.tsx`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **What connects `⛔ Decisão travando o resto`, `Bloqueia a submissão`, `Quebra com usuários reais` to the rest of the system?**
+  _329 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `profile.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.07142857142857142 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07890122735242548 - nodes in this community are weakly interconnected._
 - **Should `backup.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.11693548387096774 - nodes in this community are weakly interconnected._
